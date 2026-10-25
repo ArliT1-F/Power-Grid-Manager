@@ -2,7 +2,7 @@
 
 A RimWorld mod focused on readable colony power monitoring. It will observe RimWorld's native power simulation; it will not replace it.
 
-> **Development status:** Phase 1 project setup is in progress. This repository currently contains the mod metadata, build configuration, saved monitoring settings, and API/research notes. No dashboard, live scanner, history collector, diagnostics, forecasts, or control features are advertised as implemented yet.
+> **Development status:** Phase 2 monitoring code is implemented, with validation pending. A read-only map-scoped scanner now caches network, building, trader and battery observations. There is no dashboard yet. Compilation and in-game validation remain blocked by the missing game installation/toolchain; this is not a release-ready mod.
 
 ## Target and validation status
 
@@ -39,6 +39,10 @@ Copy the repository folder (or a release folder containing `About/`, `Languages/
 - Settings persisted through RimWorld's `ModSettings` API: refresh cadence, sample cadence, retention, and high-load threshold.
 - A build target that references game-provided assemblies without vendoring them.
 - Initial implementation plan and API/research report.
+- Scheduled map-scoped monitoring with active-vs-reported power separation, real network membership, battery energy/capacity, and unsupported/pending-data flags.
+- Source-linked monitoring test harness and CI workflow (not executed locally).
+
+See [Phase 2 measurement contracts, architecture, limitations and validation](Docs/PHASE-2-MONITORING.md). Run logic tests with a .NET 8 SDK: `dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release`. These tests use game doubles and do not verify compatibility with game binaries.
 
 ## Planned
 

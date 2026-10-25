@@ -6,10 +6,12 @@ namespace PowerGridManager
     public sealed class PowerGridManagerMod : Mod
     {
         private readonly PowerGridManagerSettings settings;
+        public static PowerGridManagerSettings Settings { get; private set; }
 
         public PowerGridManagerMod(ModContentPack content) : base(content)
         {
             settings = GetSettings<PowerGridManagerSettings>();
+            Settings = settings;
         }
 
         public override string SettingsCategory()
