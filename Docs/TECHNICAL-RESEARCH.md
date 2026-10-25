@@ -107,7 +107,8 @@ These links establish overlapping categories, not a complete feature-by-feature 
 - [x] Phase 1: initial research, project/build skeleton and settings established.
 - [x] Add 1.5/1.6/1.7 metadata and separate build targets/runtime layouts.
 - [ ] Phase 1: compile/load against official 1.5, 1.6, and 1.7 installations (blocked here by absent game installs/toolchain).
-- [ ] Phase 2: monitoring core.
+- [x] Phase 2: monitoring core implementation and source-linked test harness.
+- [ ] Phase 2: execute C# tests, compile against game assemblies, and reconcile in-game statistics (environment-blocked).
 - [ ] Phase 3: dashboard.
 - [ ] Phase 4: history.
 - [ ] Phase 5: diagnostics.
@@ -115,3 +116,8 @@ These links establish overlapping categories, not a complete feature-by-feature 
 - [ ] Phase 7: optional management.
 - [ ] Phase 8: compatibility/performance.
 - [ ] Phase 9: release preparation.
+
+
+## Phase 2 implementation update (2026-10-25)
+
+See [PHASE-2-MONITORING.md](PHASE-2-MONITORING.md) for the implemented scanner/cache, exact measurement contracts, source reinspection evidence, tests and limitations. Phase 2 code is implemented; acceptance remains gated on compilation and in-game reconciliation. In particular, current draw must gate signed trader output by `PowerOn`. Historical collection, UI, diagnostics, forecasts and management remain later phases.
