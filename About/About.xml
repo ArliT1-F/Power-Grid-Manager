@@ -8,5 +8,7 @@
     <li>1.6</li>
     <li>1.7</li>
   </supportedVersions>
-  <description>Monitor colony power networks, generation, consumption, and battery storage from a centralized interface. This mod observes RimWorld's power simulation and does not replace it.</description>
+  <description>Monitor colony power networks, generation, consumption, storage and history from a centralised dashboard. Power Grid Manager observes RimWorld's own power simulation and never replaces or alters it.
+
+Open the Power tab to see map-wide totals, per-network detail, a searchable table of every powered building, and recorded charts of generation, consumption, net balance, battery charge and load. All figures are labelled as measured, configured or estimated.</description>
 </ModMetaData>

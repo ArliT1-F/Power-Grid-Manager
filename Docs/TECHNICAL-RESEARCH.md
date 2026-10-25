@@ -1,6 +1,6 @@
 # Technical research, implementation plan, and validation record
 
-Updated 2026-10-26. This is a development record, not a claim of in-game validation.
+Updated 2026-10-25. This is a development record, not a claim of in-game validation.
 
 ## Environment findings
 
@@ -108,15 +108,73 @@ These links establish overlapping categories, not a complete feature-by-feature 
 - [x] Add 1.5/1.6/1.7 metadata and separate build targets/runtime layouts.
 - [ ] Phase 1: compile/load against official 1.5, 1.6, and 1.7 installations (blocked here by absent game installs/toolchain).
 - [x] Phase 2: monitoring core implementation and source-linked test harness.
-- [ ] Phase 2: execute C# tests, compile against game assemblies, and reconcile in-game statistics (environment-blocked).
-- [ ] Phase 3: dashboard.
-- [ ] Phase 4: history.
+- [ ] Phase 2: compile against game assemblies and reconcile in-game statistics (environment-blocked).
+- [x] Phase 2: execute the C# harness (252 checks, see the note below on how it was run here).
+- [x] Phase 3: dashboard (overview, networks, buildings, classification, filtering, sorting, grouping, localization).
+- [ ] Phase 3: in-game rendering/interaction validation (environment-blocked).
+- [x] Phase 4: history (bounded sampling, retention, save/load, charts).
+- [ ] Phase 4: in-game save/load and chart validation (environment-blocked).
 - [ ] Phase 5: diagnostics.
 - [ ] Phase 6: battery forecasting.
 - [ ] Phase 7: optional management.
 - [ ] Phase 8: compatibility/performance.
 - [ ] Phase 9: release preparation.
 
+
+## Phase 3-4 implementation update (2026-10-25)
+
+The dashboard and history layers are implemented. See
+[PHASE-3-DASHBOARD.md](PHASE-3-DASHBOARD.md), [PHASE-4-HISTORY.md](PHASE-4-HISTORY.md) and
+[TESTING.md](TESTING.md).
+
+Additional API evidence gathered for these phases, again from the public 1.6 reference
+(`Dyyrlysh/RimworldDecompile`, commit `79ca2aa15c9e116bd43d448692b62636467f6c46`):
+
+- `MainTabWindow` is the documented tab extension point: `MainButtonDef.tabWindowClass`
+  is instantiated by `MainButtonDef.TabWindow` and receives `def`; `RequestedTabSize` is
+  virtual and `Window.InitialSize` clamps it to the screen.
+- `TabDrawer.DrawTabs<TTabRecord>(Rect, List<TTabRecord>, float maxTabWidth = 200f)` draws
+  the strip 32 px above the rect it is given; `TabRecord.GetTip()` is virtual.
+- `Map.FillComponents()` instantiates every non-`CustomMapComponent` subclass of
+  `MapComponent` that has a `(Map)` constructor, which is why the monitoring component needs
+  no patch or def. `Map.GetComponent<T>()` scans that list.
+- Def `label`/`description` are translated through `DefInjected`, not `Keyed`; the
+  `MainButtonDef` therefore carries display text while C#-generated strings use keyed keys.
+- `Widgets.DrawBoxSolid`/`DrawLineHorizontal`/`Label`, `Text.Font`/`Anchor`/`WordWrap`,
+  `Text.ClampTextWithEllipsis`, `Widgets.BeginScrollView`, `Widgets.ButtonInvisible`,
+  `Widgets.ButtonText`, `Widgets.TextField`, `TooltipHandler.TipRegion`, `FloatMenu`,
+  `FloatMenuOption`, `Dialog_InfoCard(Thing)` and `CameraJumper.TryJumpAndSelect` all exist
+  with the signatures used by the dashboard.
+- `Scribe_Values.Look`, `Scribe_Collections.Look(ref List<T>, …)` and
+  `Scribe_Deep.Look(ref T, …)` support the bounded history format; `Map.ExposeComponents`
+  serializes the `components` list with `LookMode.Deep`, so a map component can persist data
+  and is dropped cleanly when absent.
+- `Thing.GetRoom()` (`RegionAndRoomQuery`) returns a `Room` whose `Role` may be null, so
+  room grouping must handle "no room" and "unnamed room" explicitly.
+- `ThingDef.HasComp(Type)`, `BuildingProperties.isTrap` / `bed_defaultMedical` /
+  `bed_healPerDay`, `ThingCategoryDef.parent` and the classes `Building_ResearchBench`,
+  `Building_TurretGun`, `Building_Bed`, `CompTempControl` and `CompGlower` support the
+  conservative category classifier.
+
+### How the harness was executed without a game SDK
+
+The environment has no `dotnet`, NuGet access or game assemblies, but Roslyn and a
+self-contained .NET 10 runtime were obtainable from packages already reachable here
+(`registry.npmjs.org`). The production sources plus the harness were compiled with Roslyn
+and executed on that runtime, which is how the 252 checks were run. This validates C#/logic
+only: the game assemblies were still replaced by doubles, so *no* claim is made about real
+game API compatibility, rendering, save format or performance.
+
+### Deliberate scope boundaries carried into Phases 3-4
+
+- No installed-capacity figure is presented as production; only a def-level "configured
+  generation", clearly qualified and excluded from all calculations.
+- No per-building history exists, so per-building historical averages are reported as not
+  recorded, and the daily-energy figure is labelled an estimate from current draw.
+- Network identity stays snapshot-local; history is map-aggregate only, because network
+  objects have no persistent identity.
+- Diagnostics/forecasting/management remain Phase 5-7; "data notices" are data-quality
+  facts, not advisories.
 
 ## Phase 2 implementation update (2026-10-25)
 

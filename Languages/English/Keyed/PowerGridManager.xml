@@ -1,12 +1,265 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
+  <!-- Identity -->
   <PGM_ModName>Power Grid Manager</PGM_ModName>
+
+  <!-- Units. Watts are power; watt-days are energy. -->
+  <PGM_Unit_Watt>W</PGM_Unit_Watt>
+  <PGM_Unit_Kilowatt>kW</PGM_Unit_Kilowatt>
+  <PGM_Unit_WattDay>Wd</PGM_Unit_WattDay>
+  <PGM_Unit_Minute>min</PGM_Unit_Minute>
+  <PGM_Unit_Hour>h</PGM_Unit_Hour>
+  <PGM_Unit_Day>d</PGM_Unit_Day>
+  <PGM_Value_Unknown>unknown</PGM_Value_Unknown>
+  <PGM_Value_NotEstimated>not estimated</PGM_Value_NotEstimated>
+
+  <!-- Settings window -->
   <PGM_RefreshInterval_Label>Dashboard refresh interval: {0} ticks</PGM_RefreshInterval_Label>
-  <PGM_RefreshInterval_Tip>How often cached monitoring data should refresh while the map is active. This setting does not change the game's power simulation.</PGM_RefreshInterval_Tip>
+  <PGM_RefreshInterval_Tip>How often the cached power snapshot is rebuilt while the map is active. This setting does not change the game's power simulation.</PGM_RefreshInterval_Tip>
+  <PGM_HistoryEnabled_Label>Record power history</PGM_HistoryEnabled_Label>
+  <PGM_HistoryEnabled_Tip>When enabled, aggregate generation, consumption and battery energy are sampled at the interval below and stored in the save. Turning this off stops recording but keeps existing history.</PGM_HistoryEnabled_Tip>
   <PGM_SampleInterval_Label>History sample interval: {0} ticks</PGM_SampleInterval_Label>
-  <PGM_SampleInterval_Tip>Planned interval for future aggregate history samples. One in-game hour is 2,500 ticks.</PGM_SampleInterval_Tip>
+  <PGM_SampleInterval_Tip>How often one aggregate history sample is stored. One in-game hour is 2,500 ticks. Shorter intervals give smoother charts and use more save space.</PGM_SampleInterval_Tip>
   <PGM_Retention_Label>History retention: {0} days</PGM_Retention_Label>
-  <PGM_Retention_Tip>Maximum in-game history retention planned for the collector. This setting has no effect until historical monitoring is implemented.</PGM_Retention_Tip>
-  <PGM_HighLoad_Label>High-load warning threshold: {0}%</PGM_HighLoad_Label>
-  <PGM_HighLoad_Tip>Planned threshold relative to connected installed generation capacity. Current output and nominal capacity will be shown separately.</PGM_HighLoad_Tip>
+  <PGM_Retention_Tip>Samples older than this many in-game days are discarded. History storage is bounded by this window.</PGM_Retention_Tip>
+  <PGM_HighLoad_Label>High-load threshold: {0}% of current generation</PGM_HighLoad_Label>
+  <PGM_HighLoad_Tip>Networks whose consumption reaches this share of their current generation are labelled High Load. This compares against current output, not installed capacity.</PGM_HighLoad_Tip>
+  <PGM_HighConsumption_Label>High-consumption threshold: {0} W</PGM_HighConsumption_Label>
+  <PGM_HighConsumption_Tip>Buildings drawing at least this much power are flagged in the building table. This is a display filter only.</PGM_HighConsumption_Tip>
+
+  <!-- Window -->
+  <PGM_Window_NoMap>No map is active.</PGM_Window_NoMap>
+  <PGM_Window_NoComponent>The power monitoring component is not available on this map yet.</PGM_Window_NoComponent>
+  <PGM_Window_Waiting>Waiting for the first power reading. Data refreshes on the next game tick.</PGM_Window_Waiting>
+
+  <!-- Tabs -->
+  <PGM_Tab_Overview>Overview</PGM_Tab_Overview>
+  <PGM_Tab_OverviewTip>Map-wide generation, consumption, storage and data quality.</PGM_Tab_OverviewTip>
+  <PGM_Tab_Networks>Networks</PGM_Tab_Networks>
+  <PGM_Tab_NetworksTip>Each connected power network with its own statistics.</PGM_Tab_NetworksTip>
+  <PGM_Tab_Buildings>Buildings</PGM_Tab_Buildings>
+  <PGM_Tab_BuildingsTip>Search, sort and filter every powered building.</PGM_Tab_BuildingsTip>
+  <PGM_Tab_History>History</PGM_Tab_History>
+  <PGM_Tab_HistoryTip>Recorded generation, consumption, net balance and battery charge over in-game time.</PGM_Tab_HistoryTip>
+
+  <!-- Overview -->
+  <PGM_Overview_Title>Colony power overview</PGM_Overview_Title>
+  <PGM_Overview_Age>measured {0} ago</PGM_Overview_Age>
+  <PGM_Overview_NotesTitle>What these numbers include</PGM_Overview_NotesTitle>
+  <PGM_Overview_Notes>Generation and consumption are the current reported output of connected power traders that are switched on right now: {0} and {1} respectively. Installed generation capacity is not shown because a generator's configured output is not a reliable ceiling for every generator type. Battery energy is reported in watt-days (power multiplied by time), which the game also uses for stored energy. Nominal draw is the configured consumption from building definitions and is listed separately from measured draw. Data notices count unsupported components, pending network membership and consumers without a network.</PGM_Overview_Notes>
+  <PGM_Tile_CurrentGeneration>Current generation</PGM_Tile_CurrentGeneration>
+  <PGM_Tile_CurrentConsumption>Current consumption</PGM_Tile_CurrentConsumption>
+  <PGM_Tile_NetBalance>Net balance</PGM_Tile_NetBalance>
+    <PGM_Tile_StoredEnergy>Stored energy</PGM_Tile_StoredEnergy>
+  <PGM_Tile_StorageCapacity>Storage capacity</PGM_Tile_StorageCapacity>
+  <PGM_Tile_Charge>Battery charge</PGM_Tile_Charge>
+  <PGM_Tile_ConfiguredGeneration>Configured generation</PGM_Tile_ConfiguredGeneration>
+  <PGM_Tile_LoadRatio>Consumption / generation</PGM_Tile_LoadRatio>
+  <PGM_Tip_LoadRatio>Current consumption divided by current generation. Above 100% means batteries are covering the difference or demand is going unmet. Unknown when nothing is generating.</PGM_Tip_LoadRatio>
+  <PGM_Tile_HighLoadNetworks>High-load networks</PGM_Tile_HighLoadNetworks>
+  <PGM_Tip_HighLoadNetworks>Networks whose consumption reaches the configured high-load share of their current generation. Change the threshold in the mod settings.</PGM_Tip_HighLoadNetworks>
+  <PGM_Tile_Unsupported>Unsupported components</PGM_Tile_Unsupported>
+  <PGM_Tip_Unsupported>Power components that are not a recognised type. Their electrical behavior is not interpreted or counted in any total.</PGM_Tip_Unsupported>
+  <PGM_Tile_SwitchedOff>Switched-off consumers</PGM_Tile_SwitchedOff>
+  <PGM_Tip_SwitchedOff>Buildings with a flick switch that is currently off. They draw no power, so their measured draw is zero while their nominal draw is retained.</PGM_Tip_SwitchedOff>
+  <PGM_Tile_Networks>Power networks</PGM_Tile_Networks>
+  <PGM_Tile_Consumers>Connected consumers</PGM_Tile_Consumers>
+  <PGM_Tile_Generators>Connected generators</PGM_Tile_Generators>
+  <PGM_Tile_Batteries>Connected batteries</PGM_Tile_Batteries>
+  <PGM_Tile_DeficitNetworks>Networks in deficit</PGM_Tile_DeficitNetworks>
+  <PGM_Tile_DataNotices>Data notices</PGM_Tile_DataNotices>
+  <PGM_Tile_NominalDraw>Nominal consumer draw</PGM_Tile_NominalDraw>
+  <PGM_Tile_Disconnected>Disconnected consumers</PGM_Tile_Disconnected>
+  <PGM_Tile_Sampling>History interval</PGM_Tile_Sampling>
+  <PGM_Tip_CurrentGeneration>Sum of positive reported output from switched-on traders that are confirmed members of a power network. This is measured current production, not installed capacity.</PGM_Tip_CurrentGeneration>
+  <PGM_Tip_CurrentConsumption>Sum of negative reported output from switched-on traders that are confirmed members of a power network. Buildings that are switched off or unconnected contribute nothing here.</PGM_Tip_CurrentConsumption>
+  <PGM_Tip_NetBalance>Generation minus consumption. It excludes battery charging losses, battery self-discharge and debug unlimited-power effects, so it is a trader balance rather than a promise about stored energy.</PGM_Tip_NetBalance>
+  <PGM_Tip_ConfiguredGeneration>Sum of the generation configured in generator definitions. This is a configuration figure from the buildings themselves, not a measurement and not a guarantee: variable-output generators regularly produce less than this.</PGM_Tip_ConfiguredGeneration>
+  <PGM_Tip_StoredEnergy>Physical battery energy in watt-days, summed across batteries on all networks, including batteries temporarily disabled by EMP.</PGM_Tip_StoredEnergy>
+  <PGM_Tip_StorageCapacity>Configured maximum storage in watt-days. It does not guarantee that every battery is currently usable.</PGM_Tip_StorageCapacity>
+  <PGM_Tip_Charge>Stored energy divided by configured capacity. Unknown when there are no batteries.</PGM_Tip_Charge>
+  <PGM_Tip_Networks>Number of simulated power networks on this map, including networks with no generation.</PGM_Tip_Networks>
+  <PGM_Tip_Consumers>Power components that currently request power and are confirmed network members. One building with several components can contribute more than once.</PGM_Tip_Consumers>
+  <PGM_Tip_Generators>Power components that currently produce or are configured to produce power and are confirmed network members.</PGM_Tip_Generators>
+  <PGM_Tip_Batteries>Battery components on confirmed networks.</PGM_Tip_Batteries>
+  <PGM_Tip_DeficitNetworks>Networks whose current consumption exceeds current generation. Batteries may still be covering the difference.</PGM_Tip_DeficitNetworks>
+  <PGM_Tip_DataNotices>Monitoring notices backed by observed data: unsupported power components, network membership that could not be confirmed, and consumers with no network. One building can raise more than one notice, so this is a notice count rather than a building count. Diagnostic advisories are a later feature.</PGM_Tip_DataNotices>
+  <PGM_Tip_NominalDraw>Configured consumption from building definitions, for comparison with measured draw. Hidden when any consumer does not expose a usable configured value.</PGM_Tip_NominalDraw>
+  <PGM_Tip_Disconnected>Buildings with a power consumer that has no network assignment and no network membership. A momentary topology change can look like this for one refresh.</PGM_Tip_Disconnected>
+  <PGM_Tip_Sampling>Interval used for the history samples stored in the save. Change it in the mod settings.</PGM_Tip_Sampling>
+
+  <!-- Status labels -->
+  <PGM_Status_Stable>Stable</PGM_Status_Stable>
+  <PGM_Status_HighLoad>High load</PGM_Status_HighLoad>
+  <PGM_Status_Deficit>Power deficit</PGM_Status_Deficit>
+  <PGM_Status_BatteryDischarging>Battery discharging</PGM_Status_BatteryDischarging>
+  <PGM_Status_BatteryCharging>Battery charging</PGM_Status_BatteryCharging>
+  <PGM_Status_NoGeneration>No generation</PGM_Status_NoGeneration>
+  <PGM_Status_Unknown>Unknown</PGM_Status_Unknown>
+
+  <!-- Categories -->
+  <PGM_Category_Generation>Generation</PGM_Category_Generation>
+  <PGM_Category_Storage>Storage</PGM_Category_Storage>
+  <PGM_Category_Production>Production</PGM_Category_Production>
+  <PGM_Category_Temperature>Temperature control</PGM_Category_Temperature>
+  <PGM_Category_Lighting>Lighting</PGM_Category_Lighting>
+  <PGM_Category_Research>Research</PGM_Category_Research>
+  <PGM_Category_Medical>Medical</PGM_Category_Medical>
+  <PGM_Category_Security>Security</PGM_Category_Security>
+  <PGM_Category_Recreation>Recreation</PGM_Category_Recreation>
+  <PGM_Category_Unassigned>Uncategorized</PGM_Category_Unassigned>
+
+  <!-- Connection and rooms -->
+  <PGM_Connection_Connected>Connected</PGM_Connection_Connected>
+  <PGM_Connection_NoNetwork>No network</PGM_Connection_NoNetwork>
+  <PGM_Connection_Pending>Pending</PGM_Connection_Pending>
+  <PGM_Room_None>No room assigned</PGM_Room_None>
+  <PGM_Room_Unnamed>Unnamed room</PGM_Room_Unnamed>
+
+  <!-- Time ranges -->
+  <PGM_Range_Hour>Last hour</PGM_Range_Hour>
+  <PGM_Range_SixHours>Last 6 hours</PGM_Range_SixHours>
+  <PGM_Range_Day>Last day</PGM_Range_Day>
+  <PGM_Range_ThreeDays>Last 3 days</PGM_Range_ThreeDays>
+  <PGM_Range_SevenDays>Last 7 days</PGM_Range_SevenDays>
+
+  <!-- Networks -->
+  <PGM_Network_Number>Network {0}</PGM_Network_Number>
+  <PGM_Network_NoneAssigned>No network</PGM_Network_NoneAssigned>
+  <PGM_Networks_Header>Power networks ({0})</PGM_Networks_Header>
+  <PGM_Networks_Empty>This map has no power networks yet.</PGM_Networks_Empty>
+  <PGM_Networks_RowCounts>{0} consumers, {1} generators</PGM_Networks_RowCounts>
+  <PGM_Networks_SelectPrompt>Select a network on the left to see its details.</PGM_Networks_SelectPrompt>
+  <PGM_Network_DetailTitle>Network {0}</PGM_Network_DetailTitle>
+  <PGM_Networks_Incomplete>Some data for this network could not be confirmed, so its totals may be incomplete.</PGM_Networks_Incomplete>
+  <PGM_Networks_TopConsumers>Largest consumers on this network</PGM_Networks_TopConsumers>
+  <PGM_Networks_NoConsumers>No connected consumer on this network is currently drawing power.</PGM_Networks_NoConsumers>
+  <PGM_Networks_RowTip>Generation {0}, consumption {1}. {2} consumers, {3} generators, {4} batteries. Click for details.</PGM_Networks_RowTip>
+  <PGM_Networks_NoBatteries>No batteries on this network</PGM_Networks_NoBatteries>
+  <PGM_Networks_BatteryInfo>{0} batteries, {1} of {2}</PGM_Networks_BatteryInfo>
+  <PGM_Networks_Locate>Locate</PGM_Networks_Locate>
+  <PGM_Networks_LocateTip>Jump to the network's largest consumer. This jumps to a building that is confirmed to be on the network; it does not draw the network itself.</PGM_Networks_LocateTip>
+  <PGM_Networks_ShowBuildings>Show these buildings</PGM_Networks_ShowBuildings>
+  <PGM_Networks_ShowBuildingsTip>Open the building table filtered to this network.</PGM_Networks_ShowBuildingsTip>
+
+  <!-- Shared detail labels -->
+  <PGM_Detail_Generation>Generation</PGM_Detail_Generation>
+  <PGM_Detail_Consumption>Consumption</PGM_Detail_Consumption>
+  <PGM_Detail_Net>Net balance</PGM_Detail_Net>
+  <PGM_Detail_Consumers>Consumers</PGM_Detail_Consumers>
+  <PGM_Detail_Generators>Generators</PGM_Detail_Generators>
+  <PGM_Detail_Batteries>Batteries</PGM_Detail_Batteries>
+  <PGM_Detail_Stored>Stored energy</PGM_Detail_Stored>
+  <PGM_Detail_Capacity>Storage capacity</PGM_Detail_Capacity>
+  <PGM_Detail_Charge>Charge</PGM_Detail_Charge>
+  <PGM_Detail_CurrentDraw>Measured draw</PGM_Detail_CurrentDraw>
+  <PGM_Detail_NominalDraw>Nominal draw</PGM_Detail_NominalDraw>
+  <PGM_Detail_EstDailyEnergy>Estimated daily energy</PGM_Detail_EstDailyEnergy>
+  <PGM_Detail_StoredCharge>Stored / capacity</PGM_Detail_StoredCharge>
+  <PGM_Detail_Category>Category</PGM_Detail_Category>
+  <PGM_Detail_TraderState>Power state</PGM_Detail_TraderState>
+  <PGM_Detail_History>History</PGM_Detail_History>
+  <PGM_Detail_LoadRatio>Load / generation</PGM_Detail_LoadRatio>
+  <PGM_TraderState_On>On</PGM_TraderState_On>
+  <PGM_TraderState_Off>Off</PGM_TraderState_Off>
+  <PGM_TraderState_Mixed>Mixed</PGM_TraderState_Mixed>
+  <PGM_Value_NotApplicable>n/a</PGM_Value_NotApplicable>
+  <PGM_Value_NotRecorded>not recorded</PGM_Value_NotRecorded>
+  <PGM_Tip_HistoryPerBuilding>Per-building history is not recorded. Only map-wide aggregates are sampled, so per-building historical averages and daily energy figures cannot be shown as measurements; the daily energy figure shown here is an estimate from the current draw.</PGM_Tip_HistoryPerBuilding>
+  <PGM_Detail_Position>Position</PGM_Detail_Position>
+  <PGM_Detail_Room>Room</PGM_Detail_Room>
+  <PGM_Detail_Network>Network</PGM_Detail_Network>
+  <PGM_Detail_Support>Support</PGM_Detail_Support>
+  <PGM_Detail_Locate>Locate</PGM_Detail_Locate>
+  <PGM_Detail_Inspect>Inspect</PGM_Detail_Inspect>
+  <PGM_Detail_Clear>Clear</PGM_Detail_Clear>
+  <PGM_Detail_SelectionMissing>This building is no longer part of the current power reading. It may have been destroyed, uninstalled or moved.</PGM_Detail_SelectionMissing>
+  <PGM_Tip_EstDailyEnergy>Estimate only: the current measured draw multiplied by one in-game day, assuming the draw stays constant. Real demand varies, so treat this as a comparison figure rather than a measurement.</PGM_Tip_EstDailyEnergy>
+
+  <!-- Building table -->
+  <PGM_Buildings_SearchTip>Search by building name, definition name or category.</PGM_Buildings_SearchTip>
+  <PGM_Buildings_SortButton>Sort: {0} {1}</PGM_Buildings_SortButton>
+  <PGM_Buildings_FiltersButton>Filters</PGM_Buildings_FiltersButton>
+  <PGM_Buildings_AllCategories>All categories</PGM_Buildings_AllCategories>
+  <PGM_Buildings_GroupButton>Group: {0}</PGM_Buildings_GroupButton>
+  <PGM_Buildings_ViewButton>View: {0}</PGM_Buildings_ViewButton>
+  <PGM_Buildings_CategorySelected>Category: {0}</PGM_Buildings_CategorySelected>
+  <PGM_Buildings_Reset>Reset</PGM_Buildings_Reset>
+  <PGM_Buildings_Count>{0} of {1} buildings</PGM_Buildings_Count>
+  <PGM_Buildings_NoPowerBuildings>No building on this map has a power component.</PGM_Buildings_NoPowerBuildings>
+  <PGM_Buildings_NoMatches>No building matches the current search and filters.</PGM_Buildings_NoMatches>
+  <PGM_Column_Building>Building</PGM_Column_Building>
+  <PGM_Column_Category>Category</PGM_Column_Category>
+  <PGM_Column_Draw>Draw</PGM_Column_Draw>
+  <PGM_Column_Generation>Output</PGM_Column_Generation>
+  <PGM_Column_Network>Net</PGM_Column_Network>
+  <PGM_Column_Status>Status</PGM_Column_Status>
+  <PGM_Flick_On>on</PGM_Flick_On>
+  <PGM_Flick_Off>off</PGM_Flick_Off>
+  <PGM_RowStatus_Unsupported>Unsupported</PGM_RowStatus_Unsupported>
+  <PGM_RowStatus_MultipleNetworks>Multiple networks</PGM_RowStatus_MultipleNetworks>
+  <PGM_RowStatus_SwitchedOff>Switched off</PGM_RowStatus_SwitchedOff>
+  <PGM_RowStatus_PoweredDown>Powered down</PGM_RowStatus_PoweredDown>
+  <PGM_RowStatus_HighConsumption>High consumption</PGM_RowStatus_HighConsumption>
+  <PGM_RowStatus_Ok>OK</PGM_RowStatus_Ok>
+
+  <!-- Sort menu -->
+  <PGM_Sort_CurrentDraw>Current draw</PGM_Sort_CurrentDraw>
+  <PGM_Sort_Generation>Generation</PGM_Sort_Generation>
+  <PGM_Sort_Name>Name</PGM_Sort_Name>
+  <PGM_Sort_Category>Category</PGM_Sort_Category>
+  <PGM_Sort_Status>Status</PGM_Sort_Status>
+  <PGM_Sort_ToggleDirection>Reverse direction</PGM_Sort_ToggleDirection>
+
+  <!-- Filters -->
+  <PGM_Filter_Consumers>Consumers</PGM_Filter_Consumers>
+  <PGM_Filter_Generators>Generators</PGM_Filter_Generators>
+  <PGM_Filter_Batteries>Batteries</PGM_Filter_Batteries>
+  <PGM_Filter_Flickable>Flickable buildings only</PGM_Filter_Flickable>
+  <PGM_Filter_SwitchedOff>Switched-off buildings only</PGM_Filter_SwitchedOff>
+  <PGM_Filter_HighConsumption>High consumption only ({0} W+)</PGM_Filter_HighConsumption>
+  <PGM_Filter_DataNotices>Buildings with data notices</PGM_Filter_DataNotices>
+  <PGM_Filter_UnknownBehavior>Unknown or unsupported behavior</PGM_Filter_UnknownBehavior>
+  <PGM_Filter_Colonist>Colonist buildings only</PGM_Filter_Colonist>
+  <PGM_Filter_NoRoom>Buildings without a room</PGM_Filter_NoRoom>
+  <PGM_Filter_Network>Network: {0}</PGM_Filter_Network>
+  <PGM_Filter_AllNetworks>All networks</PGM_Filter_AllNetworks>
+
+  <!-- Grouping -->
+  <PGM_Group_None>None</PGM_Group_None>
+  <PGM_Group_Category>Category</PGM_Group_Category>
+  <PGM_Group_Room>Room</PGM_Group_Room>
+  <PGM_Group_Network>Network</PGM_Group_Network>
+
+  <!-- Compatibility -->
+  <PGM_Support_Supported>Supported</PGM_Support_Supported>
+  <PGM_Support_SupportedTip>Uses the game's standard power components, so its readings can be trusted.</PGM_Support_SupportedTip>
+  <PGM_Support_Custom>Modded components</PGM_Support_Custom>
+  <PGM_Support_CustomTip>Power components come from another mod. They follow the standard power contract, but their custom overrides are not independently verified.</PGM_Support_CustomTip>
+  <PGM_Support_Pending>Pending</PGM_Support_Pending>
+  <PGM_Support_PendingTip>Network membership could not be confirmed for this refresh. Totals exclude the building until it is confirmed.</PGM_Support_PendingTip>
+  <PGM_Support_Unsupported>Unsupported</PGM_Support_Unsupported>
+  <PGM_Support_UnsupportedTip>At least one power component is not a recognised type, so its electrical behavior is not interpreted or counted.</PGM_Support_UnsupportedTip>
+
+  <!-- History -->
+  <PGM_History_Disabled>History recording is turned off. Enable it in the mod settings to collect samples.</PGM_History_Disabled>
+  <PGM_History_Empty>No history samples yet. A sample is stored every {0} of in-game time while the map is running.</PGM_History_Empty>
+  <PGM_History_NotEnoughSamples>Only one sample has been recorded. At least two are needed to draw a trend.</PGM_History_NotEnoughSamples>
+  <PGM_History_NoSamplesShort>No samples recorded yet</PGM_History_NoSamplesShort>
+  <PGM_History_Info>{0} samples, one every {1}</PGM_History_Info>
+  <PGM_History_Discarded>{0} stored samples were unreadable and were ignored.</PGM_History_Discarded>
+  <PGM_Tip_HistoryInfo>History is sampled every {0} and kept for {1} in-game days. Collections are bounded, so older samples are discarded. The retained samples currently span {2}.</PGM_Tip_HistoryInfo>
+  <PGM_Chart_GenerationTitle>Generation and consumption</PGM_Chart_GenerationTitle>
+  <PGM_Chart_NetTitle>Net balance</PGM_Chart_NetTitle>
+  <PGM_Chart_ChargeTitle>Battery charge</PGM_Chart_ChargeTitle>
+  <PGM_Chart_LoadTitle>Consumption relative to generation</PGM_Chart_LoadTitle>
+  <PGM_Chart_LegendLoad>Consumption / generation</PGM_Chart_LegendLoad>
+  <PGM_Chart_LegendGeneration>Generation</PGM_Chart_LegendGeneration>
+  <PGM_Chart_LegendConsumption>Consumption</PGM_Chart_LegendConsumption>
+  <PGM_Chart_LegendNet>Net balance</PGM_Chart_LegendNet>
+  <PGM_Chart_LegendCharge>Charge</PGM_Chart_LegendCharge>
+  <PGM_Chart_NoData>No samples in this range</PGM_Chart_NoData>
+  <PGM_Chart_Missing>{0} of {1} columns have no sample</PGM_Chart_Missing>
+  <PGM_Chart_Ago>{0} before the newest sample</PGM_Chart_Ago>
+  <PGM_Chart_NewestSample>newest sample {0} ago</PGM_Chart_NewestSample>
 </LanguageData>
