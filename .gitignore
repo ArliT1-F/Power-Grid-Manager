@@ -1,0 +1,11 @@
+# Build outputs
+Assemblies/*.dll
+Assemblies/*.pdb
+/1.5/Assemblies/*.dll
+/1.5/Assemblies/*.pdb
+/1.6/Assemblies/*.dll
+/1.6/Assemblies/*.pdb
+/1.7/Assemblies/*.dll
+/1.7/Assemblies/*.pdb
+Source/PowerGridManager/bin/
+Source/PowerGridManager/obj/
