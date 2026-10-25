@@ -51,15 +51,41 @@ writes version-scoped binaries to `1.5/Assemblies`, `1.6/Assemblies` or `1.7/Ass
 and never downloads or bundles game assemblies.
 
 ```sh
-# RimWorld 1.5 / 1.6: point at that game's *_Data/Managed directory
-RIMWORLD_GAME_VERSION=1.6 RIMWORLD_MANAGED_DIR="/path/to/RimWorld/RimWorldWin64_Data/Managed" ./build.sh
+# RimWorld 1.5 / 1.6 (bundled Mono, net472) — version is read from Version.txt
+RIMWORLD_MANAGED_DIR="$HOME/.steam/steam/steamapps/common/RimWorld/RimWorldLinux_Data/Managed" ./build.sh
 
-# RimWorld 1.7: uses the installation root and .NET 10 / Waylith assemblies
-RIMWORLD_GAME_VERSION=1.7 RIMWORLD_DIR="/path/to/RimWorld-1.7" ./build.sh
+# Windows equivalent
+# set RIMWORLD_MANAGED_DIR=C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed
+
+# RimWorld 1.7 (.NET 10 / Waylith) — pass the installation root instead
+RIMWORLD_DIR="/path/to/RimWorld-1.7" ./build.sh
 ```
 
-Requires `dotnet` or `msbuild` plus the target game's assemblies (and a .NET 10 SDK for the
-1.7 build). Do not commit game DLLs.
+- The version is detected from `Version.txt` next to the `Managed` directory; set
+  `RIMWORLD_GAME_VERSION=1.5` (or `1.6`/`1.7`) to override it.
+- 1.5/1.6 need `Assembly-CSharp.dll`, `UnityEngine.CoreModule.dll` and
+  `UnityEngine.IMGUIModule.dll` from that install; the script verifies them first.
+- The build uses `dotnet` or `msbuild`. On Linux the .NET SDK restores the .NET Framework
+  4.7.2 reference assemblies from NuGet, so the first build needs network access. If no
+  `dotnet`/`msbuild` is present, the script falls back to `mcs`/`csc` against the game's own
+  assemblies (Mono: `sudo apt install mono-devel`).
+- Output: `1.6/Assemblies/PowerGridManager.dll` (adjust the folder for your version). It is
+  git-ignored — never commit or redistribute game DLLs.
+
+## Try it in game
+
+Link the repository into the game's `Mods` folder so a rebuild takes effect immediately:
+
+```sh
+ln -s "/path/to/Power-Grid-Manager" "$HOME/.steam/steam/steamapps/common/RimWorld/Mods/PowerGridManager"
+```
+
+Then enable **Power Grid Manager** in the mod list, restart, and open the **Power** tab.
+If the tab is missing or nothing happens, check the log for load errors:
+
+```sh
+tail -n 80 "$HOME/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Player.log"
+```
 
 ## Test
 

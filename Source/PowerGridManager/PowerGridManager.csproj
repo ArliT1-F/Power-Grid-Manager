@@ -8,9 +8,13 @@
     <LangVersion>latest</LangVersion>
     <AssemblyName>PowerGridManager</AssemblyName>
     <RootNamespace>PowerGridManager</RootNamespace>
-    <OutputPath>$(MSBuildThisFileDirectory)..\..\$(RimWorldGameVersion)\Assemblies\</OutputPath>
+    <!-- Forward slashes: MSBuild normalises them on Windows, and backslashes would
+         create a literally-named directory on Linux. -->
+    <OutputPath>$(MSBuildThisFileDirectory)../../$(RimWorldGameVersion)/Assemblies/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
   <!-- RimWorld 1.5 and 1.6 use the Mono/.NET Framework managed assemblies. -->
