@@ -7,7 +7,7 @@ static class MonitoringTests
 {
     static int checks;
     static void Check(bool condition, string message)
-    { checks++; if (!condition) throw new Exception(message); }
+    { checks++; if (!condition) throw new Exception("[phase2] " + message); }
     static void Equal(float actual, float expected, string message)
     { Check(Math.Abs(actual - expected) < 0.001f, message + ": " + actual); }
     static PowerNet Net(Map map)
@@ -25,7 +25,7 @@ static class MonitoringTests
         return comp;
     }
     sealed class UnknownPower : CompPower { }
-    static void Main()
+    public static int Run()
     {
         var scan = new PowerGridScanner(); var map = new Map();
         var empty = scan.Scan(map, 0);
@@ -95,6 +95,7 @@ static class MonitoringTests
         for (int i = 0; i < 10000; i++) Add(large, largeNet, new CompPowerTrader { PowerOn = true, PowerOutput = -1 });
         s = scan.Scan(large, 0); Equal(s.ConsumptionWatts, 10000, "large map totals");
         Check(s.Buildings.Count == 10000, "large map discovery");
-        Console.WriteLine("Passed " + checks + " monitoring checks (game doubles; not in-game validation).");
+        Console.WriteLine("Phase 2 monitoring checks passed: " + checks);
+        return checks;
     }
 }

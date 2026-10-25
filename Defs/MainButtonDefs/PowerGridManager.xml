@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <MainButtonDef>
+    <defName>PowerGridManager</defName>
+    <label>Power</label>
+    <description>Open the colony power dashboard: generation, consumption, networks, buildings and recorded history.</description>
+    <tabWindowClass>PowerGridManager.MainTabWindow_PowerGridManager</tabWindowClass>
+    <order>90</order>
+    <iconPath>UI/Icons/PowerGridManager</iconPath>
+    <validWithoutMap>false</validWithoutMap>
+    <closesWorldView>true</closesWorldView>
+  </MainButtonDef>
+</Defs>

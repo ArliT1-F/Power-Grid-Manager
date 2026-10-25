@@ -2,12 +2,23 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <AssemblyName>PowerGridManager.Tests</AssemblyName>
+    <RootNamespace>PowerGridManager</RootNamespace>
   </PropertyGroup>
+
+  <!--
+    The harness links the production sources together with minimal game doubles so that
+    measurement, filtering, history and chart logic can be verified without a RimWorld
+    installation. It is not a compatibility test for the real game assemblies.
+  -->
   <ItemGroup>
-    <Compile Include="../Source/PowerGridManager/Power/*.cs" Link="Power/%(Filename)%(Extension)" />
-    <Compile Include="../Source/PowerGridManager/Core/PowerGridManagerComponent.cs" Link="Component.cs" />
-    <Compile Include="GameDoubles.cs" />
-    <Compile Include="MonitoringTests.cs" />
+    <Compile Include="../Source/PowerGridManager/**/*.cs" LinkBase="Production"
+             Exclude="../Source/PowerGridManager/bin/**;../Source/PowerGridManager/obj/**" />
+    <Compile Include="Doubles/*.cs" />
+    <Compile Include="*.cs" />
+    <None Include="../Languages/English/Keyed/PowerGridManager.xml" Link="Languages/PowerGridManager.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
