@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <PGM_ModName>Power Grid Manager</PGM_ModName>
+  <PGM_RefreshInterval_Label>Dashboard refresh interval: {0} ticks</PGM_RefreshInterval_Label>
+  <PGM_RefreshInterval_Tip>How often cached monitoring data should refresh while the map is active. This setting does not change the game's power simulation.</PGM_RefreshInterval_Tip>
+  <PGM_SampleInterval_Label>History sample interval: {0} ticks</PGM_SampleInterval_Label>
+  <PGM_SampleInterval_Tip>Planned interval for future aggregate history samples. One in-game hour is 2,500 ticks.</PGM_SampleInterval_Tip>
+  <PGM_Retention_Label>History retention: {0} days</PGM_Retention_Label>
+  <PGM_Retention_Tip>Maximum in-game history retention planned for the collector. This setting has no effect until historical monitoring is implemented.</PGM_Retention_Tip>
+  <PGM_HighLoad_Label>High-load warning threshold: {0}%</PGM_HighLoad_Label>
+  <PGM_HighLoad_Tip>Planned threshold relative to connected installed generation capacity. Current output and nominal capacity will be shown separately.</PGM_HighLoad_Tip>
+</LanguageData>

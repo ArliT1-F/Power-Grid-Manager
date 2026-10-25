@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RimWorldGameVersion Condition="'$(RimWorldGameVersion)' == ''">1.6</RimWorldGameVersion>
+    <RimWorldManagedDir Condition="'$(RimWorldManagedDir)' == ''">$(RIMWORLD_MANAGED_DIR)</RimWorldManagedDir>
+    <RimWorldDir Condition="'$(RimWorldDir)' == ''">$(RIMWORLD_DIR)</RimWorldDir>
+    <TargetFramework Condition="'$(RimWorldGameVersion)' == '1.7'">net10.0</TargetFramework>
+    <TargetFramework Condition="'$(RimWorldGameVersion)' != '1.7'">net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>PowerGridManager</AssemblyName>
+    <RootNamespace>PowerGridManager</RootNamespace>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\$(RimWorldGameVersion)\Assemblies\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <!-- RimWorld 1.5 and 1.6 use the Mono/.NET Framework managed assemblies. -->
+  <ItemGroup Condition="'$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6'">
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldManagedDir)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- RimWorld 1.7 has a different .NET runtime and assembly layout; compile a separate binary. -->
+  <ItemGroup Condition="'$(RimWorldGameVersion)' == '1.7'">
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(RimWorldDir)/Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityStubs">
+      <HintPath>$(RimWorldDir)/UnityStubs.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Waylith">
+      <HintPath>$(RimWorldDir)/Waylith.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Waylith.UnityCompat">
+      <HintPath>$(RimWorldDir)/Waylith.UnityCompat.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateRimWorldReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="'$(RimWorldGameVersion)' != '1.5' And '$(RimWorldGameVersion)' != '1.6' And '$(RimWorldGameVersion)' != '1.7'"
+           Text="RimWorldGameVersion must be 1.5, 1.6, or 1.7." />
+    <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And '$(RimWorldManagedDir)' == ''"
+           Text="Set RimWorldManagedDir or RIMWORLD_MANAGED_DIR to the target 1.5/1.6 game's Managed directory." />
+    <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And !Exists('$(RimWorldManagedDir)/Assembly-CSharp.dll')"
+           Text="Assembly-CSharp.dll was not found in '$(RimWorldManagedDir)'. Use the selected version's Managed directory." />
+    <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And !Exists('$(RimWorldManagedDir)/UnityEngine.CoreModule.dll')"
+           Text="UnityEngine.CoreModule.dll was not found in '$(RimWorldManagedDir)'." />
+    <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And !Exists('$(RimWorldManagedDir)/UnityEngine.IMGUIModule.dll')"
+           Text="UnityEngine.IMGUIModule.dll was not found in '$(RimWorldManagedDir)'." />
+    <Error Condition="'$(RimWorldGameVersion)' == '1.7' And '$(RimWorldDir)' == ''"
+           Text="Set RimWorldDir or RIMWORLD_DIR to the RimWorld 1.7 installation root." />
+    <Error Condition="'$(RimWorldGameVersion)' == '1.7' And !Exists('$(RimWorldDir)/Assembly-CSharp.dll')"
+           Text="RimWorld 1.7 Assembly-CSharp.dll was not found in '$(RimWorldDir)'." />
+    <Error Condition="'$(RimWorldGameVersion)' == '1.7' And !Exists('$(RimWorldDir)/UnityStubs.dll')"
+           Text="RimWorld 1.7 UnityStubs.dll was not found in '$(RimWorldDir)'." />
+    <Error Condition="'$(RimWorldGameVersion)' == '1.7' And !Exists('$(RimWorldDir)/Waylith.dll')"
+           Text="RimWorld 1.7 Waylith.dll was not found in '$(RimWorldDir)'." />
+    <Error Condition="'$(RimWorldGameVersion)' == '1.7' And !Exists('$(RimWorldDir)/Waylith.UnityCompat.dll')"
+           Text="RimWorld 1.7 Waylith.UnityCompat.dll was not found in '$(RimWorldDir)'." />
+  </Target>
+</Project>
