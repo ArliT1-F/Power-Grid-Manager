@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — build compatibility
+
+- Removed the compile-time dependency on `Verse.GenDate`: durations, retention and chart
+  ranges now use the mod's own `PowerTime.TicksPerHour` / `PowerTime.TicksPerDay`
+  (2,500 / 60,000 ticks), so the sources no longer fail to compile with `CS0103` against a
+  game assembly that does not expose that type.
+- History saving now checks `LoadSaveMode.Saving` only, instead of also referencing
+  `LoadSaveMode.SavingReference` (`CS0117`). The five parallel value lists are written in
+  the plain saving pass, which every supported game build performs.
+- Offline harness: dropped the now-unused `GenDate` double and pointed the duration/range
+  assertions at `PowerTime`.
+
 ## Unreleased — Phase 4: historical monitoring
 
 - Added bounded, map-scoped aggregate history: generation, consumption, stored energy and

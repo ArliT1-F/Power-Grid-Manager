@@ -20,7 +20,7 @@ namespace PowerGridManager
         public bool HistoryEnabled = true;
 
         /// <summary>Retention window expressed in game ticks.</summary>
-        public int RetentionTicks => RetentionDays * GenDate.TicksPerDay;
+        public int RetentionTicks => RetentionDays * PowerTime.TicksPerDay;
 
         public override void ExposeData()
         {

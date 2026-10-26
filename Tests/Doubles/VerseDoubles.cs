@@ -572,12 +572,6 @@ namespace Verse
         public bool ButtonText(string label, string highlightTag = null, float widthPct = 1f) => false;
     }
 
-    public static class GenDate
-    {
-        public const int TicksPerDay = 60000;
-        public const int TicksPerHour = 2500;
-    }
-
     public enum MovementMode
     {
         Pan,

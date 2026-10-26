@@ -412,9 +412,9 @@ namespace PowerGridManager
                 PowerChartMetric.LoadRatio);
             TestAssert.Check(!noLoadData.HasData, "load chart reports missing data");
 
-            TestAssert.Equal(PowerChartBuilder.TicksFor(PowerTimeRange.LastHour), GenDate.TicksPerHour,
+            TestAssert.Equal(PowerChartBuilder.TicksFor(PowerTimeRange.LastHour), PowerTime.TicksPerHour,
                 "hour range");
-            TestAssert.Equal(PowerChartBuilder.TicksFor(PowerTimeRange.LastSevenDays), GenDate.TicksPerDay * 7,
+            TestAssert.Equal(PowerChartBuilder.TicksFor(PowerTimeRange.LastSevenDays), PowerTime.TicksPerDay * 7,
                 "week range");
             PowerChartData clampedColumns = PowerChartBuilder.Build(samples, 0, 5000, 99999,
                 PowerChartMetric.NetBalance);

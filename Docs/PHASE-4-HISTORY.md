@@ -97,8 +97,8 @@ offline. It bins samples into screen-independent columns:
 - One column per sample bucket; a bucket with several samples shows their **average**.
 - A bucket with no sample is `null`. Nothing is interpolated or carried forward, and the
   panel reports "N of M columns have no sample" in warning colour.
-- Ranges: 1 hour, 6 hours, 1 day, 3 days, 7 days of in-game time (`GenDate.TicksPerHour`
-  = 2,500, `TicksPerDay` = 60,000).
+- Ranges: 1 hour, 6 hours, 1 day, 3 days, 7 days of in-game time (`PowerTime.TicksPerHour`
+  = 2,500, `PowerTime.TicksPerDay` = 60,000).
 - Metrics: generation and consumption (two series), net balance (axis always includes
   zero, negative values rendered in a distinct colour), battery charge (0–100 %),
   consumption relative to generation (0 % upward, axis keeps the 100 % line visible, and a
