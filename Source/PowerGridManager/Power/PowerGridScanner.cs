@@ -29,7 +29,7 @@ namespace PowerGridManager
                     var nets = map.powerNetManager.AllNetsListForReading;
                     for (int i = 0; i < nets.Count; i++)
                     {
-                        var network = new PowerNetworkSnapshot { Id = i + 1 };
+                        var network = new PowerNetworkSnapshot { Id = i + 1, Net = nets[i] };
                         networks.Add(network);
                         Register(nets[i].powerComps, i, networks);
                         Register(nets[i].batteryComps, i, networks);
@@ -49,6 +49,8 @@ namespace PowerGridManager
                     result.StoredWattDays += n.StoredWattDays;
                     result.AvailableStoredWattDays += n.AvailableStoredWattDays;
                     result.CapacityWattDays += n.CapacityWattDays;
+                    result.EfficiencyWeightedSum += n.EfficiencyWeightedSum;
+                    result.EfficiencySamples += n.EfficiencySamples;
                     if (n.NetWatts < -0.01f) result.DeficitNetworkCount++;
                     if (n.HasIncompleteData)
                     {
@@ -330,6 +332,10 @@ namespace PowerGridManager
             {
                 n.BatteryCount++;
                 result.BatteryCount++;
+                // Unusable efficiencies are counted as 1.0 so the weighted average stays finite,
+                // and the shortfall is reported through EfficiencySamples instead.
+                n.EfficiencyWeightedSum += (s.ChargeEfficiency ?? 1f) * s.CapacityWattDays;
+                if (s.ChargeEfficiency.HasValue) n.EfficiencySamples++;
             }
             n.GenerationWatts += s.GenerationWatts;
             n.ConsumptionWatts += s.ConsumptionWatts;

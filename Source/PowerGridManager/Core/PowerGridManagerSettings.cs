@@ -8,6 +8,9 @@ namespace PowerGridManager
     /// </summary>
     public sealed class PowerGridManagerSettings : ModSettings
     {
+        /// <summary>Default history cadence, quoted by UI text that explains how estimates are fed.</summary>
+        public const int DefaultSampleIntervalTicks = 2500;
+
         public int RefreshIntervalTicks = 120;
         public int SampleIntervalTicks = 2500;
         public int RetentionDays = 7;
@@ -19,8 +22,80 @@ namespace PowerGridManager
         /// <summary>When false, no history samples are recorded (aggregates still refresh).</summary>
         public bool HistoryEnabled = true;
 
+        // --- Diagnostics ------------------------------------------------------
+
+        /// <summary>Master switch for the diagnostics engine. Monitoring keeps working without it.</summary>
+        public bool DiagnosticsEnabled = true;
+
+        /// <summary>Smallest deficit worth reporting, in watts.</summary>
+        public float DeficitAlertWatts = 50f;
+
+        /// <summary>Battery charge at or below which a draining network becomes a critical advisory.</summary>
+        public float LowBatteryWarningFraction = 0.25f;
+
+        /// <summary>How long a deficit must persist before it is reported as persistent.</summary>
+        public int PersistentDeficitTicks = PowerTime.TicksPerHour;
+
+        /// <summary>
+        /// How long a generator must stay far below its configured output before it is reported.
+        /// Long by default: solar and wind generators idle legitimately, and a short delay would
+        /// raise an advisory every single night.
+        /// </summary>
+        public int GeneratorUnderOutputTicks = PowerTime.TicksPerDay;
+
+        /// <summary>Whether informational advisories are listed at all.</summary>
+        public bool ShowInfoDiagnostics = true;
+
+        /// <summary>Whether new Warning/Critical advisories also raise the game's on-screen message.</summary>
+        public bool ShowPowerMessages = true;
+
+        /// <summary>Minimum gap between two on-screen messages, and the window in which a returning
+        /// condition counts as the same episode rather than a new alert.</summary>
+        public int AlertCooldownTicks = PowerTime.TicksPerDay;
+
+        /// <summary>Bitmask of muted <see cref="PowerDiagnosticKind"/> values.</summary>
+        public int MutedDiagnosticKinds;
+
+        // --- Forecast ---------------------------------------------------------
+
+        /// <summary>
+        /// Subtract the game's verified 5 W per battery self-discharge from the balance used by the
+        /// endurance forecast. On by default because the trader balance excludes it.
+        /// </summary>
+        public bool ForecastIncludeSelfDischarge = true;
+
         /// <summary>Retention window expressed in game ticks.</summary>
         public int RetentionTicks => RetentionDays * PowerTime.TicksPerDay;
+
+        // --- Muting -----------------------------------------------------------
+
+        public bool IsMuted(PowerDiagnosticKind kind)
+        {
+            int bit = 1 << (int)kind;
+            return (MutedDiagnosticKinds & bit) != 0;
+        }
+
+        public void SetMuted(PowerDiagnosticKind kind, bool muted)
+        {
+            int bit = 1 << (int)kind;
+            if (muted) MutedDiagnosticKinds |= bit;
+            else MutedDiagnosticKinds &= ~bit;
+        }
+
+        public int MutedKindCount
+        {
+            get
+            {
+                int count = 0;
+                int mask = MutedDiagnosticKinds;
+                while (mask != 0)
+                {
+                    count += mask & 1;
+                    mask >>= 1;
+                }
+                return count;
+            }
+        }
 
         public override void ExposeData()
         {
@@ -30,6 +105,18 @@ namespace PowerGridManager
             Scribe_Values.Look(ref HighLoadThreshold, "highLoadThreshold", 0.90f);
             Scribe_Values.Look(ref HighConsumptionWatts, "highConsumptionWatts", 500f);
             Scribe_Values.Look(ref HistoryEnabled, "historyEnabled", true);
+
+            Scribe_Values.Look(ref DiagnosticsEnabled, "diagnosticsEnabled", true);
+            Scribe_Values.Look(ref DeficitAlertWatts, "deficitAlertWatts", 50f);
+            Scribe_Values.Look(ref LowBatteryWarningFraction, "lowBatteryWarningFraction", 0.25f);
+            Scribe_Values.Look(ref PersistentDeficitTicks, "persistentDeficitTicks", PowerTime.TicksPerHour);
+            Scribe_Values.Look(ref GeneratorUnderOutputTicks, "generatorUnderOutputTicks", PowerTime.TicksPerDay);
+            Scribe_Values.Look(ref ShowInfoDiagnostics, "showInfoDiagnostics", true);
+            Scribe_Values.Look(ref ShowPowerMessages, "showPowerMessages", true);
+            Scribe_Values.Look(ref AlertCooldownTicks, "alertCooldownTicks", PowerTime.TicksPerDay);
+            Scribe_Values.Look(ref MutedDiagnosticKinds, "mutedDiagnosticKinds", 0);
+            Scribe_Values.Look(ref ForecastIncludeSelfDischarge, "forecastIncludeSelfDischarge", true);
+
             base.ExposeData();
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -39,8 +126,21 @@ namespace PowerGridManager
                 RetentionDays = Clamp(RetentionDays, 1, 30);
                 HighLoadThreshold = Clamp(HighLoadThreshold, 0.50f, 1.50f);
                 HighConsumptionWatts = Clamp(HighConsumptionWatts, 0f, 100000f);
+
+                DeficitAlertWatts = Clamp(DeficitAlertWatts, 1f, 100000f);
+                LowBatteryWarningFraction = Clamp(LowBatteryWarningFraction, 0.01f, 0.99f);
+                PersistentDeficitTicks = Clamp(PersistentDeficitTicks, 60, PowerTime.TicksPerDay * 7);
+                GeneratorUnderOutputTicks = Clamp(GeneratorUnderOutputTicks, PowerTime.TicksPerHour,
+                    PowerTime.TicksPerDay * 7);
+                AlertCooldownTicks = Clamp(AlertCooldownTicks, 0, PowerTime.TicksPerDay * 7);
+                // Unknown bits (written by a newer version, or by hand) are dropped rather than
+                // being allowed to mute kinds this build does not define.
+                MutedDiagnosticKinds = Clamp(MutedDiagnosticKinds, 0, (1 << KnownDiagnosticKindCount) - 1);
             }
         }
+
+        /// <summary>Number of advisory kinds this build defines; bounds the persisted mute mask.</summary>
+        private static readonly int KnownDiagnosticKindCount = System.Enum.GetValues(typeof(PowerDiagnosticKind)).Length;
 
         private static int Clamp(int value, int min, int max)
         {

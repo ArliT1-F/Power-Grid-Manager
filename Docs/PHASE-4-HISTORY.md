@@ -116,13 +116,20 @@ range or pixel size changes, so redrawing does not re-bin 243 samples every fram
 
 ## What the charts are not
 
-- They are **not** a forecast. Battery endurance and demand forecasting are Phase 6 and
-  are not implemented.
 - They do not imply that a gap in the past was a power cut: sampling only happens while
   the map is running.
 - They show aggregates for the whole map; they cannot attribute an average to a single
-  building or network.
-- A recorded deficit is not a diagnosis; interpreting deficits is Phase 5.
+  building or network, except when the map has exactly one network — that special case is
+  what lets Phase 5 quote history as evidence for a network advisory.
+
+## Superseded by later phases
+
+- **The charts are no longer "not a forecast."** Phase 6 ([Docs/PHASE-6-FORECAST.md](PHASE-6-FORECAST.md))
+  uses this history as one of the two inputs to the battery endurance estimate: the recorded
+  average net balance over the selected range decides how much that estimate can be trusted.
+- **A recorded deficit is no longer left uninterpreted.** Phase 5
+  ([Docs/PHASE-5-DIAGNOSTICS.md](PHASE-5-DIAGNOSTICS.md)) interprets the readings, including
+  these samples, and turns them into advisories with evidence.
 
 ## Verification performed offline
 

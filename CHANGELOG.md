@@ -12,6 +12,57 @@
 - Offline harness: dropped the now-unused `GenDate` double and pointed the duration/range
   assertions at `PowerTime`.
 
+## Unreleased — Phase 6: battery endurance forecasting
+
+- Added a battery endurance estimate: time until the map's stored energy runs out, or until it
+  is full, from the current balance and — when enough samples exist — the recorded average over
+  a selectable range (hour to seven days).
+- Added `Analytics/PowerForecast.cs` (windowed averages, average net balance, deficit share)
+  and `Analytics/BatteryForecast.cs` (the arithmetic, result kinds and confidence bands). Both
+  are pure functions over numbers: no game objects, no simulation calls, no side effects.
+- The estimate subtracts battery self-discharge (a verified 5 W per battery that the trader
+  balance does not include), accounts for charge efficiency when it can be read, excludes
+  EMP-stunned batteries from usable energy, and saturates at 30 in-game days so a long
+  projection is reported as "more than" rather than as a precise number.
+- No discharge rate limit is applied: a public per-battery limit is not confirmed for the
+  supported builds, so inventing one was rejected. The estimate is conservative as a result.
+- Added the **Forecast** tab: range buttons, four metric tiles (stored energy, capacity,
+  charge, net including losses), the headline estimate with its basis and confidence, a
+  current-vs-historical comparison, per-network endurance, and a "what this estimate assumes"
+  block.
+- Added **Battery endurance** and **Forecast confidence** tiles to the overview, and an
+  endurance line to the network detail pane.
+- Added the `ForecastIncludeSelfDischarge` setting.
+- Validation: 90 new offline checks, including a read-only guarantee that forecasting leaves
+  the power simulation and the reported measurements untouched. Not validated in game.
+
+## Unreleased — Phase 5: power diagnostics
+
+- Added a diagnostics engine that turns the readings into advisories: power deficit, high load,
+  battery discharge, network with no generation, isolated consumer, unconfirmed membership,
+  underperforming generator, draw above the configured amount, switched off but still drawing,
+  and unsupported component.
+- Every advisory carries a severity, a description, the evidence behind it (generation,
+  consumption, charge, how long it has been true, how many samples support it) and a suggested
+  action. Nothing is acted on automatically.
+- Added `Analytics/PowerDiagnosticTracker.cs`: session-only episode memory keyed by live
+  network or building. A flickering condition is one episode, not a new alert; a condition that
+  clears is reported as resolved for one in-game day; episodes are released when their object
+  disappears or their resolution ages out.
+- Added the **Diagnostics** tab: scrollable advisory cards with severity pill, title,
+  description, evidence, action and status, plus locate / show-buildings / mute / dismiss
+  buttons and a filter (everything, critical only, warning and above, resolved only).
+- Added the **Active advisories** and **Critical advisories** tiles to the overview.
+- Added optional, rate-limited on-screen messages for new warning and critical advisories
+  (at most two per refresh, then nothing until the cooldown expires), suppressed entirely
+  unless `Current.ProgramState == ProgramState.Playing`.
+- Added settings: `DiagnosticsEnabled`, `DeficitAlertWatts`, `LowBatteryWarningFraction`,
+  `PersistentDeficitTicks`, `GeneratorUnderOutputTicks`, `ShowInfoDiagnostics`,
+  `ShowPowerMessages`, `AlertCooldownTicks` and a per-kind mute bitmask. All are clamped on
+  load, and the mute mask is masked to the kinds this build defines.
+- Advisory kinds are never renumbered: the enum values index the persisted mute mask.
+- Validation: 119 new offline checks. Not validated in game.
+
 ## Unreleased — Phase 4: historical monitoring
 
 - Added bounded, map-scoped aggregate history: generation, consumption, stored energy and

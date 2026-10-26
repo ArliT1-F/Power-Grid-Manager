@@ -10,7 +10,18 @@ namespace PowerGridManager
         Overview = 0,
         Networks,
         Buildings,
-        History
+        History,
+        Diagnostics,
+        Forecast
+    }
+
+    /// <summary>Which advisories the diagnostics tab shows.</summary>
+    public enum DiagnosticFilter
+    {
+        All = 0,
+        CriticalOnly,
+        WarningAndAbove,
+        ResolvedOnly
     }
 
     public enum BuildingSortKey
@@ -93,6 +104,10 @@ namespace PowerGridManager
     {
         public PowerGridTab Tab = PowerGridTab.Overview;
         public PowerTimeRange Range = PowerTimeRange.LastDay;
+
+        /// <summary>Range used by the forecast tab; the history tab keeps its own.</summary>
+        public PowerTimeRange ForecastRange = PowerTimeRange.LastDay;
+        public DiagnosticFilter DiagnosticView = DiagnosticFilter.All;
         public BuildingSortKey SortKey = BuildingSortKey.CurrentDraw;
         public bool SortDescending = true;
         public BuildingGrouping Grouping = BuildingGrouping.None;
@@ -105,6 +120,8 @@ namespace PowerGridManager
         public Vector2 NetworkScroll;
         public Vector2 BuildingScroll;
         public Vector2 DetailScroll;
+        public Vector2 DiagnosticScroll;
+        public Vector2 ForecastScroll;
 
         /// <summary>Drops a selection whose building no longer exists or was despawned.</summary>
         public void ValidateSelection()

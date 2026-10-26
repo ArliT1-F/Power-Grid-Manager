@@ -2,6 +2,7 @@
 // public 1.6 reference for the members the mod uses; the bodies are inert or simple.
 using System;
 using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 
 namespace Verse
@@ -236,6 +237,46 @@ namespace Verse
         public bool IsOpen(Window window) => windows.Contains(window);
         public bool IsOpen(Type windowType) => windows.Exists(w => w.GetType() == windowType);
     }
+
+    // Mirrors Verse.ProgramState / Verse.Current, which the notifier checks before queueing an
+    // on-screen message.
+    public enum ProgramState
+    {
+        None,
+        Entry,
+        MapInitializing,
+        Playing
+    }
+
+    public static class Current
+    {
+        public static ProgramState ProgramState = ProgramState.Playing;
+    }
+
+    public static class Messages
+    {
+        /// <summary>Records every message the mod queues so tests can assert on them.</summary>
+        public static readonly System.Collections.Generic.List<string> Sent =
+            new System.Collections.Generic.List<string>();
+
+        public static void Message(string text, MessageTypeDef def, bool historical = true)
+        {
+            Sent.Add(text);
+        }
+
+        public static void Message(string text, Verse.LookTargets lookTargets, MessageTypeDef def,
+            bool historical = true)
+        {
+            Sent.Add(text);
+        }
+
+        public static void Clear()
+        {
+            Sent.Clear();
+        }
+    }
+
+    public class LookTargets { }
 
     public static class Find
     {

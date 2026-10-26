@@ -19,6 +19,8 @@ namespace PowerGridManager
         private readonly PowerNetworkPanel networkPanel = new PowerNetworkPanel();
         private readonly BuildingPowerPanel buildingPanel = new BuildingPowerPanel();
         private readonly PowerHistoryPanel historyPanel = new PowerHistoryPanel();
+        private readonly PowerDiagnosticsPanel diagnosticsPanel = new PowerDiagnosticsPanel();
+        private readonly PowerForecastPanel forecastPanel = new PowerForecastPanel();
         private List<TabRecord> tabs;
 
         /// <summary>Window view state. Internal so the offline harness can drive each tab.</summary>
@@ -84,8 +86,16 @@ namespace PowerGridManager
                 case PowerGridTab.History:
                     historyPanel.Draw(content, component.History, state, settings, now);
                     break;
+                case PowerGridTab.Diagnostics:
+                    diagnosticsPanel.Draw(content, snapshot, state, settings, component.Diagnostics,
+                        component.Advisories, ShowBuildingsOnNetwork);
+                    break;
+                case PowerGridTab.Forecast:
+                    forecastPanel.Draw(content, snapshot, component.History, state, settings, now);
+                    break;
                 default:
-                    overviewPanel.Draw(content, snapshot, now, settings);
+                    overviewPanel.Draw(content, snapshot, now, settings, component.Forecast,
+                        component.CriticalAdvisoryCount, component.WarningAdvisoryCount);
                     break;
             }
         }
@@ -98,7 +108,9 @@ namespace PowerGridManager
                 Tab("PGM_Tab_Overview", PowerGridTab.Overview, "PGM_Tab_OverviewTip"),
                 Tab("PGM_Tab_Networks", PowerGridTab.Networks, "PGM_Tab_NetworksTip"),
                 Tab("PGM_Tab_Buildings", PowerGridTab.Buildings, "PGM_Tab_BuildingsTip"),
-                Tab("PGM_Tab_History", PowerGridTab.History, "PGM_Tab_HistoryTip")
+                Tab("PGM_Tab_History", PowerGridTab.History, "PGM_Tab_HistoryTip"),
+                Tab("PGM_Tab_Diagnostics", PowerGridTab.Diagnostics, "PGM_Tab_DiagnosticsTip"),
+                Tab("PGM_Tab_Forecast", PowerGridTab.Forecast, "PGM_Tab_ForecastTip")
             };
         }
 
