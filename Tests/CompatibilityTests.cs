@@ -375,6 +375,8 @@ namespace PowerGridManager.Tests
             component.Management.SetGroup(generator, "Generation", 0);
             component.Management.Events.Add(0, PowerManagementEventKind.PolicyChanged, "",
                 "policy", true, "test");
+            // SetGroup writes an audit event too; assert against the real saved length.
+            int expectedEvents = component.Management.Events.Count;
 
             SaveNode node = Scribe.BeginSaving();
             component.ExposeData();
@@ -386,7 +388,10 @@ namespace PowerGridManager.Tests
             loaded.ExposeData();
             Scribe.Finish();
             TestAssert.Equal(loaded.History.Count, 1, "history survives a full component round trip");
-            TestAssert.Equal(loaded.Management.Events.Count, 1, "event log survives the round trip");
+            TestAssert.Equal(loaded.Management.Events.Count, expectedEvents,
+                "event log survives the round trip");
+            TestAssert.Equal(loaded.Management.Events[expectedEvents - 1].Detail, "test",
+                "the newest event detail survives the round trip");
             TestAssert.Null(loaded.Snapshot, "runtime snapshot is not persisted");
 
             // Removing the mod's data node must not break the map component or its history.

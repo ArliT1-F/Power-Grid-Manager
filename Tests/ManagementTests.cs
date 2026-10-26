@@ -724,13 +724,20 @@ namespace PowerGridManager.Tests
                 "policy", true, "enabled");
             component.History.MaybeSample(Scan(scenario.Map, 0), 0, 2500,
                 settings.RetentionDays * PowerTime.TicksPerDay);
+            // SetSheddable/SetPriority also write audit events, so compare against the
+            // actual pre-save length rather than assuming only the explicit event exists.
+            int expectedEvents = component.Management.Events.Count;
+            TestAssert.Check(expectedEvents > 1, "setup produced several management events");
 
             SaveNode node = Save(component);
             var loaded = new PowerGridManagerComponent(scenario.Map);
             Load(loaded, node);
             TestAssert.Check(loaded.Management.Registry.IsSheddable(target),
                 "management preferences survive a component save/load");
-            TestAssert.Equal(loaded.Management.Events.Count, 1, "event log survives component save/load");
+            TestAssert.Equal(loaded.Management.Events.Count, expectedEvents,
+                "event log survives component save/load");
+            TestAssert.Equal(loaded.Management.Events[expectedEvents - 1].Detail, "enabled",
+                "the newest event detail survives component save/load");
             TestAssert.Equal(loaded.History.Count, 1, "history still survives the same save");
 
             // A save from before Phase 7 has no management node but must load cleanly.
