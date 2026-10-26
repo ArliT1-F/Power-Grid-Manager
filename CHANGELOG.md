@@ -26,8 +26,8 @@
   limitations and an in-game validation checklist.
 - The offline harness now emits GitHub Actions annotations for failures and a notice with the
   total check count. The `Offline logic tests` CI job (Ubuntu, .NET 8) compiles all production
-  sources against the doubles and runs the full harness successfully; the static checker runs
-  in the same job. This is a doubles-based compile, not a build against the game assemblies.
+  sources against the doubles and runs the full harness successfully (1,719 checks); the
+  static checker runs in the same job. This is a doubles-based compile, not a build against the game assemblies.
 - No official game binaries or profiler were available here: no compilation against the real
   RimWorld assemblies, frame-time profiling, Harmony patch check or in-game exception scan was
   performed.

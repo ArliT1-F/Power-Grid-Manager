@@ -214,6 +214,6 @@ verification matrix and limitations. Key additions to this research record:
   development workspace. A Roslyn-based *syntax* parse, XML/key checks and source hygiene
   checks were run locally with zero failures. The `Offline logic tests` GitHub Actions job
   (Ubuntu, .NET 8) then compiled all production sources against the test doubles and ran the
-  full C# harness successfully, so semantic/type correctness against the doubles and all
-  offline logic checks are verified. Compilation against the official RimWorld assemblies,
+  full C# harness successfully (1,719 checks), so semantic/type correctness against the
+  doubles and all offline logic checks are verified. Compilation against the official RimWorld assemblies,
   in-game launch, save/load, rendering and profiling remain open checklist items.

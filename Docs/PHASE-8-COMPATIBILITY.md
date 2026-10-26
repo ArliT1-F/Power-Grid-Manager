@@ -76,7 +76,7 @@ check against the project's game doubles. It is not an in-game or frame-time val
 |---|---|---|---|
 | C# syntax | Roslyn parser via CSharpier WASM (`@scalar/csharp-fmt`) on all 50 source/test files | 0 parse failures | Full `dotnet build` against game assemblies |
 | Semantic/type correctness | `dotnet run` in CI compiles all production sources against the game doubles; `static_checks.py` | **CI compile passes** (doubles only) | Compilation against the official game assemblies |
-| Logic tests | `Tests/*.cs`; `Offline logic tests` CI job on .NET 8 | **Executed in CI, pass** (no SDK in the local workspace) | Re-run locally after any change; real modded saves in game |
+| Logic tests | `Tests/*.cs`; `Offline logic tests` CI job on .NET 8 | **Executed in CI, pass: 1,719 checks** (no SDK in the local workspace) | Re-run locally after any change; real modded saves in game |
 | Localization | `static_checks.py` + `LocalizationTests` (in harness) | 568 keys defined, 0 missing, 0 placeholder mismatches | In-game text rendering |
 | XML metadata | `static_checks.py` (About/Defs/Languages parse; icon exists) | pass | In-game def load |
 | Large colony | 10,000-building offline scenario in `CompatibilityTests` | Executed in CI, passes (synthetic, generous timing bound) | Real map profiling with a profiler |

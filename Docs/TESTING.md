@@ -23,8 +23,8 @@ Exit code is 0 only when every check passes. The project links
 `../Source/PowerGridManager/**/*.cs` plus `Tests/Doubles/*.cs`, so a compile error in the
 mod also fails the harness.
 
-What it covers (the Phase 1–6 harness reported 493 checks; Phases 7–8 add the categories
-below, and the harness prints the exact total when run):
+What it covers (the Phase 1–6 harness reported 493 checks; the current CI run reports
+**1,719 checks**, and the harness prints the exact total when run):
 
 - **Phase 2 monitoring (32):** empty maps, signed trader output, `PowerOn` gating, flick
   state, batteries and EMP, deficit counting, independent networks, non-colonist buildings,
@@ -200,7 +200,9 @@ and check the log after each step. Record the results next to each item.
 
 Earlier phases reported a full Roslyn compile of the production sources plus the harness
 against a local .NET runtime and execution of the 493 checks. **That toolchain is not present
-in the Phase 7/8 continuation workspace.** The following checks were run here instead:
+in the Phase 7/8 local workspace**, but the `Offline logic tests` GitHub Actions job now
+performs the equivalent doubles-based compile and executes **1,719 checks** successfully on
+every push/PR. The following checks were additionally run locally:
 
 - `python3 Tests/static_checks.py --syntax` — 1,853 assertions, 0 failures: XML parsing of
   `About.xml`, all defs and the English keyed file; 568 localization keys with placeholder

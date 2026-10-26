@@ -128,8 +128,8 @@ python3 Tests/static_checks.py --syntax                                         
 
 The C# harness links the production sources against minimal game doubles and runs the
 monitoring, dashboard, history, diagnostics, forecast, management, compatibility and
-localization checks. It prints the exact total; it proves logic only, not game-binary
-compatibility. `--syntax` needs Node.js 22+ and `npm i @scalar/csharp-fmt`; set
+localization checks. The current CI run reports 1,719 checks; it proves logic only, not
+game-binary compatibility. `--syntax` needs Node.js 22+ and `npm i @scalar/csharp-fmt`; set
 `PGM_CSHARP_FMT` if the package is installed elsewhere. CI runs the static checker and the
 harness on every push/PR.
 
