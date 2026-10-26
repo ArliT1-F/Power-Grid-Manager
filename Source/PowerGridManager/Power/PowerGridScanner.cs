@@ -131,6 +131,8 @@ namespace PowerGridManager
                     IsColonistBuilding = colonist,
                     IsFlickable = flick != null,
                     SwitchIsOn = flick == null ? (bool?)null : flick.SwitchIsOn,
+                    IsCustomFlickable = flick != null &&
+                        CompatibilityRegistry.IsCustomComponentType(flick.GetType(), typeof(CompFlickable)),
                     Components = components.AsReadOnly()
                 };
                 AggregateBuilding(buildingSnapshot, components, result);
@@ -276,7 +278,8 @@ namespace PowerGridManager
             var s = new PowerComponentSnapshot
             {
                 ComponentIndex = index,
-                IsCustomImplementation = power.GetType().Assembly != typeof(CompPower).Assembly
+                IsCustomImplementation = CompatibilityRegistry.IsCustomComponentType(
+                    power.GetType(), typeof(CompPower))
             };
             var trader = power as CompPowerTrader;
             if (trader != null)

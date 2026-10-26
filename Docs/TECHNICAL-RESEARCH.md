@@ -1,6 +1,6 @@
 # Technical research, implementation plan, and validation record
 
-Updated 2026-10-25. This is a development record, not a claim of in-game validation.
+Updated 2026-10-26. This is a development record, not a claim of in-game validation.
 
 ## Environment findings
 
@@ -114,11 +114,12 @@ These links establish overlapping categories, not a complete feature-by-feature 
 - [ ] Phase 3: in-game rendering/interaction validation (environment-blocked).
 - [x] Phase 4: history (bounded sampling, retention, save/load, charts).
 - [ ] Phase 4: in-game save/load and chart validation (environment-blocked).
-- [ ] Phase 5: diagnostics.
-- [ ] Phase 6: battery forecasting.
-- [ ] Phase 7: optional management.
-- [ ] Phase 8: compatibility/performance.
-- [ ] Phase 9: release preparation.
+- [x] Phase 5: diagnostics (source + offline checks; in-game validation still open).
+- [x] Phase 6: battery forecasting (source + offline checks; in-game validation still open).
+- [x] Phase 7: optional management (source + offline checks; in-game validation still open).
+- [x] Phase 8: compatibility/performance (source audits + offline checks; real profiling and
+      official-assembly compilation still open).
+- [ ] Phase 9: release preparation (license, packaged release, final in-game sign-off).
 
 
 ## Phase 3-4 implementation update (2026-10-25)
@@ -179,3 +180,40 @@ game API compatibility, rendering, save format or performance.
 ## Phase 2 implementation update (2026-10-25)
 
 See [PHASE-2-MONITORING.md](PHASE-2-MONITORING.md) for the implemented scanner/cache, exact measurement contracts, source reinspection evidence, tests and limitations. Phase 2 code is implemented; acceptance remains gated on compilation and in-game reconciliation. In particular, current draw must gate signed trader output by `PowerOn`. Historical collection, UI, diagnostics, forecasts and management remain later phases.
+
+
+## Phase 7-8 implementation update (2026-10-26)
+
+The optional management layer and the compatibility work are implemented in source. See
+[PHASE-7-MANAGEMENT.md](PHASE-7-MANAGEMENT.md) and
+[PHASE-8-COMPATIBILITY.md](PHASE-8-COMPATIBILITY.md) for the full design, API evidence,
+verification matrix and limitations. Key additions to this research record:
+
+- **Flick control**: `CompFlickable` keeps a private desired-state flag. Setting only
+  `SwitchIsOn` leaves the vanilla gizmo inconsistent and can make a colonist flick the
+  building back. The supported path used here is the component's own public
+  `Command_Toggle.toggleAction` (from `CompGetGizmosExtra`) to synchronise that flag, followed
+  by the public `SwitchIsOn` setter and `FlickUtility.UpdateFlickDesignation` to clear the
+  designation. Verified in both the 1.5.4409 and 1.6 public decompilations.
+- **Stable identity**: `Thing.GetUniqueLoadID()` returns `"Thing_" + defName +
+  thingIDNumber`, and the game itself persists it as the `id` node. It is the key used for
+  management preferences and tracked switches. `Map.uniqueID` is persisted and used only to
+  stagger first scans across maps.
+- **Serialization**: `Scribe_Deep.Look` itself does nothing in `PostLoadInit`; the separate
+  `PostLoadInitter` re-enters objects registered during `LoadingVars`. Loading-time clamping
+  now also happens at the end of `LoadingVars` for the Phase 4 history tracker and every new
+  persisted object, so validation does not depend on that registration detail.
+- **Performance**: evaluation stays on the 60–600 tick refresh cadence; the Management tab
+  caches its plan and rows rather than walking the snapshot each frame; empty registries take
+  a constant-time path. No LINQ, reflection, threads or Harmony are used anywhere in the
+  production source. Synthetic 10,000-building and multi-map checks were added to the harness.
+- **Version status**: the new APIs were cross-checked against 1.5 and 1.6 public references.
+  The 1.7 build target remains configured but unverified: its runtime/assembly layout differs
+  and no official 1.7 assemblies were available here.
+- **Validation honesty**: no .NET SDK, game assemblies or profiler were available in the local
+  development workspace. A Roslyn-based *syntax* parse, XML/key checks and source hygiene
+  checks were run locally with zero failures. The `Offline logic tests` GitHub Actions job
+  (Ubuntu, .NET 8) then compiled all production sources against the test doubles and ran the
+  full C# harness successfully (1,719 checks), so semantic/type correctness against the
+  doubles and all offline logic checks are verified. Compilation against the official RimWorld assemblies,
+  in-game launch, save/load, rendering and profiling remain open checklist items.

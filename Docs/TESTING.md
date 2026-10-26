@@ -2,9 +2,13 @@
 
 Two separate levels exist, and they must not be confused:
 
-1. **Offline logic harness** — runs here, compiles the production sources against minimal
-   game doubles. Proves measurement, filtering, history, chart and localization logic.
-   It cannot prove compatibility with the real game assemblies, rendering, or performance.
+1. **Offline logic harness** — compiles the production sources against minimal game doubles.
+   Proves measurement, filtering, history, chart, diagnostics, forecast, management and
+   localization logic. It cannot prove compatibility with the real game assemblies, rendering,
+   or performance. **There is no .NET SDK in the development workspace itself**, but the
+   `Offline logic tests` GitHub Actions job compiles the full production source set against
+   the doubles and runs the harness on .NET 8 for every push and pull request; that job passes
+   for the Phase 7/8 branch. A local `dotnet run` reproduces it.
 2. **In-game validation** — requires an installed RimWorld build. Everything in this
    document's second half is still outstanding.
 
@@ -19,7 +23,8 @@ Exit code is 0 only when every check passes. The project links
 `../Source/PowerGridManager/**/*.cs` plus `Tests/Doubles/*.cs`, so a compile error in the
 mod also fails the harness.
 
-What it covers (493 checks at the time of writing):
+What it covers (the Phase 1–6 harness reported 493 checks; the current CI run reports
+**1,719 checks**, and the harness prints the exact total when run):
 
 - **Phase 2 monitoring (32):** empty maps, signed trader output, `PowerOn` gating, flick
   state, batteries and EMP, deficit counting, independent networks, non-colonist buildings,
@@ -53,10 +58,24 @@ What it covers (493 checks at the time of writing):
   `ComputeForecast` with real samples; headless passes over the forecast and network panels
   at three sizes; and the read-only guarantee that forecasting leaves the simulation and the
   reported measurements untouched.
-- **Localization and metadata (41):** every `PGM_` key referenced in source exists in the
-  English keyed file, format-placeholder counts are sufficient, the keyed/def/About XML
-  parse, the def wires the right tab window type, the icon texture exists, and the window
-  type derives from `MainTabWindow`.
+- **Phase 7 management (new):** settings defaults and clamping; settings save/load and older
+  saves without management nodes; control API success, no-op, pending-flick refusal, missing
+  gizmo, ambiguous toggles, throwing modded gizmo, destroyed buildings and unsupported
+  components; stable load IDs across reload; registry corruption, duplicates, bounds,
+  long-missing pruning and group bulk actions; bounded event log save/load; disabled policy,
+  no batteries, EMP, generators/batteries excluded, priority ordering, measured-savings
+  selection, per-pass caps, stability, cooldown, mid-band hysteresis, staged/all/manual
+  recovery, destroyed buildings, controller integration, component serialization and
+  per-building diagnostics exclusion; headless Management tab draw at four sizes.
+- **Phase 8 compatibility/performance (new):** production source hygiene (no LINQ,
+  reflection, Harmony, threads, `Log.Error` or DLC namespaces), metadata/no-DLC audit,
+  a 10,000-building synthetic colony with bounded-time assertions, multi-map staggering,
+  modded trader/battery/unknown components, full component save/load, older saves, map
+  removal, and an all-tab window regression at three resolutions.
+- **Localization and metadata (41 in Phase 1–6, now 568 keys):** every `PGM_` key referenced
+  in source exists in the English keyed file, format-placeholder counts are sufficient, the
+  keyed/def/About XML parse, the def wires the right tab window type, the icon texture exists,
+  and the window type derives from `MainTabWindow`.
 
 The harness proves nothing about the draw calls themselves: `Widgets`, `GUI` and rendering
 are inert doubles.
@@ -140,6 +159,25 @@ and check the log after each step. Record the results next to each item.
 - [ ] Nothing the forecast does changes the vanilla power simulation (compare a control save
       without the mod).
 
+### Management (Phase 7)
+
+- [ ] Default settings: the Management tab says OFF; no building is ever switched.
+- [ ] Enable controls only: on/off buttons work and the vanilla gizmo checkbox, switch and
+      flick designation stay in sync; colonists do not re-flick the building.
+- [ ] Enable automation with no sheddable buildings: preview is empty and nothing switches.
+- [ ] Mark two non-critical consumers sheddable with different priorities: the preview lists
+      both, the higher shed-priority number goes first and the event log records it.
+- [ ] Drain batteries below the threshold with a deficit: stability and cooldown are visible,
+      then a bounded batch is applied; charge between thresholds does not restore.
+- [ ] Recharge above the recovery threshold: staged / all / manual recovery behave as set.
+- [ ] Disable automation mid-shedding: every auto-shed building is restored.
+- [ ] Destroy, uninstall and replace a configured building: no stale control, no exception;
+      the replacement stays protected until configured again.
+- [ ] Exclude a building from diagnostics and confirm its building-level advisory disappears
+      while network advisories remain.
+- [ ] Save/reload and restart with a policy armed: settings, groups, priorities, exclusions,
+      event history and tracked switches survive.
+
 ### Compatibility and performance
 
 - [ ] A modded consumer, a modded generator and a modded battery behave sanely; custom
@@ -160,15 +198,28 @@ and check the log after each step. Record the results next to each item.
 
 ## 3. Static checks performed in this environment
 
-- Full compile of all production sources plus the harness against the local .NET 10
-  runtime (Roslyn), then execution of all 493 checks.
-- API signatures cross-checked against a public RimWorld 1.6 decompilation reference:
-  `MainTabWindow`, `MainButtonDef`, `TabDrawer`, `TabRecord.GetTip`, `Widgets.*`,
-  `Text.*`, `Map.FillComponents` auto-instantiation, `Map.GetComponent<T>`,
-  `MapComponent` hooks, `Scribe_*`, `CompPower*`, `CompFlickable`, `Room`/`RoomRoleDef`,
-  `CameraJumper`, `Dialog_InfoCard`, `FloatMenu`.
-- XML parsing of `About.xml`, the `MainButtonDef` and the English keyed file.
+Earlier phases reported a full Roslyn compile of the production sources plus the harness
+against a local .NET runtime and execution of the 493 checks. **That toolchain is not present
+in the Phase 7/8 local workspace**, but the `Offline logic tests` GitHub Actions job now
+performs the equivalent doubles-based compile and executes **1,719 checks** successfully on
+every push/PR. The following checks were additionally run locally:
+
+- `python3 Tests/static_checks.py --syntax` — 1,853 assertions, 0 failures: XML parsing of
+  `About.xml`, all defs and the English keyed file; 568 localization keys with placeholder
+  counts; duplicate keys; forbidden API patterns; no DLC namespaces; no `PackageReference`
+  or Harmony in the production project; def wiring and icon existence.
+- Roslyn **syntax** parsing of all 50 C# files through the WASM build of CSharpier
+  (`@scalar/csharp-fmt`), 0 parse failures. This is a parser, not a semantic compiler.
+- Manual member cross-check of every new Phase 7/8 type against its declaration and the game
+  doubles, and API signature cross-checks against the public 1.5.4409 and 1.6 decompilation
+  references for `CompFlickable`, `FlickUtility`, `Command_Toggle`, `ThingComp`,
+  `Thing.GetUniqueLoadID`, `Map.uniqueID`, `Scribe_Deep`, `Scribe_Values`, `ParseHelper`,
+  `JobDriver_Flick` and `WorkGiver_Flick`.
 - `git diff --check` for whitespace errors.
 
-**Not performed:** compiling against the real game assemblies, launching the game, real
-save/load, real rendering, profiling.
+**Not performed in this workspace:** compilation against official game assemblies, launching
+the game, real save/load, real rendering, Harmony patch verification or frame-time profiling.
+The C# harness *is* executed on every push/PR by the GitHub Actions `Offline logic tests`
+job (Ubuntu, .NET 8), which compiles all production sources against the doubles and runs
+every check; that job passes for this branch. The `CompatibilityTests` timing assertions are
+generous regression guards in that environment, not performance claims about the real game.

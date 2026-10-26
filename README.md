@@ -3,12 +3,14 @@
 A RimWorld mod focused on readable colony power monitoring. It observes RimWorld's native
 power simulation; it does not replace or patch it.
 
-> **Development status:** Phases 1–6 are implemented (project skeleton, monitoring core,
-> dashboard, historical monitoring, diagnostics, forecasting). The offline logic harness
-> passes all 493 checks, but
-> nothing has been compiled against, loaded into, or profiled in an actual RimWorld
-> installation — none is available in this environment. Treat this as a development build,
-> not a release.
+> **Development status:** Phases 1–8 are implemented in source (project skeleton, monitoring
+> core, dashboard, historical monitoring, diagnostics, forecasting, optional management, and
+> compatibility/optimization work). The offline logic harness and the dependency-free static
+> checker both pass in GitHub Actions CI against .NET 8 (the harness links the production
+> sources against minimal game doubles — it is *not* a build against the real RimWorld
+> assemblies). **No game assemblies or RimWorld installation are available here**, so the
+> production build (`build.sh`) and every in-game behaviour remain unverified. Treat this as a
+> development build, not a release, until the [in-game checklist](Docs/TESTING.md) is run.
 
 ## What it does today
 
@@ -53,8 +55,19 @@ Forecast figures are explicitly labelled as **estimates**: they assume the obser
 continues, and the panel states what it assumed. They are never written back into the game's
 power simulation.
 
-Not implemented yet: optional load management (Phase 7). The dashboard's "data notices" are
-observed data-quality facts, not diagnostics.
+- **Management** — optional, disabled by default. Compatible buildings can be switched on/off
+  through the game's public flick API; buildings can be put into user-defined monitoring groups,
+  excluded from building-level diagnostics, excluded from control, or explicitly whitelisted as
+  protected. A load-shedding policy can be armed with user-configurable charge thresholds, a
+  hysteresis band, a stability period, a cooldown, a per-pass action cap, per-building priorities
+  (1–6) and staged / all-at-once / manual recovery. A read-only preview lists the buildings a
+  policy would affect before it is enabled; a bounded event history records every attempted
+  action and refusal. Monitoring works with management off, and only buildings the player
+  explicitly marked sheddable can ever be switched off automatically.
+
+The dashboard's "data notices" are observed data-quality facts, not diagnostics. Verified
+`PowerCategory` values are grouping helpers, **not** an automatic criticality classifier:
+there is no automatic detection that a building is safe to disable.
 
 ## Requirements
 
@@ -109,11 +122,24 @@ tail -n 80 "$HOME/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Play
 
 ```sh
 dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release   # .NET 8 SDK
+python3 Tests/static_checks.py                                                     # no dependencies
+python3 Tests/static_checks.py --syntax                                             # optional Roslyn parse
 ```
 
-The harness links the production sources against minimal game doubles and runs 493 checks
-across monitoring, dashboard, history and localization logic. It proves logic only; see
-[Testing](Docs/TESTING.md) for the in-game checklist that still has to be executed.
+The C# harness links the production sources against minimal game doubles and runs the
+monitoring, dashboard, history, diagnostics, forecast, management, compatibility and
+localization checks. The current CI run reports 1,719 checks; it proves logic only, not
+game-binary compatibility. `--syntax` needs Node.js 22+ and `npm i @scalar/csharp-fmt`; set
+`PGM_CSHARP_FMT` if the package is installed elsewhere. CI runs the static checker and the
+harness on every push/PR.
+
+The local workspace has no `dotnet`, but the `Offline logic tests` GitHub Actions job compiles
+the full production source set against the doubles and runs the harness on .NET 8; that job
+passes for this branch. Locally `python3 Tests/static_checks.py --syntax` also passes — 1,853
+static assertions including XML metadata, 568 localization keys/placeholders, source hygiene
+and a Roslyn syntax parse of all 50 C# files, with zero failures. See
+[Phase 8](Docs/PHASE-8-COMPATIBILITY.md) for the full verification matrix and
+[Testing](Docs/TESTING.md) for the in-game checklist.
 
 ## Install (once built)
 
@@ -129,5 +155,7 @@ Copy this folder (or a release folder containing `About/`, `Defs/`, `Languages/`
 - [Phase 4: historical monitoring, retention, save/load](Docs/PHASE-4-HISTORY.md)
 - [Phase 5: diagnostics, advisory kinds, alert throttling](Docs/PHASE-5-DIAGNOSTICS.md)
 - [Phase 6: battery endurance forecasting, confidence](Docs/PHASE-6-FORECAST.md)
+- [Phase 7: optional management, control APIs, load shedding](Docs/PHASE-7-MANAGEMENT.md)
+- [Phase 8: compatibility, optimization, verified limitations](Docs/PHASE-8-COMPATIBILITY.md)
 - [Testing: what the harness proves and the in-game checklist](Docs/TESTING.md)
 - [Changelog](CHANGELOG.md)

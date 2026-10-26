@@ -167,6 +167,10 @@ namespace PowerGridManager
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 RebuildFromSerializedLists();
+                // Scribe_Deep itself does nothing in PostLoadInit; nested objects are re-entered
+                // by PostLoadInitter only if they were registered during LoadingVars. Validate
+                // here as well so bounds never depend on that registration detail.
+                ClampLoadedState();
             }
             else if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {

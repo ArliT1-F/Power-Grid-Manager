@@ -42,7 +42,7 @@ namespace PowerGridManager
             // screen at any UI scale, so the whole panel scrolls rather than clipping controls.
             // The height is a constant rather than a measured value because Listing_Standard
             // only knows its own height after it has drawn.
-            const float contentHeight = 1200f;
+            const float contentHeight = 1720f;
             Rect viewRect = new Rect(0f, 0f, inRect.width - 18f, contentHeight);
             Widgets.BeginScrollView(inRect, ref settingsScroll, viewRect);
             try
@@ -123,6 +123,57 @@ namespace PowerGridManager
                 listing.Label("PGM_Settings_ForecastNote".Translate());
                 listing.Gap(12f);
 
+                Section(listing, "PGM_Settings_Management");
+                listing.CheckboxLabeled("PGM_Mgmt_Master_Label".Translate(), ref settings.ManagementEnabled,
+                    "PGM_Mgmt_Master_Tip".Translate());
+                listing.CheckboxLabeled("PGM_Mgmt_Automation_Label".Translate(),
+                    ref settings.LoadSheddingEnabled, "PGM_Mgmt_Automation_Tip".Translate());
+                listing.CheckboxLabeled("PGM_Mgmt_RequireDeficit_Label".Translate(),
+                    ref settings.LoadShedRequireDeficit, "PGM_Mgmt_RequireDeficit_Tip".Translate());
+                listing.Gap(6f);
+
+                listing.Label("PGM_Mgmt_LowSetting_Label".Translate(
+                    PowerFormatting.FormatCharge(settings.LoadShedLowThreshold)));
+                settings.LoadShedLowThreshold = Slider(listing, settings.LoadShedLowThreshold, 0.05f, 0.60f,
+                    "PGM_Mgmt_LowSetting_Tip", "5%", "60%");
+                listing.Gap(8f);
+
+                listing.Label("PGM_Mgmt_RestoreSetting_Label".Translate(
+                    PowerFormatting.FormatCharge(settings.LoadShedRestoreThreshold)));
+                settings.LoadShedRestoreThreshold = Slider(listing, settings.LoadShedRestoreThreshold,
+                    0.20f, 1f, "PGM_Mgmt_RestoreSetting_Tip", "20%", "100%");
+                listing.Gap(8f);
+
+                listing.Label("PGM_Mgmt_Stable_Label".Translate(
+                    PowerFormatting.FormatDuration(settings.LoadShedStableTicks)));
+                settings.LoadShedStableTicks = Mathf.RoundToInt(Slider(listing, settings.LoadShedStableTicks,
+                    0f, PowerTime.TicksPerDay, "PGM_Mgmt_Stable_Tip", null, null));
+                listing.Gap(8f);
+
+                listing.Label("PGM_Mgmt_Cooldown_Label".Translate(
+                    PowerFormatting.FormatDuration(settings.LoadShedCooldownTicks)));
+                settings.LoadShedCooldownTicks = Mathf.RoundToInt(Slider(listing,
+                    settings.LoadShedCooldownTicks, 0f, PowerTime.TicksPerDay,
+                    "PGM_Mgmt_Cooldown_Tip", null, null));
+                listing.Gap(8f);
+
+                listing.Label("PGM_Mgmt_MaxActions_Label".Translate(settings.LoadShedMaxActionsPerPass));
+                settings.LoadShedMaxActionsPerPass = Mathf.RoundToInt(Slider(listing,
+                    settings.LoadShedMaxActionsPerPass, 1f, 16f, "PGM_Mgmt_MaxActions_Tip", null, null));
+                listing.Gap(8f);
+
+                Rect recoveryRect = listing.GetRect(26f);
+                if (Widgets.ButtonText(recoveryRect, "PGM_Mgmt_RecoverySetting_Label".Translate(
+                        RecoveryModeLabel(settings.LoadShedRecovery))))
+                {
+                    OpenRecoveryModeMenu(settings);
+                }
+                PowerUiDraw.Tip(recoveryRect, "PGM_Mgmt_RecoverySetting_Tip".Translate());
+                listing.Gap(8f);
+                listing.Label("PGM_Mgmt_SettingsNote".Translate());
+                settings.NormalizeManagement();
+                listing.Gap(12f);
+
                 Section(listing, "PGM_Settings_Muted");
                 DrawMuteToggles(listing);
 
@@ -134,6 +185,37 @@ namespace PowerGridManager
             }
 
             base.DoSettingsWindowContents(inRect);
+        }
+
+        private static void OpenRecoveryModeMenu(PowerGridManagerSettings settings)
+        {
+            var options = new System.Collections.Generic.List<FloatMenuOption>(3);
+            LoadSheddingRecoveryMode[] modes =
+            {
+                LoadSheddingRecoveryMode.Staged, LoadSheddingRecoveryMode.All,
+                LoadSheddingRecoveryMode.Manual
+            };
+            for (int i = 0; i < modes.Length; i++)
+            {
+                LoadSheddingRecoveryMode mode = modes[i];
+                options.Add(new FloatMenuOption(RecoveryModeLabel(mode), delegate
+                {
+                    settings.LoadShedRecovery = mode;
+                    settings.NormalizeManagement();
+                    Save();
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private static string RecoveryModeLabel(LoadSheddingRecoveryMode mode)
+        {
+            switch (mode)
+            {
+                case LoadSheddingRecoveryMode.All: return "PGM_Mgmt_Recovery_All".Translate();
+                case LoadSheddingRecoveryMode.Manual: return "PGM_Mgmt_Recovery_Manual".Translate();
+                default: return "PGM_Mgmt_Recovery_Staged".Translate();
+            }
         }
 
         /// <summary>One checkbox per advisory kind, so muting is discoverable rather than a bitmask.</summary>

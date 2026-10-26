@@ -10,5 +10,7 @@
   </supportedVersions>
   <description>Monitor colony power networks, generation, consumption, storage and history from a centralised dashboard. Power Grid Manager observes RimWorld's own power simulation and never replaces or alters it.
 
-Open the Power tab to see map-wide totals, per-network detail, a searchable table of every powered building, and recorded charts of generation, consumption, net balance, battery charge and load. All figures are labelled as measured, configured or estimated.</description>
+Open the Power tab to see map-wide totals, per-network detail, a searchable table of every powered building, recorded charts of generation, consumption, net balance, battery charge and load, evidence-based diagnostics and a labelled battery endurance estimate. All figures are marked as measured, configured or estimated.
+
+An optional, disabled-by-default Management tab adds compatible on/off controls, monitoring groups, per-building exclusions, user-set priorities, a load-shedding policy with hysteresis and an action history. Monitoring works without it, and only buildings you explicitly mark may be switched off automatically. No DLC, Harmony or other mod required.</description>
 </ModMetaData>

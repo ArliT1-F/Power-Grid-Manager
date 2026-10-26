@@ -59,6 +59,8 @@ namespace PowerGridManager
         }
 
         private static readonly List<Candidate> Candidates = new List<Candidate>(MaxAdvisories * 2);
+        /// <summary>Per-map user exclusions, set for the duration of one Evaluate call.</summary>
+        private static PowerManagementRegistry Exclusions;
         private static readonly List<PowerDiagnostic> ResolvedBuffer = new List<PowerDiagnostic>(16);
         private static readonly Comparison<Candidate> RankComparison = Rank;
         private static readonly int[] KindCounts = new int[KindSlots];
@@ -68,45 +70,58 @@ namespace PowerGridManager
         /// frame and never from the UI's draw pass.
         /// </summary>
         public static void Evaluate(PowerGridSnapshot snapshot, PowerHistoryTracker history,
-            PowerGridManagerSettings settings, PowerDiagnosticTracker tracker, List<PowerDiagnostic> output)
+            PowerGridManagerSettings settings, PowerDiagnosticTracker tracker, List<PowerDiagnostic> output,
+            PowerManagementRegistry exclusions = null)
         {
             output.Clear();
-            if (snapshot == null || settings == null || tracker == null) return;
-
-            if (!settings.DiagnosticsEnabled)
+            Exclusions = exclusions;
+            try
             {
-                // Episodes are measured against the snapshot's own tick; leaving stale ones behind
-                // would report an absurd duration the moment diagnostics are switched back on.
-                tracker.Reset();
-                return;
+                if (snapshot == null || settings == null || tracker == null) return;
+
+                if (!settings.DiagnosticsEnabled)
+                {
+                    // Episodes are measured against the snapshot's own tick; leaving stale ones
+                    // behind would report an absurd duration when diagnostics are switched back on.
+                    tracker.Reset();
+                    return;
+                }
+
+                int now = snapshot.Tick;
+                tracker.BeginEvaluation();
+                Candidates.Clear();
+                for (int i = 0; i < KindCounts.Length; i++) KindCounts[i] = 0;
+
+                EvaluateNetworks(snapshot, history, settings, tracker, now);
+                EvaluateBuildings(snapshot, settings, tracker, now);
+
+                // Conditions that cleared recently are reported as resolved rather than vanishing,
+                // so the player can tell "fixed" apart from "no longer being looked at".
+                ResolvedBuffer.Clear();
+                tracker.CollectResolved(ResolvedBuffer, now);
+                for (int i = 0; i < ResolvedBuffer.Count; i++)
+                {
+                    PowerDiagnostic resolved = ResolvedBuffer[i];
+                    if (settings.IsMuted(resolved.Kind)) continue;
+                    if (tracker.IsDismissed(resolved.Kind, resolved.NetworkId, resolved.Building)) continue;
+                    if (IsExcluded(resolved.Building)) continue;
+                    if (Candidates.Count >= MaxAdvisories * 2) break;
+                    Candidates.Add(new Candidate(resolved, resolved.SortMagnitude));
+                }
+
+                Candidates.Sort(RankComparison);
+                int limit = Candidates.Count < MaxAdvisories ? Candidates.Count : MaxAdvisories;
+                for (int i = 0; i < limit; i++) output.Add(Candidates[i].Advisory);
+
+                tracker.EndEvaluation(snapshot, now);
             }
-
-            int now = snapshot.Tick;
-            tracker.BeginEvaluation();
-            Candidates.Clear();
-            for (int i = 0; i < KindCounts.Length; i++) KindCounts[i] = 0;
-
-            EvaluateNetworks(snapshot, history, settings, tracker, now);
-            EvaluateBuildings(snapshot, settings, tracker, now);
-
-            // Conditions that cleared recently are reported as resolved rather than vanishing, so
-            // the player can tell "fixed" apart from "no longer being looked at".
-            ResolvedBuffer.Clear();
-            tracker.CollectResolved(ResolvedBuffer, now);
-            for (int i = 0; i < ResolvedBuffer.Count; i++)
+            finally
             {
-                PowerDiagnostic resolved = ResolvedBuffer[i];
-                if (settings.IsMuted(resolved.Kind)) continue;
-                if (tracker.IsDismissed(resolved.Kind, resolved.NetworkId, resolved.Building)) continue;
-                if (Candidates.Count >= MaxAdvisories * 2) break;
-                Candidates.Add(new Candidate(resolved, resolved.SortMagnitude));
+                // Static scratch state is shared with the other diagnostics helpers; never let a
+                // caller's exclusion list leak into the next evaluation.
+                Exclusions = null;
+                Candidates.Clear();
             }
-
-            Candidates.Sort(RankComparison);
-            int limit = Candidates.Count < MaxAdvisories ? Candidates.Count : MaxAdvisories;
-            for (int i = 0; i < limit; i++) output.Add(Candidates[i].Advisory);
-
-            tracker.EndEvaluation(snapshot, now);
         }
 
         private static int Rank(Candidate left, Candidate right)
@@ -427,6 +442,12 @@ namespace PowerGridManager
 
         // --- Helpers ---------------------------------------------------------
 
+        /// <summary>Building-level advisories can be excluded by the player in the management tab.</summary>
+        private static bool IsExcluded(Building building)
+        {
+            return Exclusions != null && building != null && Exclusions.IsExcludedFromDiagnostics(building);
+        }
+
         private static bool HasRoomFor(PowerDiagnosticKind kind)
         {
             int slot = (int)kind;
@@ -445,6 +466,7 @@ namespace PowerGridManager
         {
             if (settings.IsMuted(advisory.Kind)) return;
             if (tracker.IsDismissed(advisory.Kind, advisory.NetworkId, advisory.Building)) return;
+            if (IsExcluded(advisory.Building)) return;
             if (Candidates.Count >= MaxAdvisories * 2) return;
 
             advisory.Ongoing = true;

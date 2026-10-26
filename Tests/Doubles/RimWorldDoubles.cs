@@ -62,12 +62,76 @@ namespace RimWorld
     public class CompFlickable : ThingComp
     {
         private bool switchOnInt = true;
+        private bool wantSwitchOn = true;
         public CompProperties_Flickable Props = new CompProperties_Flickable();
 
         public bool SwitchIsOn
         {
             get => switchOnInt;
             set => switchOnInt = value;
+        }
+
+        public bool WantsSwitchOn => wantSwitchOn;
+        public void SetWantsSwitchOn(bool value) { wantSwitchOn = value; }
+        public bool WantsFlick() => wantSwitchOn != switchOnInt;
+
+        public void DoFlick()
+        {
+            SwitchIsOn = !SwitchIsOn;
+        }
+
+        public void ResetToOn()
+        {
+            switchOnInt = true;
+            wantSwitchOn = true;
+        }
+
+        /// <summary>
+        /// Mirrors the vanilla gizmo: only player-faction buildings get a toggle, and the
+        /// toggle changes the private desired state then updates the flick designation.
+        /// </summary>
+        public override IEnumerable<Gizmo> CompGetGizmosExtra()
+        {
+            if (parent == null || parent.Faction != Faction.OfPlayer) yield break;
+            yield return new Command_Toggle
+            {
+                defaultLabel = "Toggle power",
+                isActive = () => wantSwitchOn,
+                toggleAction = () =>
+                {
+                    wantSwitchOn = !wantSwitchOn;
+                    FlickUtility.UpdateFlickDesignation(parent);
+                }
+            };
+        }
+    }
+
+    public class Faction
+    {
+        public static readonly Faction OfPlayer = new Faction();
+    }
+
+    public static class FlickUtility
+    {
+        public static int UpdateCount;
+
+        public static bool WantsToBeOn(Thing thing)
+        {
+            CompFlickable flick = thing == null ? null : thing.GetComp<CompFlickable>();
+            return flick == null || flick.SwitchIsOn;
+        }
+
+        public static void UpdateFlickDesignation(Thing thing)
+        {
+            UpdateCount++;
+            if (thing == null || thing.Map == null) return;
+            bool wanted = false;
+            for (int i = 0; i < thing.AllComps.Count; i++)
+            {
+                if (thing.AllComps[i] is CompFlickable flick && flick.WantsFlick()) { wanted = true; break; }
+            }
+            if (wanted) thing.Map.flickDesignations.Add(thing);
+            else thing.Map.flickDesignations.Remove(thing);
         }
     }
 

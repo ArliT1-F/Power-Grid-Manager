@@ -13,6 +13,7 @@ namespace PowerGridManager
         private readonly PowerGridScanner scanner = new PowerGridScanner();
         private readonly PowerDiagnosticTracker diagnostics = new PowerDiagnosticTracker();
         private readonly List<PowerDiagnostic> advisories = new List<PowerDiagnostic>(32);
+        private PowerManagementController management = new PowerManagementController();
 
         private int lastRefreshTick = -1;
         private PowerHistoryTracker history = new PowerHistoryTracker();
@@ -35,6 +36,9 @@ namespace PowerGridManager
         /// <summary>Map-wide endurance estimate cached at the last refresh.</summary>
         public BatteryForecastResult Forecast => mapForecast;
 
+        /// <summary>Optional, opt-in management layer. Never null once the component exists.</summary>
+        public PowerManagementController Management => management;
+
         public int CriticalAdvisoryCount => criticalCount;
         public int WarningAdvisoryCount => warningCount;
         public int ResolvedAdvisoryCount => resolvedCount;
@@ -55,8 +59,10 @@ namespace PowerGridManager
         /// <summary>
         /// Scans when the cache is missing or older than the configured refresh interval.
         /// Called from the tick hook and once when the dashboard opens; never per frame.
+        /// <paramref name="force"/> is used when the window opens so a map whose first scan is
+        /// staggered does not show a waiting state to a player looking at it.
         /// </summary>
-        public void RefreshIfStale(int tick)
+        public void RefreshIfStale(int tick, bool force = false)
         {
             PowerGridManagerSettings settings = PowerGridManagerMod.Settings;
             int interval = settings == null ? 120 : settings.RefreshIntervalTicks;
@@ -69,10 +75,24 @@ namespace PowerGridManager
                 return;
             }
 
+            // Several maps tick on the same frame. Spread their first scans over one in-game
+            // second using the map's persisted uniqueID; later refreshes stay naturally staggered.
+            if (!force && Snapshot == null && tick >= 0 && tick % StaggerWindowTicks < StaggerOffset()) return;
+
             // Publish only a complete scan. No game objects are accessed by background threads.
             Snapshot = scanner.Scan(map, tick);
             lastRefreshTick = tick;
             EvaluateAdvisories(tick);
+            if (management == null) management = new PowerManagementController();
+            management.Tick(Snapshot, settings, tick);
+        }
+
+        private const int StaggerWindowTicks = 60;
+
+        private int StaggerOffset()
+        {
+            int id = map == null || map.uniqueID < 0 ? 0 : map.uniqueID;
+            return (int)((uint)id % StaggerWindowTicks);
         }
 
         /// <summary>
@@ -84,7 +104,8 @@ namespace PowerGridManager
             PowerGridManagerSettings settings = PowerGridManagerMod.Settings;
             if (settings == null || Snapshot == null) return;
 
-            PowerDiagnostics.Evaluate(Snapshot, history, settings, diagnostics, advisories);
+            PowerDiagnostics.Evaluate(Snapshot, history, settings, diagnostics, advisories,
+                management == null ? null : management.Registry);
 
             criticalCount = 0;
             warningCount = 0;
@@ -132,7 +153,9 @@ namespace PowerGridManager
         {
             base.ExposeData();
             Scribe_Deep.Look(ref history, "powerHistory");
+            Scribe_Deep.Look(ref management, "powerManagement");
             if (history == null) history = new PowerHistoryTracker();
+            if (management == null) management = new PowerManagementController();
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 // Runtime caches are intentionally not persisted: they are rebuilt on the next tick.
@@ -159,6 +182,7 @@ namespace PowerGridManager
             warningCount = 0;
             resolvedCount = 0;
             diagnostics.Reset();
+            if (management != null) management.Reset();
         }
     }
 }

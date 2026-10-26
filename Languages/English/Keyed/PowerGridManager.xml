@@ -456,4 +456,169 @@
   <PGM_AlertCooldown_Tip>Minimum gap between announcements, up to two at a time. A condition that returns within this window counts as the same episode, so it is not announced again.</PGM_AlertCooldown_Tip>
   <PGM_SelfDischarge_Label>Include battery self-discharge</PGM_SelfDischarge_Label>
   <PGM_SelfDischarge_Tip>Subtract the game's verified 5 W per battery self-discharge from the endurance estimate. The trader balance does not include it.</PGM_SelfDischarge_Tip>
+
+  <!-- Phase 7/8: optional management, load shedding and compatibility -->
+  <PGM_Tab_Management>Management</PGM_Tab_Management>
+  <PGM_Tab_ManagementTip>Optional, opt-in power controls, monitoring groups and load-shedding policy.</PGM_Tab_ManagementTip>
+  <PGM_Detail_Management>Control: {0}. {1}. Group: {2}.</PGM_Detail_Management>
+  <PGM_Settings_Management>Optional management (off by default)</PGM_Settings_Management>
+  <PGM_Mgmt_Title>Power management (optional)</PGM_Mgmt_Title>
+  <PGM_Mgmt_Note>Monitoring works with this tab switched off. Management is disabled by default and never changes vanilla power simulation. Only buildings you explicitly mark as sheddable can be switched off automatically. Buildings not marked are treated as critical and are never touched.</PGM_Mgmt_Note>
+  <PGM_Mgmt_Enable>Enable controls</PGM_Mgmt_Enable>
+  <PGM_Mgmt_Disable>Disable controls</PGM_Mgmt_Disable>
+  <PGM_Mgmt_AutoOn>Enable automation</PGM_Mgmt_AutoOn>
+  <PGM_Mgmt_AutoOff>Disable automation</PGM_Mgmt_AutoOff>
+  <PGM_Mgmt_MasterTip>Turn the optional control UI on or off. This does not enable automatic load shedding by itself.</PGM_Mgmt_MasterTip>
+  <PGM_Mgmt_AutomationTip>Arm the load-shedding policy. Enabling it also enables optional controls, which are its prerequisite. It only acts on buildings you marked as sheddable, and only when the configured trigger and hysteresis conditions are met.</PGM_Mgmt_AutomationTip>
+  <PGM_Mgmt_RestoreNow>Restore now ({0})</PGM_Mgmt_RestoreNow>
+  <PGM_Mgmt_RestoreTip>Switch every building this mod turned off back on, regardless of the recovery mode.</PGM_Mgmt_RestoreTip>
+  <PGM_Mgmt_StatusTip>Policy state at the last refresh. Colours are always paired with a word.</PGM_Mgmt_StatusTip>
+  <PGM_Mgmt_Status_Off>OFF</PGM_Mgmt_Status_Off>
+  <PGM_Mgmt_Status_Armed>ARMED</PGM_Mgmt_Status_Armed>
+  <PGM_Mgmt_Status_Watching>WATCHING</PGM_Mgmt_Status_Watching>
+  <PGM_Mgmt_Status_Shedding>SHEDDING</PGM_Mgmt_Status_Shedding>
+  <PGM_Mgmt_Status_Restoring>RESTORING</PGM_Mgmt_Status_Restoring>
+  <PGM_Mgmt_Tile_Charge>Usable charge</PGM_Mgmt_Tile_Charge>
+  <PGM_Mgmt_Tile_ChargeTip>Available battery energy divided by configured capacity. EMP-stunned batteries are excluded. Unknown when there is no battery capacity.</PGM_Mgmt_Tile_ChargeTip>
+  <PGM_Mgmt_Tile_Net>Net balance</PGM_Mgmt_Tile_Net>
+  <PGM_Mgmt_Tile_NetTip>Measured generation minus measured consumption from the current snapshot. A negative value is the deficit the policy tries to cover.</PGM_Mgmt_Tile_NetTip>
+  <PGM_Mgmt_Tile_Sheddable>Sheddable now</PGM_Mgmt_Tile_Sheddable>
+  <PGM_Mgmt_Tile_SheddableTip>Number of opted-in, controllable, switched-on consumers that could be shed at this moment.</PGM_Mgmt_Tile_SheddableTip>
+  <PGM_Mgmt_Tile_AutoShed>Switched off by policy</PGM_Mgmt_Tile_AutoShed>
+  <PGM_Mgmt_Tile_AutoShedTip>Buildings this mod switched off and still intends to restore.</PGM_Mgmt_Tile_AutoShedTip>
+  <PGM_Mgmt_PolicyTitle>Policy and trigger conditions</PGM_Mgmt_PolicyTitle>
+  <PGM_Mgmt_Low_Label>Shed at {0}</PGM_Mgmt_Low_Label>
+  <PGM_Mgmt_Low_Tip>Battery charge at or below which shedding is considered. Choose a preset; the explanation stays in the tooltip.</PGM_Mgmt_Low_Tip>
+  <PGM_Mgmt_Restore_Label>Recover at {0}</PGM_Mgmt_Restore_Label>
+  <PGM_Mgmt_Restore_Tip>Battery charge at or above which switched-off buildings are restored. It is always kept above the shed threshold.</PGM_Mgmt_Restore_Tip>
+  <PGM_Mgmt_Recovery_Label>Recovery: {0}</PGM_Mgmt_Recovery_Label>
+  <PGM_Mgmt_Recovery_Tip>How buildings are brought back once the recovery charge is reached.</PGM_Mgmt_Recovery_Tip>
+  <PGM_Mgmt_Recovery_Staged>Staged</PGM_Mgmt_Recovery_Staged>
+  <PGM_Mgmt_Recovery_All>All at once</PGM_Mgmt_Recovery_All>
+  <PGM_Mgmt_Recovery_Manual>Manual only</PGM_Mgmt_Recovery_Manual>
+  <PGM_Mgmt_Status_Reason>Status: {0}</PGM_Mgmt_Status_Reason>
+  <PGM_Mgmt_PolicyNote>At most {0} switches change per pass. A trigger must hold for {1}, and consecutive batches are separated by {2}. This hysteresis stops rapid on/off cycling.</PGM_Mgmt_PolicyNote>
+  <PGM_Mgmt_Reason_Off>Automatic management is off. Monitoring is unaffected.</PGM_Mgmt_Reason_Off>
+  <PGM_Mgmt_Reason_NoData>No power reading is available yet.</PGM_Mgmt_Reason_NoData>
+  <PGM_Mgmt_Reason_NoBatteries>No usable battery capacity: no charge-based policy can be evaluated.</PGM_Mgmt_Reason_NoBatteries>
+  <PGM_Mgmt_Reason_ConditionsNotMet>Trigger conditions are not met; no switch will change.</PGM_Mgmt_Reason_ConditionsNotMet>
+  <PGM_Mgmt_Reason_Holding>Shedding is holding until the recovery charge is reached.</PGM_Mgmt_Reason_Holding>
+  <PGM_Mgmt_Reason_Stabilising>Trigger met, waiting for it to remain true long enough.</PGM_Mgmt_Reason_Stabilising>
+  <PGM_Mgmt_Reason_Cooldown>Waiting for the cooldown between switch batches.</PGM_Mgmt_Reason_Cooldown>
+  <PGM_Mgmt_Reason_NoCandidates>No opted-in consumer is currently available to shed or restore.</PGM_Mgmt_Reason_NoCandidates>
+  <PGM_Mgmt_Reason_Ready>Conditions met and a batch of switch changes is ready.</PGM_Mgmt_Reason_Ready>
+  <PGM_Mgmt_Reason_Preview>Preview only: these are the buildings the current policy could switch off.</PGM_Mgmt_Reason_Preview>
+  <PGM_Mgmt_PreviewTitle>Buildings this policy would affect ({0})</PGM_Mgmt_PreviewTitle>
+  <PGM_Mgmt_PreviewEmpty>No building is marked as sheddable. Mark buildings below, then preview the result here before enabling automation.</PGM_Mgmt_PreviewEmpty>
+  <PGM_Mgmt_PreviewSummary>Total measured draw</PGM_Mgmt_PreviewSummary>
+  <PGM_Mgmt_PreviewTip>Sum of the current measured draw of every building in the preview. At runtime the policy switches off only enough buildings to cover the observed deficit, up to the per-pass limit. This is a preview; nothing has been changed.</PGM_Mgmt_PreviewTip>
+  <PGM_Mgmt_MoreRows>… and {0} more</PGM_Mgmt_MoreRows>
+  <PGM_Mgmt_Priority>P{0}</PGM_Mgmt_Priority>
+  <PGM_Mgmt_GroupsTitle>Monitoring groups ({0})</PGM_Mgmt_GroupsTitle>
+  <PGM_Mgmt_EmptyGroups>No groups yet. Create one and assign buildings to it.</PGM_Mgmt_EmptyGroups>
+  <PGM_Mgmt_Create>Create</PGM_Mgmt_Create>
+  <PGM_Mgmt_Group_All>All</PGM_Mgmt_Group_All>
+  <PGM_Mgmt_Group_None>No group</PGM_Mgmt_Group_None>
+  <PGM_Mgmt_Group_Members>{0} members</PGM_Mgmt_Group_Members>
+  <PGM_Mgmt_Group_Delete>X</PGM_Mgmt_Group_Delete>
+  <PGM_Mgmt_Group_Mark>Mark</PGM_Mgmt_Group_Mark>
+  <PGM_Mgmt_Group_Clear>Clear</PGM_Mgmt_Group_Clear>
+  <PGM_Mgmt_Group_Tip>Mark: mark every member as sheddable. Clear: remove that mark. + raises the group priority (higher is shed first) and applies it to all members. X deletes the group and unassigns its members.</PGM_Mgmt_Group_Tip>
+  <PGM_Mgmt_BuildingsTitle>Power buildings ({0})</PGM_Mgmt_BuildingsTitle>
+  <PGM_Mgmt_NoBuildings>No building matches the current group filter.</PGM_Mgmt_NoBuildings>
+  <PGM_Mgmt_Page>Page {0} of {1}</PGM_Mgmt_Page>
+  <PGM_Mgmt_Prev>Prev</PGM_Mgmt_Prev>
+  <PGM_Mgmt_Next>Next</PGM_Mgmt_Next>
+  <PGM_Mgmt_SelectPrompt>Select a building in the list to control it, assign a group, set its shed priority or exclude it from diagnostics.</PGM_Mgmt_SelectPrompt>
+  <PGM_Mgmt_Selected>{0} — {1}</PGM_Mgmt_Selected>
+  <PGM_Mgmt_SelectedFlags>{0} · {1} control · {2} diagnostics</PGM_Mgmt_SelectedFlags>
+  <PGM_Mgmt_Flag_Sheddable>Sheddable</PGM_Mgmt_Flag_Sheddable>
+  <PGM_Mgmt_Flag_Critical>Protected</PGM_Mgmt_Flag_Critical>
+  <PGM_Mgmt_Flag_ExcludedControl>excluded from</PGM_Mgmt_Flag_ExcludedControl>
+  <PGM_Mgmt_Flag_ExcludedDiagnostics>excluded from</PGM_Mgmt_Flag_ExcludedDiagnostics>
+  <PGM_Mgmt_Flag_Allowed>included in</PGM_Mgmt_Flag_Allowed>
+  <PGM_Mgmt_Switch_On>on</PGM_Mgmt_Switch_On>
+  <PGM_Mgmt_Switch_Off>off</PGM_Mgmt_Switch_Off>
+  <PGM_Mgmt_Action_On>On</PGM_Mgmt_Action_On>
+  <PGM_Mgmt_Action_Off>Off</PGM_Mgmt_Action_Off>
+  <PGM_Mgmt_Action_Group>Group</PGM_Mgmt_Action_Group>
+  <PGM_Mgmt_Action_Locate>Locate</PGM_Mgmt_Action_Locate>
+  <PGM_Mgmt_Action_Sheddable>Shed</PGM_Mgmt_Action_Sheddable>
+  <PGM_Mgmt_Action_Protect>Protect</PGM_Mgmt_Action_Protect>
+  <PGM_Mgmt_Action_Exclude>Exclude</PGM_Mgmt_Action_Exclude>
+  <PGM_Mgmt_Action_Diagnostics>Diag. off</PGM_Mgmt_Action_Diagnostics>
+  <PGM_Mgmt_Action_AllowDiagnostics>Diag. on</PGM_Mgmt_Action_AllowDiagnostics>
+  <PGM_Mgmt_EventsTitle>Management actions ({0})</PGM_Mgmt_EventsTitle>
+  <PGM_Mgmt_EmptyEvents>No management actions have been recorded on this map.</PGM_Mgmt_EmptyEvents>
+  <PGM_Mgmt_EventRow>{0} ago — {1} — {2} — {3}</PGM_Mgmt_EventRow>
+  <PGM_Mgmt_Event_Ok>done</PGM_Mgmt_Event_Ok>
+  <PGM_Mgmt_Event_Failed>refused</PGM_Mgmt_Event_Failed>
+  <PGM_Mgmt_EventKind_ManualOff>Switched off</PGM_Mgmt_EventKind_ManualOff>
+  <PGM_Mgmt_EventKind_ManualOn>Switched on</PGM_Mgmt_EventKind_ManualOn>
+  <PGM_Mgmt_EventKind_AutomaticOff>Policy off</PGM_Mgmt_EventKind_AutomaticOff>
+  <PGM_Mgmt_EventKind_AutomaticOn>Policy on</PGM_Mgmt_EventKind_AutomaticOn>
+  <PGM_Mgmt_EventKind_RestoreAll>Restore</PGM_Mgmt_EventKind_RestoreAll>
+  <PGM_Mgmt_EventKind_Refused>Refused</PGM_Mgmt_EventKind_Refused>
+  <PGM_Mgmt_EventKind_Group>Group</PGM_Mgmt_EventKind_Group>
+  <PGM_Mgmt_EventKind_Priority>Priority</PGM_Mgmt_EventKind_Priority>
+  <PGM_Mgmt_EventKind_Policy>Policy</PGM_Mgmt_EventKind_Policy>
+  <PGM_Mgmt_EventKind_Tracking>Tracking</PGM_Mgmt_EventKind_Tracking>
+  <PGM_Mgmt_Event_MissingBuilding>Building no longer exists</PGM_Mgmt_Event_MissingBuilding>
+  <PGM_Mgmt_Event_AlreadyOn>Already switched on by the player</PGM_Mgmt_Event_AlreadyOn>
+  <PGM_Mgmt_Event_ShedReason>Low charge and a power deficit</PGM_Mgmt_Event_ShedReason>
+  <PGM_Mgmt_Event_RestoreReason>Recovery charge reached</PGM_Mgmt_Event_RestoreReason>
+  <PGM_Mgmt_Event_ManualRestore>Player requested restoration</PGM_Mgmt_Event_ManualRestore>
+  <PGM_Mgmt_Event_Policy>Policy</PGM_Mgmt_Event_Policy>
+  <PGM_Mgmt_Event_PolicyOn>Automatic management enabled</PGM_Mgmt_Event_PolicyOn>
+  <PGM_Mgmt_Event_PolicyOff>Automatic management disabled</PGM_Mgmt_Event_PolicyOff>
+  <PGM_Mgmt_Event_MarkedSheddable>Marked as sheddable</PGM_Mgmt_Event_MarkedSheddable>
+  <PGM_Mgmt_Event_UnmarkedSheddable>Marked as protected</PGM_Mgmt_Event_UnmarkedSheddable>
+  <PGM_Mgmt_Event_ExcludedManagement>Excluded from control</PGM_Mgmt_Event_ExcludedManagement>
+  <PGM_Mgmt_Event_AllowedManagement>Allowed control</PGM_Mgmt_Event_AllowedManagement>
+  <PGM_Mgmt_Event_ExcludedDiagnostics>Excluded from diagnostics</PGM_Mgmt_Event_ExcludedDiagnostics>
+  <PGM_Mgmt_Event_AllowedDiagnostics>Included in diagnostics</PGM_Mgmt_Event_AllowedDiagnostics>
+  <PGM_Mgmt_Event_GroupCreated>Group created</PGM_Mgmt_Event_GroupCreated>
+  <PGM_Mgmt_Event_GroupDeleted>Group deleted; members unassigned</PGM_Mgmt_Event_GroupDeleted>
+  <PGM_Mgmt_Cap_Controllable>Controllable</PGM_Mgmt_Cap_Controllable>
+  <PGM_Mgmt_Cap_ControllableTip>Uses a standard flick component; the public toggle gizmo is re-checked immediately before any switch change.</PGM_Mgmt_Cap_ControllableTip>
+  <PGM_Mgmt_Cap_Modded>Modded switch</PGM_Mgmt_Cap_Modded>
+  <PGM_Mgmt_Cap_ModdedTip>The flick component comes from another mod. It is only controlled if it exposes exactly one standard public toggle gizmo.</PGM_Mgmt_Cap_ModdedTip>
+  <PGM_Mgmt_Cap_UnsupportedControl>Not controllable</PGM_Mgmt_Cap_UnsupportedControl>
+  <PGM_Mgmt_Cap_UnsupportedControlTip>This building has no safe public switch path. It is never controlled by this mod.</PGM_Mgmt_Cap_UnsupportedControlTip>
+  <PGM_Mgmt_Cap_UnknownConnection>Connection unconfirmed</PGM_Mgmt_Cap_UnknownConnection>
+  <PGM_Mgmt_Cap_UnknownConnectionTip>Network membership could not be confirmed for this refresh, so control is deferred.</PGM_Mgmt_Cap_UnknownConnectionTip>
+  <PGM_Mgmt_Cap_Missing>Building missing</PGM_Mgmt_Cap_Missing>
+  <PGM_Mgmt_Cap_NoFlick>No flick switch</PGM_Mgmt_Cap_NoFlick>
+  <PGM_Mgmt_Cap_Unsupported>Unsupported component</PGM_Mgmt_Cap_Unsupported>
+  <PGM_Mgmt_Cap_Excluded>Excluded by you</PGM_Mgmt_Cap_Excluded>
+  <PGM_Mgmt_Cap_NotColonist>Not a colonist building</PGM_Mgmt_Cap_NotColonist>
+  <PGM_Mgmt_Result_Success>switch changed</PGM_Mgmt_Result_Success>
+  <PGM_Mgmt_Result_Already>already in that state</PGM_Mgmt_Result_Already>
+  <PGM_Mgmt_Result_Missing>building is gone</PGM_Mgmt_Result_Missing>
+  <PGM_Mgmt_Result_NoFlick>no flickable component</PGM_Mgmt_Result_NoFlick>
+  <PGM_Mgmt_Result_Pending>a player-requested flick is pending</PGM_Mgmt_Result_Pending>
+  <PGM_Mgmt_Result_NoToggle>no standard toggle gizmo</PGM_Mgmt_Result_NoToggle>
+  <PGM_Mgmt_Result_Ambiguous>more than one toggle gizmo</PGM_Mgmt_Result_Ambiguous>
+  <PGM_Mgmt_Result_Failed>control could not be completed</PGM_Mgmt_Result_Failed>
+  <PGM_Mgmt_Result_Verify>final state could not be verified</PGM_Mgmt_Result_Verify>
+  <PGM_Mgmt_Result_PolicyOff>management is disabled</PGM_Mgmt_Result_PolicyOff>
+  <PGM_Mgmt_Master_Label>Enable optional power controls</PGM_Mgmt_Master_Label>
+  <PGM_Mgmt_Master_Tip>Adds on/off buttons, monitoring groups and exclusion options to the dashboard. Off by default. Monitoring, history, diagnostics and forecasting work without it.</PGM_Mgmt_Master_Tip>
+  <PGM_Mgmt_Automation_Label>Enable automatic load shedding</PGM_Mgmt_Automation_Label>
+  <PGM_Mgmt_Automation_Tip>Off by default and requires optional controls. Only buildings explicitly marked as sheddable are ever switched off, and disabling this restores the buildings the policy switched off.</PGM_Mgmt_Automation_Tip>
+  <PGM_Mgmt_RequireDeficit_Label>Only shed during a power deficit</PGM_Mgmt_RequireDeficit_Label>
+  <PGM_Mgmt_RequireDeficit_Tip>Require a measured shortfall as well as low battery charge before shedding. Recommended: without it, low charge alone can switch buildings off even while generation covers demand.</PGM_Mgmt_RequireDeficit_Tip>
+  <PGM_Mgmt_LowSetting_Label>Shed below charge: {0}</PGM_Mgmt_LowSetting_Label>
+  <PGM_Mgmt_LowSetting_Tip>Usable battery charge at or below which shedding is considered. The condition must hold for the stability period below.</PGM_Mgmt_LowSetting_Tip>
+  <PGM_Mgmt_RestoreSetting_Label>Restore above charge: {0}</PGM_Mgmt_RestoreSetting_Label>
+  <PGM_Mgmt_RestoreSetting_Tip>Usable battery charge at or above which switched-off buildings are restored. Always kept at least 5 percentage points above the shed threshold (hysteresis).</PGM_Mgmt_RestoreSetting_Tip>
+  <PGM_Mgmt_Stable_Label>Trigger must hold for: {0}</PGM_Mgmt_Stable_Label>
+  <PGM_Mgmt_Stable_Tip>How long the trigger or recovery condition must remain true before any switch changes. Prevents acting on a momentary dip.</PGM_Mgmt_Stable_Tip>
+  <PGM_Mgmt_Cooldown_Label>Cooldown between batches: {0}</PGM_Mgmt_Cooldown_Label>
+  <PGM_Mgmt_Cooldown_Tip>Minimum gap between two batches of automatic switch changes. Prevents repeated toggling.</PGM_Mgmt_Cooldown_Tip>
+  <PGM_Mgmt_MaxActions_Label>Maximum switches per batch: {0}</PGM_Mgmt_MaxActions_Label>
+  <PGM_Mgmt_MaxActions_Tip>At most this many buildings are changed in one evaluation. The policy also stops once measured savings cover the observed deficit.</PGM_Mgmt_MaxActions_Tip>
+  <PGM_Mgmt_RecoverySetting_Label>Recovery rule: {0}</PGM_Mgmt_RecoverySetting_Label>
+  <PGM_Mgmt_RecoverySetting_Tip>Staged restores a few buildings at a time (most important first). All at once restores every tracked building. Manual only leaves restoration to the Restore now button.</PGM_Mgmt_RecoverySetting_Tip>
+  <PGM_Mgmt_SettingsNote>Switch priorities (1–6) and group membership are configured per building in the Management tab. A higher priority number is shed first and restored last. Unmarked buildings are always protected.</PGM_Mgmt_SettingsNote>
 </LanguageData>

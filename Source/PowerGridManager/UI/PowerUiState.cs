@@ -12,7 +12,8 @@ namespace PowerGridManager
         Buildings,
         History,
         Diagnostics,
-        Forecast
+        Forecast,
+        Management
     }
 
     /// <summary>Which advisories the diagnostics tab shows.</summary>
@@ -122,6 +123,13 @@ namespace PowerGridManager
         public Vector2 DetailScroll;
         public Vector2 DiagnosticScroll;
         public Vector2 ForecastScroll;
+        public Vector2 ManagementScroll;
+
+        // Management tab view state. Never persisted: it is transient UI state only.
+        public string ManagementSelectedId;
+        public string ManagementGroupFilter = "";
+        public string ManagementNewGroupName = "";
+        public int ManagementPage;
 
         /// <summary>Drops a selection whose building no longer exists or was despawned.</summary>
         public void ValidateSelection()

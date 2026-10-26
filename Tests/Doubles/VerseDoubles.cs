@@ -99,12 +99,22 @@ namespace Verse
     public class Thing
     {
         public ThingDef def;
+        public int thingIDNumber = -1;
+        public RimWorld.Faction factionInt = RimWorld.Faction.OfPlayer;
         public IntVec3 Position;
         public Map Map;
         public bool Spawned = true;
         public bool Destroyed;
         public Room RoomRef;
         public List<ThingComp> AllComps = new List<ThingComp>();
+
+        /// <summary>Mirrors Verse.Thing.ThingID, which the game persists as the "id" node.</summary>
+        public string ThingID => def == null ? "" : def.defName + thingIDNumber;
+
+        /// <summary>Mirrors ILoadReferenceable.GetUniqueLoadID for a Thing.</summary>
+        public string GetUniqueLoadID() => "Thing_" + ThingID;
+
+        public RimWorld.Faction Faction => factionInt;
 
         public T GetComp<T>() where T : ThingComp
         {
@@ -132,6 +142,33 @@ namespace Verse
         // Vanilla declares ThingWithComps; every fixture in this harness parents comps to a
         // Building, so the narrower type keeps the scenario builders simple.
         public Building parent;
+
+        public virtual IEnumerable<Gizmo> CompGetGizmosExtra()
+        {
+            yield break;
+        }
+    }
+
+    public class Gizmo
+    {
+        public string defaultLabel;
+        public string defaultDesc;
+        public bool disabled;
+    }
+
+    public class Command : Gizmo { }
+
+    /// <summary>Mirrors Verse.Command_Toggle's public delegates.</summary>
+    public class Command_Toggle : Command
+    {
+        public Func<bool> isActive;
+        public Action toggleAction;
+    }
+
+    public static class Log
+    {
+        public static readonly List<string> Warnings = new List<string>();
+        public static void Warning(string text) { Warnings.Add(text); }
     }
 
     public class ListerBuildings
@@ -142,9 +179,12 @@ namespace Verse
 
     public class Map
     {
+        public int uniqueID = -1;
         public RimWorld.PowerNetManager powerNetManager = new RimWorld.PowerNetManager();
         public ListerBuildings listerBuildings = new ListerBuildings();
         public Dictionary<Type, MapComponent> components = new Dictionary<Type, MapComponent>();
+        /// <summary>Test-only stand-in for DesignationDefOf.Flick designations.</summary>
+        public HashSet<Thing> flickDesignations = new HashSet<Thing>();
 
         public T GetComponent<T>() where T : MapComponent
         {
