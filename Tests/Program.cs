@@ -35,9 +35,13 @@ namespace PowerGridManager
                 }
                 catch (Exception exception)
                 {
-                    failures.Add(phase.Key + ": " + exception.Message);
+                    string failure = phase.Key + ": " + exception.Message;
+                    failures.Add(failure);
                     Console.WriteLine("FAILED " + phase.Key);
                     Console.WriteLine(exception);
+                    // GitHub Actions has no console output in the checks API, so mirror the
+                    // failure into an annotation that reviewers (and automation) can read.
+                    Annotate("::error::" + EscapeAnnotation(failure + " | " + exception.StackTrace));
                 }
             }
 
@@ -51,7 +55,24 @@ namespace PowerGridManager
 
             Console.WriteLine("FAILURES:");
             foreach (string failure in failures) Console.WriteLine(" - " + failure);
+            Annotate("::error::" + EscapeAnnotation(
+                failures.Count + " test phase(s) failed: " + string.Join("; ", failures)));
             return 1;
+        }
+
+        private static void Annotate(string annotation)
+        {
+            if (string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine(annotation);
+            }
+        }
+
+        private static string EscapeAnnotation(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            return text.Replace("%", "%25").Replace("\r", "%0D").Replace("\n", "%0A");
         }
     }
 }
