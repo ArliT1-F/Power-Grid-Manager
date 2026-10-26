@@ -56,11 +56,11 @@ namespace PowerGridManager
         {
             switch (range)
             {
-                case PowerTimeRange.LastHour: return GenDate.TicksPerHour;
-                case PowerTimeRange.LastSixHours: return GenDate.TicksPerHour * 6;
-                case PowerTimeRange.LastDay: return GenDate.TicksPerDay;
-                case PowerTimeRange.LastThreeDays: return GenDate.TicksPerDay * 3;
-                default: return GenDate.TicksPerDay * 7;
+                case PowerTimeRange.LastHour: return PowerTime.TicksPerHour;
+                case PowerTimeRange.LastSixHours: return PowerTime.TicksPerHour * 6;
+                case PowerTimeRange.LastDay: return PowerTime.TicksPerDay;
+                case PowerTimeRange.LastThreeDays: return PowerTime.TicksPerDay * 3;
+                default: return PowerTime.TicksPerDay * 7;
             }
         }
 

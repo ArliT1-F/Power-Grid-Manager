@@ -150,7 +150,10 @@ namespace PowerGridManager
             Scribe_Values.Look(ref lastSampleIntervalTicks, "sampleInterval", 2500);
             Scribe_Values.Look(ref lastSampleTick, "lastSampleTick", -1);
 
-            if (Scribe.mode == LoadSaveMode.Saving || Scribe.mode == LoadSaveMode.SavingReference)
+            // The five parallel lists below are written in the plain Saving pass, which is
+            // the pass every game build performs. LoadSaveMode has gained and lost members
+            // between game generations, so only long-standing values are referenced here.
+            if (Scribe.mode == LoadSaveMode.Saving)
             {
                 FillSerializedLists();
             }

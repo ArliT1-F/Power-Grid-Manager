@@ -408,9 +408,9 @@ namespace PowerGridManager
             TestAssert.Equal(PowerFormatting.FormatCharge(null), "PGM_Value_Unknown", "unknown charge");
             TestAssert.Equal(PowerFormatting.FormatCharge(0.456f), "46%", "charge percent");
             TestAssert.Equal(PowerFormatting.FormatCharge(1.4f), "100%", "charge clamped");
-            TestAssert.Equal(PowerFormatting.FormatDuration(GenDate.TicksPerHour), "1.0 PGM_Unit_Hour", "one hour");
-            TestAssert.Equal(PowerFormatting.FormatDuration(GenDate.TicksPerDay), "1.0 PGM_Unit_Day", "one day");
-            TestAssert.Equal(PowerFormatting.FormatDuration(GenDate.TicksPerHour / 2), "30 PGM_Unit_Minute", "half hour");
+            TestAssert.Equal(PowerFormatting.FormatDuration(PowerTime.TicksPerHour), "1.0 PGM_Unit_Hour", "one hour");
+            TestAssert.Equal(PowerFormatting.FormatDuration(PowerTime.TicksPerDay), "1.0 PGM_Unit_Day", "one day");
+            TestAssert.Equal(PowerFormatting.FormatDuration(PowerTime.TicksPerHour / 2), "30 PGM_Unit_Minute", "half hour");
             TestAssert.Equal(PowerFormatting.EstimateDailyWattDays(250f), 250f, "one day at constant draw");
             TestAssert.Equal(PowerFormatting.EstimateDailyWattDays(-5f), 0f, "no negative daily energy");
             TestAssert.Equal(PowerFormatting.FormatPosition(-3, 12), "(-3, 12)", "position formatting");

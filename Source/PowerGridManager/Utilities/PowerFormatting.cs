@@ -79,17 +79,17 @@ namespace PowerGridManager
         public static string FormatDuration(int ticks)
         {
             int magnitude = Math.Abs(ticks);
-            if (magnitude < GenDate.TicksPerHour)
+            if (magnitude < PowerTime.TicksPerHour)
             {
-                float minutes = magnitude * 60f / GenDate.TicksPerHour;
+                float minutes = magnitude * 60f / PowerTime.TicksPerHour;
                 return FormatFixed(minutes, minutes < 10f ? 1 : 0) + " " + "PGM_Unit_Minute".Translate().ToString();
             }
-            if (magnitude < GenDate.TicksPerDay)
+            if (magnitude < PowerTime.TicksPerDay)
             {
-                float hours = magnitude / (float)GenDate.TicksPerHour;
+                float hours = magnitude / (float)PowerTime.TicksPerHour;
                 return FormatFixed(hours, hours < 10f ? 1 : 0) + " " + "PGM_Unit_Hour".Translate().ToString();
             }
-            float days = magnitude / (float)GenDate.TicksPerDay;
+            float days = magnitude / (float)PowerTime.TicksPerDay;
             return FormatFixed(days, days < 10f ? 1 : 0) + " " + "PGM_Unit_Day".Translate().ToString();
         }
 
