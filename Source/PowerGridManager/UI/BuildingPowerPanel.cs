@@ -25,7 +25,7 @@ namespace PowerGridManager
         public BuildingListModel Model => model;
 
         public void Draw(Rect rect, PowerGridSnapshot snapshot, PowerUiState state,
-            PowerGridManagerSettings settings)
+            PowerGridManagerSettings settings, PowerManagementController management = null, int tick = 0)
         {
             state.ValidateSelection();
 
@@ -34,7 +34,9 @@ namespace PowerGridManager
             y += ToolbarHeight + 4f;
 
             bool hasSelection = state.SelectedBuilding != null;
-            float detailSpace = hasSelection ? DetailHeight + 6f : 0f;
+            bool showManagement = hasSelection && management != null && settings != null &&
+                                  settings.ManagementEnabled;
+            float detailSpace = hasSelection ? DetailHeight + 6f + (showManagement ? 34f : 0f) : 0f;
             float tableHeight = Mathf.Max(60f, rect.yMax - y - detailSpace);
             Rect tableRect = new Rect(rect.x, y, rect.width, tableHeight);
 
@@ -47,7 +49,7 @@ namespace PowerGridManager
             {
                 Rect detail = new Rect(rect.x, tableRect.yMax + 6f, rect.width,
                     Mathf.Max(0f, rect.yMax - tableRect.yMax - 6f));
-                DrawDetail(detail, state);
+                DrawDetail(detail, state, settings, management, tick, showManagement);
             }
         }
 
@@ -337,7 +339,8 @@ namespace PowerGridManager
             statusColor = PowerUiDraw.Good;
         }
 
-        private void DrawDetail(Rect rect, PowerUiState state)
+        private void DrawDetail(Rect rect, PowerUiState state, PowerGridManagerSettings settings,
+            PowerManagementController management, int tick, bool showManagement)
         {
             PowerUiDraw.Panel(rect);
             Building building = state.SelectedBuilding;
@@ -400,7 +403,7 @@ namespace PowerGridManager
                 float fieldX = rect.x + 8f + column * columnWidth;
                 float fieldY = y + row * 18f;
                 Rect fieldRect = new Rect(fieldX, fieldY, columnWidth, 18f);
-                if (fieldY + 18f > rect.yMax - 34f) break;
+                if (fieldY + 18f > rect.yMax - (showManagement ? 84f : 34f)) break;
                 DetailField field = fields[i];
                 PowerUiDraw.LabelValue(fieldRect, field.LabelKey.Translate(), field.Value,
                     Mathf.Min(labelWidth, columnWidth - 90f), field.ValueColor);
@@ -424,6 +427,100 @@ namespace PowerGridManager
             {
                 state.SelectedBuilding = null;
             }
+
+            if (showManagement)
+            {
+                DrawManagementRow(new Rect(rect.x + 8f, buttonY - 30f, rect.width - 16f, 26f),
+                    building, snapshot, snapshot, settings, management, tick);
+            }
+        }
+
+        /// <summary>
+        /// Optional controls on the building detail card. They are only drawn when the player has
+        /// explicitly enabled management, and incompatible buildings show a reason instead of a
+        /// switch button.
+        /// </summary>
+        private void DrawManagementRow(Rect rect, Building building, BuildingPowerSnapshot row,
+            PowerGridSnapshot mapSnapshot, PowerGridManagerSettings settings,
+            PowerManagementController management, int tick)
+        {
+            PowerManagementRegistry registry = management.Registry;
+            PowerManagementRecord record = registry == null ? null : registry.Find(building);
+            PowerControlSupport support = CompatibilityRegistry.EvaluateControl(row, registry);
+            bool usable = support != PowerControlSupport.Unsupported &&
+                          support != PowerControlSupport.Pending;
+
+            float x = rect.x;
+            float width = Mathf.Max(52f, (rect.width - 16f) / 5f);
+            Rect onRect = new Rect(x, rect.y, width, 24f);
+            if (Widgets.ButtonText(onRect, "PGM_Mgmt_Action_On".Translate()) && usable)
+            {
+                string detail;
+                management.ManualSwitch(mapSnapshot, building, true, settings, tick, out detail);
+            }
+            x += width + 4f;
+            Rect offRect = new Rect(x, rect.y, width, 24f);
+            if (Widgets.ButtonText(offRect, "PGM_Mgmt_Action_Off".Translate()) && usable)
+            {
+                string detail;
+                management.ManualSwitch(mapSnapshot, building, false, settings, tick, out detail);
+            }
+            x += width + 4f;
+            Rect groupRect = new Rect(x, rect.y, width, 24f);
+            if (Widgets.ButtonText(groupRect, "PGM_Mgmt_Action_Group".Translate()))
+            {
+                OpenGroupMenuForDetail(management, building, tick);
+            }
+            x += width + 4f;
+            Rect shedRect = new Rect(x, rect.y, width, 24f);
+            if (Widgets.ButtonText(shedRect, record != null && record.Sheddable
+                    ? "PGM_Mgmt_Action_Protect".Translate() : "PGM_Mgmt_Action_Sheddable".Translate()))
+            {
+                management.SetSheddable(building, record == null || !record.Sheddable, tick);
+            }
+            x += width + 4f;
+            Rect diagRect = new Rect(x, rect.y, Mathf.Max(0f, rect.xMax - x), 24f);
+            if (Widgets.ButtonText(diagRect, record != null && record.ExcludeFromDiagnostics
+                    ? "PGM_Mgmt_Action_AllowDiagnostics".Translate()
+                    : "PGM_Mgmt_Action_Diagnostics".Translate()))
+            {
+                management.SetExcludedFromDiagnostics(building,
+                    record == null || !record.ExcludeFromDiagnostics, tick);
+            }
+
+            Rect supportRect = new Rect(rect.x, rect.y - 18f, rect.width, 18f);
+            PowerUiDraw.TextEllipsized(supportRect,
+                "PGM_Detail_Management".Translate(
+                    CompatibilityRegistry.ControlLabelKey(support).Translate(),
+                    "PGM_Mgmt_Priority".Translate(record == null
+                        ? PowerManagementRegistry.DefaultPriority : record.ShedPriority),
+                    record == null || record.Group.Length == 0
+                        ? "PGM_Mgmt_Group_None".Translate().ToString() : record.Group),
+                usable ? PowerUiDraw.Muted : PowerUiDraw.Warn);
+            PowerUiDraw.Tip(supportRect,
+                CompatibilityRegistry.ControlTooltipKey(support).Translate());
+        }
+
+        private static void OpenGroupMenuForDetail(PowerManagementController management,
+            Building building, int tick)
+        {
+            PowerManagementRegistry registry = management.Registry;
+            var options = new List<FloatMenuOption>(registry.GroupCount + 1)
+            {
+                new FloatMenuOption("PGM_Mgmt_Group_None".Translate(), delegate
+                {
+                    management.SetGroup(building, "", tick);
+                })
+            };
+            for (int i = 0; i < registry.GroupCount; i++)
+            {
+                string name = registry.Groups[i];
+                options.Add(new FloatMenuOption(name, delegate
+                {
+                    management.SetGroup(building, name, tick);
+                }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
         }
 
         private struct DetailField

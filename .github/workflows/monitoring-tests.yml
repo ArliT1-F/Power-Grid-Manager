@@ -10,7 +10,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      # XML/key/source hygiene checks need no game assemblies or third-party packages.
+      - run: python3 Tests/static_checks.py
       # Links the production sources against test doubles and runs the monitoring,
-      # dashboard, history and localization checks. This does not prove compatibility
-      # with the real RimWorld assemblies; that requires the game installation.
+      # dashboard, history, diagnostics, forecast, management, compatibility and
+      # localization checks. This does not prove binary compatibility with the real
+      # RimWorld assemblies; that requires a game installation.
       - run: dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release

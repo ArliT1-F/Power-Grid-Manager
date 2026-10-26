@@ -2,9 +2,12 @@
 
 Two separate levels exist, and they must not be confused:
 
-1. **Offline logic harness** — runs here, compiles the production sources against minimal
-   game doubles. Proves measurement, filtering, history, chart and localization logic.
-   It cannot prove compatibility with the real game assemblies, rendering, or performance.
+1. **Offline logic harness** — compiles the production sources against minimal game doubles.
+   Proves measurement, filtering, history, chart, diagnostics, forecast, management and
+   localization logic. It cannot prove compatibility with the real game assemblies, rendering,
+   or performance. **In the Phase 7/8 continuation no .NET SDK was available in this
+   workspace**, so the harness was extended but could not be executed here; CI and a local
+   `dotnet run` execute it.
 2. **In-game validation** — requires an installed RimWorld build. Everything in this
    document's second half is still outstanding.
 
@@ -19,7 +22,8 @@ Exit code is 0 only when every check passes. The project links
 `../Source/PowerGridManager/**/*.cs` plus `Tests/Doubles/*.cs`, so a compile error in the
 mod also fails the harness.
 
-What it covers (493 checks at the time of writing):
+What it covers (the Phase 1–6 harness reported 493 checks; Phases 7–8 add the categories
+below, and the harness prints the exact total when run):
 
 - **Phase 2 monitoring (32):** empty maps, signed trader output, `PowerOn` gating, flick
   state, batteries and EMP, deficit counting, independent networks, non-colonist buildings,
@@ -53,10 +57,24 @@ What it covers (493 checks at the time of writing):
   `ComputeForecast` with real samples; headless passes over the forecast and network panels
   at three sizes; and the read-only guarantee that forecasting leaves the simulation and the
   reported measurements untouched.
-- **Localization and metadata (41):** every `PGM_` key referenced in source exists in the
-  English keyed file, format-placeholder counts are sufficient, the keyed/def/About XML
-  parse, the def wires the right tab window type, the icon texture exists, and the window
-  type derives from `MainTabWindow`.
+- **Phase 7 management (new):** settings defaults and clamping; settings save/load and older
+  saves without management nodes; control API success, no-op, pending-flick refusal, missing
+  gizmo, ambiguous toggles, throwing modded gizmo, destroyed buildings and unsupported
+  components; stable load IDs across reload; registry corruption, duplicates, bounds,
+  long-missing pruning and group bulk actions; bounded event log save/load; disabled policy,
+  no batteries, EMP, generators/batteries excluded, priority ordering, measured-savings
+  selection, per-pass caps, stability, cooldown, mid-band hysteresis, staged/all/manual
+  recovery, destroyed buildings, controller integration, component serialization and
+  per-building diagnostics exclusion; headless Management tab draw at four sizes.
+- **Phase 8 compatibility/performance (new):** production source hygiene (no LINQ,
+  reflection, Harmony, threads, `Log.Error` or DLC namespaces), metadata/no-DLC audit,
+  a 10,000-building synthetic colony with bounded-time assertions, multi-map staggering,
+  modded trader/battery/unknown components, full component save/load, older saves, map
+  removal, and an all-tab window regression at three resolutions.
+- **Localization and metadata (41 in Phase 1–6, now 568 keys):** every `PGM_` key referenced
+  in source exists in the English keyed file, format-placeholder counts are sufficient, the
+  keyed/def/About XML parse, the def wires the right tab window type, the icon texture exists,
+  and the window type derives from `MainTabWindow`.
 
 The harness proves nothing about the draw calls themselves: `Widgets`, `GUI` and rendering
 are inert doubles.
@@ -140,6 +158,25 @@ and check the log after each step. Record the results next to each item.
 - [ ] Nothing the forecast does changes the vanilla power simulation (compare a control save
       without the mod).
 
+### Management (Phase 7)
+
+- [ ] Default settings: the Management tab says OFF; no building is ever switched.
+- [ ] Enable controls only: on/off buttons work and the vanilla gizmo checkbox, switch and
+      flick designation stay in sync; colonists do not re-flick the building.
+- [ ] Enable automation with no sheddable buildings: preview is empty and nothing switches.
+- [ ] Mark two non-critical consumers sheddable with different priorities: the preview lists
+      both, the higher shed-priority number goes first and the event log records it.
+- [ ] Drain batteries below the threshold with a deficit: stability and cooldown are visible,
+      then a bounded batch is applied; charge between thresholds does not restore.
+- [ ] Recharge above the recovery threshold: staged / all / manual recovery behave as set.
+- [ ] Disable automation mid-shedding: every auto-shed building is restored.
+- [ ] Destroy, uninstall and replace a configured building: no stale control, no exception;
+      the replacement stays protected until configured again.
+- [ ] Exclude a building from diagnostics and confirm its building-level advisory disappears
+      while network advisories remain.
+- [ ] Save/reload and restart with a policy armed: settings, groups, priorities, exclusions,
+      event history and tracked switches survive.
+
 ### Compatibility and performance
 
 - [ ] A modded consumer, a modded generator and a modded battery behave sanely; custom
@@ -160,15 +197,25 @@ and check the log after each step. Record the results next to each item.
 
 ## 3. Static checks performed in this environment
 
-- Full compile of all production sources plus the harness against the local .NET 10
-  runtime (Roslyn), then execution of all 493 checks.
-- API signatures cross-checked against a public RimWorld 1.6 decompilation reference:
-  `MainTabWindow`, `MainButtonDef`, `TabDrawer`, `TabRecord.GetTip`, `Widgets.*`,
-  `Text.*`, `Map.FillComponents` auto-instantiation, `Map.GetComponent<T>`,
-  `MapComponent` hooks, `Scribe_*`, `CompPower*`, `CompFlickable`, `Room`/`RoomRoleDef`,
-  `CameraJumper`, `Dialog_InfoCard`, `FloatMenu`.
-- XML parsing of `About.xml`, the `MainButtonDef` and the English keyed file.
+Earlier phases reported a full Roslyn compile of the production sources plus the harness
+against a local .NET runtime and execution of the 493 checks. **That toolchain is not present
+in the Phase 7/8 continuation workspace.** The following checks were run here instead:
+
+- `python3 Tests/static_checks.py --syntax` — 1,853 assertions, 0 failures: XML parsing of
+  `About.xml`, all defs and the English keyed file; 568 localization keys with placeholder
+  counts; duplicate keys; forbidden API patterns; no DLC namespaces; no `PackageReference`
+  or Harmony in the production project; def wiring and icon existence.
+- Roslyn **syntax** parsing of all 50 C# files through the WASM build of CSharpier
+  (`@scalar/csharp-fmt`), 0 parse failures. This is a parser, not a semantic compiler.
+- Manual member cross-check of every new Phase 7/8 type against its declaration and the game
+  doubles, and API signature cross-checks against the public 1.5.4409 and 1.6 decompilation
+  references for `CompFlickable`, `FlickUtility`, `Command_Toggle`, `ThingComp`,
+  `Thing.GetUniqueLoadID`, `Map.uniqueID`, `Scribe_Deep`, `Scribe_Values`, `ParseHelper`,
+  `JobDriver_Flick` and `WorkGiver_Flick`.
 - `git diff --check` for whitespace errors.
 
-**Not performed:** compiling against the real game assemblies, launching the game, real
-save/load, real rendering, profiling.
+**Not performed in this workspace:** semantic compilation against official game assemblies
+or even the doubles (no `dotnet`), execution of the C# harness, launching the game, real
+save/load, real rendering, Harmony patch verification or frame-time profiling. The
+`CompatibilityTests` timing assertions run only when the harness is executed in an
+environment with .NET; their generous bounds are regression guards, not performance claims.

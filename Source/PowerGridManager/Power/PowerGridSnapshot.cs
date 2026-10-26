@@ -94,6 +94,13 @@ namespace PowerGridManager
         public bool IsFlickable { get; internal set; }
         public bool? SwitchIsOn { get; internal set; }
 
+        /// <summary>
+        /// True when the flick component's type lives outside the game assembly. Such a building
+        /// can still be controlled if it exposes the standard public toggle gizmo; the UI labels
+        /// it as a modded implementation rather than claiming verified vanilla behaviour.
+        /// </summary>
+        public bool IsCustomFlickable { get; internal set; }
+
         public bool IsConsumer { get; internal set; }
         public bool IsGenerator { get; internal set; }
         public bool IsBattery { get; internal set; }

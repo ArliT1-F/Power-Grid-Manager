@@ -1,5 +1,62 @@
 # Changelog
 
+## Unreleased — Phase 8: compatibility and optimization
+
+- Hardened save/load after inspecting `Verse/Scribe_Deep.Look`, `PostLoadInitter` and
+  `ScribeExtractor`: `Scribe_Deep.Look` does nothing in `PostLoadInit`, and nested objects are
+  re-entered there only when `PostLoadInitter` registered them during `LoadingVars`.
+  `PowerHistoryTracker` and all Phase 7 persisted objects now clamp/normalise at the end of
+  `LoadingVars` as well (both passes are idempotent), so bounds, format versions and
+  deduplication do not depend on that registration detail.
+- Staggered first scans across multiple maps using the persisted `Map.uniqueID`; opening the
+  tab forces an immediate scan so the stagger never shows a waiting state.
+- Cached the Management tab's preview plan and row list against the snapshot, settings and a
+  revision counter; added fast paths so an empty registry costs no per-building ID work.
+  No per-frame full scan, no LINQ, no reflection, no background work.
+- Extended compatibility classification with assembly *and* namespace detection for modded
+  `CompPower` / `CompFlickable` types, plus a separate `PowerControlSupport` level. Modded
+  flick components with zero or multiple public toggle gizmos are refused explicitly.
+- Added `Tests/CompatibilityTests.cs` (source hygiene, no-DLC/metadata audit, 10,000-building
+  synthetic colony, multi-map staggering, modded trader/battery/unknown component, full
+  component save/load, older saves without management data, map removal, all-tab window
+  regression) and `Tests/static_checks.py` (dependency-free XML/key/placeholder/source check
+  with an optional Roslyn syntax parse via `@scalar/csharp-fmt`). CI now runs the static checker.
+- Added `Docs/PHASE-8-COMPATIBILITY.md`: verification matrix, version status (1.5/1.6 API
+  research, 1.7 configured but unverified), measured/configured/estimated contract, known
+  limitations and an in-game validation checklist.
+- No official game binaries or profiler were available here: no compilation, frame-time
+  profiling, Harmony patch check or in-game exception scan was performed.
+
+## Unreleased — Phase 7: optional management (off by default)
+
+- Added `ManagementEnabled` and `LoadSheddingEnabled`, both false by default and saved with the
+  mod settings. Monitoring, history, diagnostics and forecasting are independent of them.
+- Added `Integration/BuildingPowerControl.cs`: the only writer to a building's power state.
+  It syncs the private desired state through the vanilla `Command_Toggle.toggleAction`, applies
+  the public `CompFlickable.SwitchIsOn` setter, clears any flick designation, and verifies the
+  result. No reflection, no Harmony, no simulation mutation. Pending player flicks,
+  unsupported components, unconfirmed connections and ambiguous gizmos are refused.
+- Added a bounded, map-scoped `PowerManagementRegistry` keyed by `Thing.GetUniqueLoadID()`:
+  monitoring groups, per-building shed priorities (1–6), explicit sheddable/protected flags,
+  exclusion from control and exclusion from building-level diagnostics. Loads tolerate missing,
+  truncated, duplicate and future-version data; destroyed/replaced buildings lose no safety.
+- Added `LoadSheddingEngine`: read-only decisions over the cached snapshot with usable charge,
+  measured deficit, a low/recovery hysteresis band, a stability window, a cooldown, a per-pass
+  cap, priority ordering and configurable staged/all/manual recovery. Only opted-in, currently
+  drawing consumers are shed; generators, batteries and unknown components never are.
+- Added `LoadSheddingState` (tracked switches, condition memory) and a bounded
+  `PowerManagementEventLog`. Disabling automation restores everything the policy switched off;
+  missing buildings are untracked and recorded.
+- Added the **Management** tab: status pill, separate enable/automation switches, threshold and
+  recovery presets, a read-only "buildings this policy would affect" preview, group management,
+  a paged building table with on/off/group/priority/exclude/locate actions, and an event
+  history. Building detail cards gain on/off, group and diagnostics-exclusion controls when
+  management is enabled.
+- Added 162 English keyed strings; every referenced key and placeholder count is checked.
+- Extended `Tests/Doubles` with the verified flick/gizmo/load-ID contracts and added
+  `Tests/ManagementTests.cs`. See `Docs/PHASE-7-MANAGEMENT.md` for API evidence and the
+  in-game checklist. Not compiled against game assemblies or validated in game here.
+
 ## Unreleased — build compatibility
 
 - Removed the compile-time dependency on `Verse.GenDate`: durations, retention and chart

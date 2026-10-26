@@ -21,6 +21,7 @@ namespace PowerGridManager
         private readonly PowerHistoryPanel historyPanel = new PowerHistoryPanel();
         private readonly PowerDiagnosticsPanel diagnosticsPanel = new PowerDiagnosticsPanel();
         private readonly PowerForecastPanel forecastPanel = new PowerForecastPanel();
+        private readonly PowerManagementPanel managementPanel = new PowerManagementPanel();
         private List<TabRecord> tabs;
 
         /// <summary>Window view state. Internal so the offline harness can drive each tab.</summary>
@@ -35,7 +36,7 @@ namespace PowerGridManager
             Map map = Find.CurrentMap;
             if (map == null) return;
             PowerGridManagerComponent component = map.GetComponent<PowerGridManagerComponent>();
-            if (component != null) component.RefreshIfStale(Find.TickManager.TicksGame);
+            if (component != null) component.RefreshIfStale(Find.TickManager.TicksGame, true);
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -81,7 +82,7 @@ namespace PowerGridManager
                     networkPanel.Draw(content, snapshot, state, settings, ShowBuildingsOnNetwork);
                     break;
                 case PowerGridTab.Buildings:
-                    buildingPanel.Draw(content, snapshot, state, settings);
+                    buildingPanel.Draw(content, snapshot, state, settings, component.Management, now);
                     break;
                 case PowerGridTab.History:
                     historyPanel.Draw(content, component.History, state, settings, now);
@@ -92,6 +93,9 @@ namespace PowerGridManager
                     break;
                 case PowerGridTab.Forecast:
                     forecastPanel.Draw(content, snapshot, component.History, state, settings, now);
+                    break;
+                case PowerGridTab.Management:
+                    managementPanel.Draw(content, snapshot, state, settings, component.Management, now);
                     break;
                 default:
                     overviewPanel.Draw(content, snapshot, now, settings, component.Forecast,
@@ -110,7 +114,8 @@ namespace PowerGridManager
                 Tab("PGM_Tab_Buildings", PowerGridTab.Buildings, "PGM_Tab_BuildingsTip"),
                 Tab("PGM_Tab_History", PowerGridTab.History, "PGM_Tab_HistoryTip"),
                 Tab("PGM_Tab_Diagnostics", PowerGridTab.Diagnostics, "PGM_Tab_DiagnosticsTip"),
-                Tab("PGM_Tab_Forecast", PowerGridTab.Forecast, "PGM_Tab_ForecastTip")
+                Tab("PGM_Tab_Forecast", PowerGridTab.Forecast, "PGM_Tab_ForecastTip"),
+                Tab("PGM_Tab_Management", PowerGridTab.Management, "PGM_Tab_ManagementTip")
             };
         }
 

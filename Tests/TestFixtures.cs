@@ -78,10 +78,18 @@ namespace PowerGridManager.Tests
     {
         public readonly Map Map = new Map();
         public readonly List<PowerNet> Nets = new List<PowerNet>();
+        private static int nextThingId = 1;
 
         public PowerScenario()
         {
             Find.CurrentMap = Map;
+        }
+
+        /// <summary>Provides a persisted map ID for the multi-map staggering tests.</summary>
+        public PowerScenario WithUniqueId(int id)
+        {
+            Map.uniqueID = id;
+            return this;
         }
 
         public PowerNet AddNet()
@@ -94,7 +102,7 @@ namespace PowerGridManager.Tests
 
         public Building CreateBuilding(ThingDef def)
         {
-            return new Building { def = def, Map = Map };
+            return new Building { def = def, Map = Map, thingIDNumber = nextThingId++ };
         }
 
         public Building AddBuilding(ThingDef def)

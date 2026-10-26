@@ -1,8 +1,9 @@
 // Entry point for the offline verification harness.
 //
 // It compiles the production sources against minimal game doubles and exercises the
-// measurement, dashboard and history logic. It does NOT prove RimWorld API compatibility,
-// in-game behaviour, rendering or performance: those require the real game assemblies.
+// measurement, dashboard, history, diagnostics, forecast and management logic. It does NOT
+// prove RimWorld API compatibility, in-game behaviour, rendering or frame-time performance:
+// those require the real game assemblies and a running game.
 using System;
 using System.Collections.Generic;
 using PowerGridManager.Tests;
@@ -20,6 +21,8 @@ namespace PowerGridManager
                 new KeyValuePair<string, Func<int>>("Phase 4 history", HistoryTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 5 diagnostics", DiagnosticsTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 6 forecast", ForecastTests.Run),
+                new KeyValuePair<string, Func<int>>("Phase 7 management", ManagementTests.Run),
+                new KeyValuePair<string, Func<int>>("Phase 8 compatibility", CompatibilityTests.Run),
                 new KeyValuePair<string, Func<int>>("Localization/metadata", LocalizationTests.Run)
             };
 

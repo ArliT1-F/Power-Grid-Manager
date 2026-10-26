@@ -64,6 +64,37 @@ namespace PowerGridManager
         /// </summary>
         public bool ForecastIncludeSelfDischarge = true;
 
+        // --- Optional management (Phase 7) ------------------------------------
+        // Both switches are OFF by default. Monitoring, history, diagnostics and the
+        // forecast never read them, so turning management off cannot affect readings.
+
+        /// <summary>Master switch for the optional control UI. Off by default.</summary>
+        public bool ManagementEnabled = false;
+
+        /// <summary>Automatic load shedding. Off by default and requires ManagementEnabled.</summary>
+        public bool LoadSheddingEnabled = false;
+
+        /// <summary>Usable battery charge at or below which shedding is considered.</summary>
+        public float LoadShedLowThreshold = 0.25f;
+
+        /// <summary>Charge at or above which shedding is reversed. Must exceed the low threshold.</summary>
+        public float LoadShedRestoreThreshold = 0.55f;
+
+        /// <summary>How long a trigger condition must hold before any switch is changed.</summary>
+        public int LoadShedStableTicks = PowerTime.TicksPerHour / 2;
+
+        /// <summary>Minimum gap between two batches of automatic switch actions.</summary>
+        public int LoadShedCooldownTicks = PowerTime.TicksPerHour;
+
+        /// <summary>Maximum number of switches changed in one evaluation pass.</summary>
+        public int LoadShedMaxActionsPerPass = 4;
+
+        /// <summary>How buildings switched off by the policy are brought back.</summary>
+        public LoadSheddingRecoveryMode LoadShedRecovery = LoadSheddingRecoveryMode.Staged;
+
+        /// <summary>Only shed while the map also reports a generation shortfall.</summary>
+        public bool LoadShedRequireDeficit = true;
+
         /// <summary>Retention window expressed in game ticks.</summary>
         public int RetentionTicks => RetentionDays * PowerTime.TicksPerDay;
 
@@ -117,6 +148,16 @@ namespace PowerGridManager
             Scribe_Values.Look(ref MutedDiagnosticKinds, "mutedDiagnosticKinds", 0);
             Scribe_Values.Look(ref ForecastIncludeSelfDischarge, "forecastIncludeSelfDischarge", true);
 
+            Scribe_Values.Look(ref ManagementEnabled, "managementEnabled", false);
+            Scribe_Values.Look(ref LoadSheddingEnabled, "loadSheddingEnabled", false);
+            Scribe_Values.Look(ref LoadShedLowThreshold, "loadShedLowThreshold", 0.25f);
+            Scribe_Values.Look(ref LoadShedRestoreThreshold, "loadShedRestoreThreshold", 0.55f);
+            Scribe_Values.Look(ref LoadShedStableTicks, "loadShedStableTicks", PowerTime.TicksPerHour / 2);
+            Scribe_Values.Look(ref LoadShedCooldownTicks, "loadShedCooldownTicks", PowerTime.TicksPerHour);
+            Scribe_Values.Look(ref LoadShedMaxActionsPerPass, "loadShedMaxActionsPerPass", 4);
+            Scribe_Values.Look(ref LoadShedRecovery, "loadShedRecovery", LoadSheddingRecoveryMode.Staged);
+            Scribe_Values.Look(ref LoadShedRequireDeficit, "loadShedRequireDeficit", true);
+
             base.ExposeData();
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -136,7 +177,25 @@ namespace PowerGridManager
                 // Unknown bits (written by a newer version, or by hand) are dropped rather than
                 // being allowed to mute kinds this build does not define.
                 MutedDiagnosticKinds = Clamp(MutedDiagnosticKinds, 0, (1 << KnownDiagnosticKindCount) - 1);
+
+                NormalizeManagement();
             }
+        }
+
+        /// <summary>
+        /// Keeps the optional-management numbers inside ranges the policy engine can reason
+        /// about. Called after loading settings and after the settings UI changes a slider, so a
+        /// hand-edited save cannot invert the hysteresis band or ask for an unbounded batch.
+        /// </summary>
+        public void NormalizeManagement()
+        {
+            LoadShedLowThreshold = Clamp(LoadShedLowThreshold, 0.01f, 0.90f);
+            LoadShedRestoreThreshold = Clamp(LoadShedRestoreThreshold, LoadShedLowThreshold + 0.05f, 1f);
+            LoadShedStableTicks = Clamp(LoadShedStableTicks, 0, PowerTime.TicksPerDay * 7);
+            LoadShedCooldownTicks = Clamp(LoadShedCooldownTicks, 0, PowerTime.TicksPerDay * 7);
+            LoadShedMaxActionsPerPass = Clamp(LoadShedMaxActionsPerPass, 1, 32);
+            if (!System.Enum.IsDefined(typeof(LoadSheddingRecoveryMode), LoadShedRecovery))
+                LoadShedRecovery = LoadSheddingRecoveryMode.Staged;
         }
 
         /// <summary>Number of advisory kinds this build defines; bounds the persisted mute mask.</summary>
