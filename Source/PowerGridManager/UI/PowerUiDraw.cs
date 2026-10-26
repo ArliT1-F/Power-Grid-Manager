@@ -41,6 +41,20 @@ namespace PowerGridManager
 
         public static Color NoticeColor => DeficitColor;
 
+        /// <summary>
+        /// Advisory severity colours. Severity is always written out as a word as well, so the
+        /// colour is never the only thing carrying the meaning.
+        /// </summary>
+        public static Color SeverityColor(PowerDiagnosticSeverity severity)
+        {
+            switch (severity)
+            {
+                case PowerDiagnosticSeverity.Critical: return DeficitColor;
+                case PowerDiagnosticSeverity.Warning: return WarnColor;
+                default: return InfoColor;
+            }
+        }
+
         public static Color StatusColorForUnknown()
         {
             return UnknownColor;

@@ -262,4 +262,198 @@
   <PGM_Chart_Missing>{0} of {1} columns have no sample</PGM_Chart_Missing>
   <PGM_Chart_Ago>{0} before the newest sample</PGM_Chart_Ago>
   <PGM_Chart_NewestSample>newest sample {0} ago</PGM_Chart_NewestSample>
+
+  <!-- Phase 5: diagnostics -->
+  <PGM_Tab_Diagnostics>Diagnostics</PGM_Tab_Diagnostics>
+  <PGM_Tab_DiagnosticsTip>Advisories generated from observed power data, with evidence and suggested actions.</PGM_Tab_DiagnosticsTip>
+  <PGM_Severity_Critical>Critical</PGM_Severity_Critical>
+  <PGM_Severity_Warning>Warning</PGM_Severity_Warning>
+  <PGM_Severity_Info>Info</PGM_Severity_Info>
+  <PGM_Diag_Ongoing>Ongoing</PGM_Diag_Ongoing>
+  <PGM_Diag_Resolved>Resolved</PGM_Diag_Resolved>
+  <PGM_Diag_Duration>{0} for {1}</PGM_Diag_Duration>
+  <PGM_Diag_Title>Power advisories</PGM_Diag_Title>
+  <PGM_Diag_Counts>{0} critical, {1} warning, {2} recently resolved</PGM_Diag_Counts>
+  <PGM_Diag_FilterButton>Show: {0}</PGM_Diag_FilterButton>
+  <PGM_Diag_Filter_All>Everything</PGM_Diag_Filter_All>
+  <PGM_Diag_Filter_Critical>Critical only</PGM_Diag_Filter_Critical>
+  <PGM_Diag_Filter_Warning>Warning and above</PGM_Diag_Filter_Warning>
+  <PGM_Diag_Filter_Resolved>Resolved only</PGM_Diag_Filter_Resolved>
+  <PGM_Diag_Restore>Restore hidden ({0})</PGM_Diag_Restore>
+  <PGM_Diag_RestoreTip>Show advisories you dismissed earlier. Dismissals are remembered for the rest of this play session only.</PGM_Diag_RestoreTip>
+  <PGM_Diag_MutedCount>{0} advisory kind(s) are muted in the mod settings.</PGM_Diag_MutedCount>
+  <PGM_Diag_Mute>Mute kind</PGM_Diag_Mute>
+  <PGM_Diag_Unmute>Unmute kind</PGM_Diag_Unmute>
+  <PGM_Diag_MuteTip>Stop listing this kind of advisory. Saved with your settings.</PGM_Diag_MuteTip>
+  <PGM_Diag_Dismiss>Dismiss</PGM_Diag_Dismiss>
+  <PGM_Diag_DismissTip>Hide this advisory until it is resolved, or until you restore hidden advisories.</PGM_Diag_DismissTip>
+  <PGM_Diag_Locate>Locate</PGM_Diag_Locate>
+  <PGM_Diag_ShowBuildings>Buildings</PGM_Diag_ShowBuildings>
+  <PGM_Diag_RowTip>Advisories are derived from observed power data only. They never change how the game distributes power.</PGM_Diag_RowTip>
+  <PGM_Diag_Empty>No advisories. Nothing in the current power readings looks like a problem.</PGM_Diag_Empty>
+  <PGM_Diag_EmptyFiltered>No advisory matches the current filter.</PGM_Diag_EmptyFiltered>
+  <PGM_Diag_Disabled>Diagnostics are turned off in the mod settings. Monitoring and history still work.</PGM_Diag_Disabled>
+
+  <PGM_Diag_Title_Deficit>Power deficit on network {0}</PGM_Diag_Title_Deficit>
+  <PGM_Diag_Title_HighLoad>High load on network {0}</PGM_Diag_Title_HighLoad>
+  <PGM_Diag_Title_Discharge>Batteries draining on network {0}</PGM_Diag_Title_Discharge>
+  <PGM_Diag_Title_NoGeneration>No generation on network {0}</PGM_Diag_Title_NoGeneration>
+  <PGM_Diag_Title_Isolated>{0} is not connected to a power network</PGM_Diag_Title_Isolated>
+  <PGM_Diag_Title_Pending>{0}: network membership unconfirmed</PGM_Diag_Title_Pending>
+  <PGM_Diag_Title_Generator>{0} is producing below its configured output</PGM_Diag_Title_Generator>
+  <PGM_Diag_Title_AboveConfig>{0} draws more than its configured amount</PGM_Diag_Title_AboveConfig>
+  <PGM_Diag_Title_OffDrawing>{0} is switched off but still drawing power</PGM_Diag_Title_OffDrawing>
+  <PGM_Diag_Title_Unsupported>{0} has an unrecognised power component</PGM_Diag_Title_Unsupported>
+
+  <PGM_Diag_Desc_Deficit>Consumption exceeds generation by {0}, and this network has no stored energy to cover the gap. This has been true for {1}.</PGM_Diag_Desc_Deficit>
+  <PGM_Diag_Desc_HighLoad>Consumption has reached {0} of current generation.</PGM_Diag_Desc_HighLoad>
+  <PGM_Diag_Desc_Discharge>Batteries are covering a {0} shortfall and draining. This has been true for {1}.</PGM_Diag_Desc_Discharge>
+  <PGM_Diag_Desc_NoGeneration>{0} consumer(s) are connected but nothing on this network is generating.</PGM_Diag_Desc_NoGeneration>
+  <PGM_Diag_Desc_Isolated>This consumer has a power component but no network assignment, so it is not part of any electrical network.</PGM_Diag_Desc_Isolated>
+  <PGM_Diag_Desc_Pending>The building's network membership could not be confirmed during the last reading. This usually settles on the next refresh.</PGM_Diag_Desc_Pending>
+  <PGM_Diag_Desc_Generator>Currently producing {0} against a configured {1}. It has stayed that low for {2}.</PGM_Diag_Desc_Generator>
+  <PGM_Diag_Desc_AboveConfig>Measured draw is {0} against a configured {1}.</PGM_Diag_Desc_AboveConfig>
+  <PGM_Diag_Desc_OffDrawing>The flick switch is off, yet the building still reports a draw of {0}.</PGM_Diag_Desc_OffDrawing>
+  <PGM_Diag_Desc_Unsupported>At least one power component is not a recognised type, so its electrical behaviour is not interpreted or counted.</PGM_Diag_Desc_Unsupported>
+
+  <PGM_Diag_Ev_Deficit>Generation {0}, consumption {1}, across {2} consumer(s).</PGM_Diag_Ev_Deficit>
+  <PGM_Diag_Ev_HighLoad>Consumption {0} against generation {1}.</PGM_Diag_Ev_HighLoad>
+  <PGM_Diag_Ev_Discharge>Charge {0}, stored {1} of {2}, estimated depletion in {3}, {4} supporting sample(s).</PGM_Diag_Ev_Discharge>
+  <PGM_Diag_Ev_NoGeneration>Consumers are asking for {0}; battery charge is {1}.</PGM_Diag_Ev_NoGeneration>
+  <PGM_Diag_Ev_Isolated>Configured draw would be {0} if it were connected.</PGM_Diag_Ev_Isolated>
+  <PGM_Diag_Ev_Pending>No reading in this snapshot confirms which network the building belongs to.</PGM_Diag_Ev_Pending>
+  <PGM_Diag_Ev_Generator>Observed on network {0} while the building is switched on.</PGM_Diag_Ev_Generator>
+  <PGM_Diag_Ev_AboveConfig>That is {0} above the configured draw.</PGM_Diag_Ev_AboveConfig>
+  <PGM_Diag_Ev_OffDrawing>Configured draw is {0}; measured draw should be zero while switched off.</PGM_Diag_Ev_OffDrawing>
+  <PGM_Diag_Ev_Unsupported>The component is listed so you can see it, but no number is taken from it.</PGM_Diag_Ev_Unsupported>
+
+  <PGM_Diag_Act_Deficit>Add about {0} of generation to this network, or switch off non-essential consumers on it.</PGM_Diag_Act_Deficit>
+  <PGM_Diag_Act_HighLoad>Generation still covers demand, so this is a warning rather than a fault. Consider extra generation before demand grows.</PGM_Diag_Act_HighLoad>
+  <PGM_Diag_Act_Discharge>Close the {0} gap: add generation, or shed load before the batteries run out.</PGM_Diag_Act_Discharge>
+  <PGM_Diag_Act_NoGeneration>Connect a generator, or check that existing generators are switched on, fuelled and not broken down.</PGM_Diag_Act_NoGeneration>
+  <PGM_Diag_Act_Isolated>Connect the building to a powered network with cables or a conduit, or dismantle it if it is not needed.</PGM_Diag_Act_Isolated>
+  <PGM_Diag_Act_Pending>No action needed. If it persists across refreshes, the building likely uses a custom power system.</PGM_Diag_Act_Pending>
+  <PGM_Diag_Act_Generator>Rule out the ordinary causes first: solar produces nothing at night and wind idles in calm weather. Then check fuel, breakdowns and the flick switch.</PGM_Diag_Act_Generator>
+  <PGM_Diag_Act_AboveConfig>No action needed by itself. Variable consumers legitimately exceed their configured draw; it matters when sizing generation.</PGM_Diag_Act_AboveConfig>
+  <PGM_Diag_Act_OffDrawing>Usually a modded component that is not controlled by the vanilla switch. The reported draw is real, so it counts against your generation.</PGM_Diag_Act_OffDrawing>
+  <PGM_Diag_Act_Unsupported>No action needed. This is reported so you know the dashboard cannot fully account for that building.</PGM_Diag_Act_Unsupported>
+
+  <!-- In-game messages (short forms of the advisories above) -->
+  <PGM_Msg_Deficit>Network {0} is short by {1} with no battery reserve.</PGM_Msg_Deficit>
+  <PGM_Msg_BatteryDischarge>Network {0}: batteries at {1} and draining.</PGM_Msg_BatteryDischarge>
+  <PGM_Msg_NoGeneration>Network {0} has consumers but nothing is generating.</PGM_Msg_NoGeneration>
+  <PGM_Msg_HighLoad>Network {0} is running at {1} of its current generation.</PGM_Msg_HighLoad>
+  <PGM_Msg_IsolatedConsumer>{0} is not connected to a power network. It would draw {1} if it were.</PGM_Msg_IsolatedConsumer>
+  <PGM_Msg_GeneratorIdle>{0} has produced far below its configured {1} for a sustained period.</PGM_Msg_GeneratorIdle>
+  <PGM_Msg_OffButDrawing>{0} is switched off but still drawing {1}.</PGM_Msg_OffButDrawing>
+  <PGM_Msg_Generic>Power Grid Manager reported a power advisory.</PGM_Msg_Generic>
+
+  <!-- Mute checkboxes in the mod settings -->
+  <PGM_Kind_Deficit>Power deficit</PGM_Kind_Deficit>
+  <PGM_Kind_DeficitTip>Consumption above generation on a network with no stored energy to cover it.</PGM_Kind_DeficitTip>
+  <PGM_Kind_HighLoad>High load</PGM_Kind_HighLoad>
+  <PGM_Kind_HighLoadTip>Consumption close to current generation.</PGM_Kind_HighLoadTip>
+  <PGM_Kind_Discharge>Battery discharge</PGM_Kind_Discharge>
+  <PGM_Kind_DischargeTip>Batteries covering a generation deficit.</PGM_Kind_DischargeTip>
+  <PGM_Kind_NoGeneration>No generation</PGM_Kind_NoGeneration>
+  <PGM_Kind_NoGenerationTip>Consumers connected to a network with no generation at all.</PGM_Kind_NoGenerationTip>
+  <PGM_Kind_Isolated>Isolated consumers</PGM_Kind_Isolated>
+  <PGM_Kind_IsolatedTip>Consumers with no power network assignment.</PGM_Kind_IsolatedTip>
+  <PGM_Kind_Pending>Unconfirmed membership</PGM_Kind_Pending>
+  <PGM_Kind_PendingTip>Network membership could not be confirmed for the last reading.</PGM_Kind_PendingTip>
+  <PGM_Kind_Generator>Underperforming generator</PGM_Kind_Generator>
+  <PGM_Kind_GeneratorTip>A generator far below its configured output for a sustained period.</PGM_Kind_GeneratorTip>
+  <PGM_Kind_AboveConfig>Above configured draw</PGM_Kind_AboveConfig>
+  <PGM_Kind_AboveConfigTip>Measured draw well above the configured draw.</PGM_Kind_AboveConfigTip>
+  <PGM_Kind_OffDrawing>Switched off but drawing</PGM_Kind_OffDrawing>
+  <PGM_Kind_OffDrawingTip>A building whose flick switch is off that still reports a draw.</PGM_Kind_OffDrawingTip>
+  <PGM_Kind_Unsupported>Unsupported components</PGM_Kind_Unsupported>
+  <PGM_Kind_UnsupportedTip>Buildings with a power component that is not a recognised type.</PGM_Kind_UnsupportedTip>
+
+  <!-- Phase 6: battery endurance forecast -->
+  <PGM_Tab_Forecast>Forecast</PGM_Tab_Forecast>
+  <PGM_Tab_ForecastTip>Battery endurance from the current balance and, when available, recorded history.</PGM_Tab_ForecastTip>
+  <PGM_Forecast_Stored>Stored energy</PGM_Forecast_Stored>
+  <PGM_Forecast_Capacity>Storage capacity</PGM_Forecast_Capacity>
+  <PGM_Forecast_Charge>Battery charge</PGM_Forecast_Charge>
+  <PGM_Forecast_Net>Net incl. losses</PGM_Forecast_Net>
+  <PGM_Forecast_NetTip>Trader balance {0} minus battery self-discharge {1}. This is the rate the estimate uses.</PGM_Forecast_NetTip>
+  <PGM_Forecast_RangeTip>History range used to support the estimate.</PGM_Forecast_RangeTip>
+  <PGM_Forecast_Title>Battery endurance</PGM_Forecast_Title>
+  <PGM_Forecast_NoBatteries>This map has no batteries, so there is no stored energy to forecast.</PGM_Forecast_NoBatteries>
+  <PGM_Forecast_NoCapacity>Battery capacity could not be read, so no forecast is produced.</PGM_Forecast_NoCapacity>
+  <PGM_Forecast_Depleted>No stored energy is left to draw on.</PGM_Forecast_Depleted>
+  <PGM_Forecast_Full>Batteries are already full.</PGM_Forecast_Full>
+  <PGM_Forecast_Balanced>Generation and consumption are balanced, so no depletion or charge time is meaningful.</PGM_Forecast_Balanced>
+  <PGM_Forecast_Depleting>Batteries are draining. Estimated depletion in {0}.</PGM_Forecast_Depleting>
+  <PGM_Forecast_DepletingLong>Batteries are draining slowly. Depletion in more than {0}.</PGM_Forecast_DepletingLong>
+  <PGM_Forecast_Charging>Batteries are charging. Estimated full in {0}.</PGM_Forecast_Charging>
+  <PGM_Forecast_ChargingLong>Batteries are charging slowly. Full in more than {0}.</PGM_Forecast_ChargingLong>
+  <PGM_Forecast_Basis_Current>the current balance only</PGM_Forecast_Basis_Current>
+  <PGM_Forecast_Basis_History>the current balance, supported by {0} samples over the {1}</PGM_Forecast_Basis_History>
+  <PGM_Forecast_Confidence>Basis: {0}. Confidence: {1}.</PGM_Forecast_Confidence>
+  <PGM_Forecast_Caveat>These are estimates from observed conditions, not measurements. Anything that changes demand or output changes the answer.</PGM_Forecast_Caveat>
+  <PGM_Confidence_High>High</PGM_Confidence_High>
+  <PGM_Confidence_Medium>Medium</PGM_Confidence_Medium>
+  <PGM_Confidence_Low>Low</PGM_Confidence_Low>
+  <PGM_Confidence_Unavailable>None</PGM_Confidence_Unavailable>
+  <PGM_Forecast_CompareTitle>Current balance against recorded history</PGM_Forecast_CompareTitle>
+  <PGM_Forecast_NoHistory>At least {0} samples are needed before history can support the estimate. Samples are taken roughly every {1} while the map is running.</PGM_Forecast_NoHistory>
+  <PGM_Forecast_CompareCurrent>Current balance {0}: {1}.</PGM_Forecast_CompareCurrent>
+  <PGM_Forecast_CompareHistory>Recorded average {0} over {2} samples: {1}.</PGM_Forecast_CompareHistory>
+  <PGM_Forecast_NetworksHeader>Per-network endurance ({0})</PGM_Forecast_NetworksHeader>
+  <PGM_Forecast_NoNetworks>No network on this map has a battery.</PGM_Forecast_NoNetworks>
+  <PGM_Forecast_NetworkTip>Stored {0} of {1}. Per-network estimates use this network's current balance only.</PGM_Forecast_NetworkTip>
+  <PGM_Forecast_Short_Depleting>empty in {0}</PGM_Forecast_Short_Depleting>
+  <PGM_Forecast_Short_Charging>full in {0}</PGM_Forecast_Short_Charging>
+  <PGM_Forecast_Short_Balanced>no meaningful estimate</PGM_Forecast_Short_Balanced>
+  <PGM_Forecast_NotesTitle>What this estimate assumes</PGM_Forecast_NotesTitle>
+  <PGM_Forecast_Notes>{0} {1} The forecast assumes the observed balance continues and that demand does not change. Vanilla batteries have no verified discharge rate limit, so no rate limit is applied; batteries that are disabled by EMP are excluded from the usable energy. Nothing here changes the game's power simulation.</PGM_Forecast_Notes>
+  <PGM_Forecast_SelfDischargeOn>Self-discharge of {0} across {1} battery(ies) is subtracted, because the trader balance does not include it.</PGM_Forecast_SelfDischargeOn>
+  <PGM_Forecast_SelfDischargeOff>Battery self-discharge is not included, so the depletion estimate is optimistic.</PGM_Forecast_SelfDischargeOff>
+  <PGM_Forecast_EfficiencyKnown>Charging losses use the batteries' own efficiency; charge is {0}.</PGM_Forecast_EfficiencyKnown>
+  <PGM_Forecast_EfficiencyUnknown>Charge efficiency could not be confirmed, so the charging estimate assumes no charging loss and is optimistic.</PGM_Forecast_EfficiencyUnknown>
+
+  <!-- Overview tiles fed by diagnostics and the forecast -->
+  <PGM_Tile_Advisories>Active advisories</PGM_Tile_Advisories>
+  <PGM_Tip_Advisories>Warning and critical advisories from the diagnostics engine. Open the Diagnostics tab for evidence and suggested actions.</PGM_Tip_Advisories>
+  <PGM_Tile_Critical>Critical advisories</PGM_Tile_Critical>
+  <PGM_Tip_Critical>Advisories rated critical: a deficit with no reserve, batteries close to empty, or a network with consumers and no generation.</PGM_Tip_Critical>
+  <PGM_Tile_Endurance>Battery endurance</PGM_Tile_Endurance>
+  <PGM_Tip_Endurance>Estimated time until the map's stored energy runs out, or until it is full, from the balance measured at the last refresh.</PGM_Tip_Endurance>
+  <PGM_Tile_EnduranceBasis>Forecast confidence</PGM_Tile_EnduranceBasis>
+  <PGM_Tip_EnduranceBasis>How much the endurance estimate can be trusted. It is Low when only the current balance is known, High when recorded history agrees with it.</PGM_Tip_EnduranceBasis>
+  <PGM_Endurance_NoBatteries>no batteries</PGM_Endurance_NoBatteries>
+  <PGM_Endurance_Balanced>balanced</PGM_Endurance_Balanced>
+  <PGM_Endurance_Depleting>{0} to empty</PGM_Endurance_Depleting>
+  <PGM_Endurance_DepletingLong>&gt; {0} to empty</PGM_Endurance_DepletingLong>
+  <PGM_Endurance_Charging>{0} to full</PGM_Endurance_Charging>
+  <PGM_Endurance_ChargingLong>&gt; {0} to full</PGM_Endurance_ChargingLong>
+  <PGM_Detail_Endurance>Battery endurance</PGM_Detail_Endurance>
+  <PGM_Tip_NetworkEndurance>Estimated from this network's current balance only. The Forecast tab uses recorded history as well.</PGM_Tip_NetworkEndurance>
+
+  <!-- Mod settings sections added by phases 5 and 6 -->
+  <PGM_Settings_Monitoring>Monitoring</PGM_Settings_Monitoring>
+  <PGM_Settings_Diagnostics>Diagnostics</PGM_Settings_Diagnostics>
+  <PGM_Settings_Forecast>Forecast</PGM_Settings_Forecast>
+  <PGM_Settings_Muted>Muted advisory kinds</PGM_Settings_Muted>
+  <PGM_Settings_ForecastNote>Endurance estimates combine the current balance with recorded history. Self-discharge is a verified 5 W per battery that the trader balance does not include.</PGM_Settings_ForecastNote>
+  <PGM_DiagnosticsEnabled_Label>Enable power diagnostics</PGM_DiagnosticsEnabled_Label>
+  <PGM_DiagnosticsEnabled_Tip>Analyse the power readings for deficits, high load, draining batteries and connectivity problems. Monitoring and history keep working when this is off.</PGM_DiagnosticsEnabled_Tip>
+  <PGM_ShowInfoDiagnostics_Label>Show informational advisories</PGM_ShowInfoDiagnostics_Label>
+  <PGM_ShowInfoDiagnostics_Tip>Include advisories that are worth knowing but are not faults, such as unconfirmed network membership or a draw above the configured amount.</PGM_ShowInfoDiagnostics_Tip>
+  <PGM_ShowPowerMessages_Label>Announce new advisories on screen</PGM_ShowPowerMessages_Label>
+  <PGM_ShowPowerMessages_Tip>Show the game's own message when a new warning or critical advisory appears. Rate limited, and the full list is always on the Diagnostics tab.</PGM_ShowPowerMessages_Tip>
+  <PGM_DeficitAlert_Label>Minimum deficit to report: {0} W</PGM_DeficitAlert_Label>
+  <PGM_DeficitAlert_Tip>Smaller shortfalls are ignored. Raise this on a busy map to cut noise, lower it to catch small problems.</PGM_DeficitAlert_Tip>
+  <PGM_LowBattery_Label>Low battery threshold: {0}%</PGM_LowBattery_Label>
+  <PGM_LowBattery_Tip>A draining network becomes a critical advisory once its charge falls to this level.</PGM_LowBattery_Tip>
+  <PGM_PersistentDeficit_Label>Persistent after: {0}</PGM_PersistentDeficit_Label>
+  <PGM_PersistentDeficit_Tip>How long a deficit or high load must continue before it is escalated.</PGM_PersistentDeficit_Tip>
+  <PGM_GeneratorIdle_Label>Generator low output after: {0}</PGM_GeneratorIdle_Label>
+  <PGM_GeneratorIdle_Tip>How long a generator must stay far below its configured output before it is reported. Keep this long if you use solar or wind: they idle legitimately.</PGM_GeneratorIdle_Tip>
+  <PGM_AlertCooldown_Label>Alert cooldown: {0}</PGM_AlertCooldown_Label>
+  <PGM_AlertCooldown_Tip>Minimum gap between announcements, up to two at a time. A condition that returns within this window counts as the same episode, so it is not announced again.</PGM_AlertCooldown_Tip>
+  <PGM_SelfDischarge_Label>Include battery self-discharge</PGM_SelfDischarge_Label>
+  <PGM_SelfDischarge_Tip>Subtract the game's verified 5 W per battery self-discharge from the endurance estimate. The trader balance does not include it.</PGM_SelfDischarge_Tip>
 </LanguageData>

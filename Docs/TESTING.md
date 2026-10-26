@@ -19,7 +19,7 @@ Exit code is 0 only when every check passes. The project links
 `../Source/PowerGridManager/**/*.cs` plus `Tests/Doubles/*.cs`, so a compile error in the
 mod also fails the harness.
 
-What it covers (252 checks at the time of writing):
+What it covers (493 checks at the time of writing):
 
 - **Phase 2 monitoring (32):** empty maps, signed trader output, `PowerOn` gating, flick
   state, batteries and EMP, deficit counting, independent networks, non-colonist buildings,
@@ -37,6 +37,22 @@ What it covers (252 checks at the time of writing):
 - **Phase 4 history (103):** sampling cadence and clamping, retention, caps, rollback,
   save/load round-trip, future and truncated formats, corrupt rows, missing nodes, map
   component integration, chart binnings/averages/gaps/axes, and `RefreshIfStale` reuse.
+- **Phase 5 diagnostics (119):** settings defaults and save/load clamping including the mute
+  mask; episode registration, duration, resolution, cooldown and reset; every network advisory
+  kind with its severity and evidence; every building advisory kind; muting; the info toggle;
+  the diagnostics master switch releasing episode memory; the advisory cap with 90 failing
+  networks; dismissal and restore; resolved-advisory reporting and expiry; notification
+  throttling (burst cap, no repeat announcements, messages off, Info and resolved skipped,
+  nothing announced before the game is playing); and a headless pass over the diagnostics tab
+  at three sizes that clicks the filter, mute, dismiss, restore, locate and show-buildings
+  buttons.
+- **Phase 6 forecast (90):** windowed averages and deficit shares including empty and inverted
+  windows; depletion and charging arithmetic against hand-computed values; self-discharge
+  scaling with battery count; EMP; saturation at the reporting horizon; NaN, negative and
+  over-capacity inputs; every confidence band; `ForNetwork`, `ForMap` and the map component's
+  `ComputeForecast` with real samples; headless passes over the forecast and network panels
+  at three sizes; and the read-only guarantee that forecasting leaves the simulation and the
+  reported measurements untouched.
 - **Localization and metadata (41):** every `PGM_` key referenced in source exists in the
   English keyed file, format-placeholder counts are sufficient, the keyed/def/About XML
   parse, the def wires the right tab window type, the icon texture exists, and the window
@@ -54,7 +70,8 @@ and check the log after each step. Record the results next to each item.
 
 - [ ] Game starts with the mod enabled; no exceptions, no missing-texture warnings.
 - [ ] The Power tab appears next to vanilla main tabs, with its icon, and opens.
-- [ ] Settings window opens, all six controls render, values persist across a restart.
+- [ ] Settings window opens, all controls render (the panel now scrolls), values persist
+      across a restart.
 - [ ] Disabling the mod restores the vanilla tab bar and leaves the save loadable (expect
       RimWorld's standard unknown-map-component message for this component).
 
@@ -97,6 +114,32 @@ and check the log after each step. Record the results next to each item.
 - [ ] Turning history off stops new samples; re-enabling resumes.
 - [ ] Long session (7+ in-game days): sample count stays at the retention cap.
 
+### Diagnostics
+
+- [ ] A network in deficit produces an advisory whose generation/consumption figures match the
+      vanilla power overlay, and whose severity escalates after the configured window.
+- [ ] A deficit covered by batteries is reported as battery discharge, not as a bare deficit;
+      it turns critical as the bank approaches the configured low-charge threshold.
+- [ ] Cutting a generator at night does not raise an underperforming-generator advisory before
+      the configured delay; a genuinely broken or unfuelled generator does.
+- [ ] Fixing a condition shows it as *resolved*, and it stops being listed after a day.
+- [ ] Muting a kind removes it and survives a restart; dismissing one advisory hides only that
+      one, and "restore hidden" brings it back.
+- [ ] Two new warnings at once produce at most two on-screen messages; a third appears on a
+      later refresh, not immediately.
+
+### Forecast
+
+- [ ] With no history the endurance figure matches the current balance arithmetic and is
+      labelled low confidence.
+- [ ] After several in-game days of history the figure quotes the recorded average and the
+      confidence rises.
+- [ ] Depleting batteries: the estimate is in the right order of magnitude compared with
+      actually running the colony down (it will differ; demand changes).
+- [ ] EMP-stunned batteries are excluded from usable energy and the estimate shortens.
+- [ ] Nothing the forecast does changes the vanilla power simulation (compare a control save
+      without the mod).
+
 ### Compatibility and performance
 
 - [ ] A modded consumer, a modded generator and a modded battery behave sanely; custom
@@ -118,7 +161,7 @@ and check the log after each step. Record the results next to each item.
 ## 3. Static checks performed in this environment
 
 - Full compile of all production sources plus the harness against the local .NET 10
-  runtime (Roslyn), then execution of all 252 checks.
+  runtime (Roslyn), then execution of all 493 checks.
 - API signatures cross-checked against a public RimWorld 1.6 decompilation reference:
   `MainTabWindow`, `MainButtonDef`, `TabDrawer`, `TabRecord.GetTip`, `Widgets.*`,
   `Text.*`, `Map.FillComponents` auto-instantiation, `Map.GetComponent<T>`,

@@ -123,6 +123,70 @@ namespace PowerGridManager
             return building.Connection != PowerConnectionState.Connected;
         }
 
+        public static string SeverityLabelKey(PowerDiagnosticSeverity severity)
+        {
+            switch (severity)
+            {
+                case PowerDiagnosticSeverity.Critical: return "PGM_Severity_Critical";
+                case PowerDiagnosticSeverity.Warning: return "PGM_Severity_Warning";
+                default: return "PGM_Severity_Info";
+            }
+        }
+
+        /// <summary>Settings label for muting one advisory kind.</summary>
+        public static string DiagnosticKindLabelKey(PowerDiagnosticKind kind)
+        {
+            switch (kind)
+            {
+                case PowerDiagnosticKind.PersistentDeficit: return "PGM_Kind_Deficit";
+                case PowerDiagnosticKind.HighLoad: return "PGM_Kind_HighLoad";
+                case PowerDiagnosticKind.BatteryDischarge: return "PGM_Kind_Discharge";
+                case PowerDiagnosticKind.NoGeneration: return "PGM_Kind_NoGeneration";
+                case PowerDiagnosticKind.IsolatedConsumer: return "PGM_Kind_Isolated";
+                case PowerDiagnosticKind.PendingMembership: return "PGM_Kind_Pending";
+                case PowerDiagnosticKind.GeneratorUnderOutput: return "PGM_Kind_Generator";
+                case PowerDiagnosticKind.DrawAboveConfigured: return "PGM_Kind_AboveConfig";
+                case PowerDiagnosticKind.SwitchedOffButDrawing: return "PGM_Kind_OffDrawing";
+                default: return "PGM_Kind_Unsupported";
+            }
+        }
+
+        /// <summary>Explanation shown next to that mute checkbox.</summary>
+        public static string DiagnosticKindTipKey(PowerDiagnosticKind kind)
+        {
+            switch (kind)
+            {
+                case PowerDiagnosticKind.PersistentDeficit: return "PGM_Kind_DeficitTip";
+                case PowerDiagnosticKind.HighLoad: return "PGM_Kind_HighLoadTip";
+                case PowerDiagnosticKind.BatteryDischarge: return "PGM_Kind_DischargeTip";
+                case PowerDiagnosticKind.NoGeneration: return "PGM_Kind_NoGenerationTip";
+                case PowerDiagnosticKind.IsolatedConsumer: return "PGM_Kind_IsolatedTip";
+                case PowerDiagnosticKind.PendingMembership: return "PGM_Kind_PendingTip";
+                case PowerDiagnosticKind.GeneratorUnderOutput: return "PGM_Kind_GeneratorTip";
+                case PowerDiagnosticKind.DrawAboveConfigured: return "PGM_Kind_AboveConfigTip";
+                case PowerDiagnosticKind.SwitchedOffButDrawing: return "PGM_Kind_OffDrawingTip";
+                default: return "PGM_Kind_UnsupportedTip";
+            }
+        }
+
+        public static string DiagnosticStatusKey(bool ongoing)
+        {
+            return ongoing ? "PGM_Diag_Ongoing" : "PGM_Diag_Resolved";
+        }
+
+        /// <summary>
+        /// Display name for a building. Falls back to the definition name and then to a placeholder,
+        /// because modded defs occasionally ship without a label.
+        /// </summary>
+        public static string BuildingLabel(Building building)
+        {
+            if (building == null) return "?";
+            ThingDef def = building.def;
+            if (def == null) return "?";
+            if (!string.IsNullOrEmpty(def.label)) return def.label.CapitalizeFirst();
+            return string.IsNullOrEmpty(def.defName) ? "?" : def.defName;
+        }
+
         /// <summary>Sum of one network's stored energy across the snapshot buildings.</summary>
         public static void CollectNetworkBuildings(PowerGridSnapshot snapshot, int networkId, List<BuildingPowerSnapshot> buffer)
         {

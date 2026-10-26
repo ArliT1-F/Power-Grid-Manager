@@ -154,6 +154,14 @@ namespace PowerGridManager
                     ? PowerFormatting.FormatCharge(network.ConsumptionWatts / network.GenerationWatts)
                     : "PGM_Value_Unknown".Translate(), labelWidth);
 
+            // Endurance for this network: the same arithmetic as the forecast tab, using only the
+            // balance observed right now, and labelled as such by the tooltip.
+            BatteryForecastResult forecast = BatteryForecast.ForNetwork(network, settings.ForecastIncludeSelfDischarge);
+            DrawStat(rect, ref y, "PGM_Detail_Endurance", EnduranceText(forecast), labelWidth,
+                EnduranceColor(forecast));
+            PowerUiDraw.Tip(new Rect(rect.x + 10f, y - 20f, Mathf.Max(20f, rect.width - 20f), 20f),
+                "PGM_Tip_NetworkEndurance".Translate());
+
             Rect bar = new Rect(rect.x + 10f, y, Mathf.Min(280f, rect.width - 20f), 8f);
             PowerUiDraw.Bar(bar, network.ChargeFraction ?? 0f, PowerUiDraw.Good);
             y += 16f;
@@ -249,6 +257,28 @@ namespace PowerGridManager
             rankedIndices.Sort((left, right) =>
                 networkBuildings[right].ConsumptionWatts.CompareTo(networkBuildings[left].ConsumptionWatts));
             if (rankedIndices.Count > maximum) rankedIndices.RemoveRange(maximum, rankedIndices.Count - maximum);
+        }
+
+        private static string EnduranceText(BatteryForecastResult forecast)
+        {
+            switch (forecast.Kind)
+            {
+                case BatteryForecastKind.NoBatteries: return "PGM_Endurance_NoBatteries".Translate();
+                case BatteryForecastKind.NoCapacity: return "PGM_Value_Unknown".Translate();
+                case BatteryForecastKind.Balanced: return "PGM_Endurance_Balanced".Translate();
+                case BatteryForecastKind.Depleting:
+                    return "PGM_Endurance_Depleting".Translate(
+                        PowerFormatting.FormatDuration(forecast.TicksToEmpty ?? 0));
+                default:
+                    return "PGM_Endurance_Charging".Translate(PowerFormatting.FormatDuration(forecast.TicksToFull ?? 0));
+            }
+        }
+
+        private static Color EnduranceColor(BatteryForecastResult forecast)
+        {
+            if (forecast.Kind == BatteryForecastKind.Depleting) return PowerUiDraw.NoticeColor;
+            if (forecast.Kind == BatteryForecastKind.Charging) return PowerUiDraw.Good;
+            return PowerUiDraw.Muted;
         }
 
         private static void DrawStat(Rect area, ref float y, string labelKey, string value, float labelWidth,

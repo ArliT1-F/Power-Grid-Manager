@@ -3,8 +3,9 @@
 A RimWorld mod focused on readable colony power monitoring. It observes RimWorld's native
 power simulation; it does not replace or patch it.
 
-> **Development status:** Phases 1–4 are implemented (project skeleton, monitoring core,
-> dashboard, historical monitoring). The offline logic harness passes all 252 checks, but
+> **Development status:** Phases 1–6 are implemented (project skeleton, monitoring core,
+> dashboard, historical monitoring, diagnostics, forecasting). The offline logic harness
+> passes all 493 checks, but
 > nothing has been compiled against, loaded into, or profiled in an actual RimWorld
 > installation — none is available in this environment. Treat this as a development build,
 > not a release.
@@ -13,7 +14,7 @@ power simulation; it does not replace or patch it.
 
 Open the **Power** tab to get a dashboard over the map's electrical infrastructure:
 
-- **Overview** — 20 tiles covering measured generation, measured consumption, net balance,
+- **Overview** — 24 tiles covering measured generation, measured consumption, net balance,
   consumption/generation ratio, configured (def-level) generation, stored energy, storage
   capacity, charge, network/component counts, deficit and high-load networks, disconnected
   consumers, data notices, nominal draw, unsupported components, switched-off consumers and
@@ -30,14 +31,30 @@ Open the **Power** tab to get a dashboard over the map's electrical infrastructu
 - **History** — in-game-time charts (hour, 6 hours, day, 3 days, 7 days) of generation vs
   consumption, net balance, battery charge and consumption relative to generation, sampled
   at a configurable interval, bounded by a retention window and stored in the save.
+- **Diagnostics** — advisories derived from the readings: power deficits, high load, draining
+  batteries, networks with no generation, isolated consumers, underperforming generators,
+  draw above the configured amount, switched-off buildings that still draw, and unsupported
+  components. Each one carries its severity, a description, the evidence behind it (including
+  how long it has been true), and a suggested action. Conditions that clear are reported as
+  resolved. Kinds can be muted; individual advisories can be dismissed; new warning and
+  critical advisories can raise the game's own on-screen message, rate-limited.
+- **Forecast** — battery endurance: how long until the map's stored energy runs out, or until
+  it is full, computed from the current balance and — when enough history exists — the
+  recorded average. Battery self-discharge (a verified 5 W per battery, which the trader
+  balance excludes) and charge efficiency are accounted for. Every estimate states its basis
+  and a confidence level (low / medium / high), and estimates beyond 30 in-game days are
+  reported as "more than" rather than as a number.
 
 Everything the mod reports is labelled as **measured**, **configured** or **estimated**.
 Figures that cannot be verified (installed capacity, per-building history, unsupported
 custom power systems) are reported as unavailable with an explanation instead of a guess.
 
-Not implemented yet: diagnostics advisories (Phase 5), battery/load forecasting (Phase 6),
-and optional load management (Phase 7). The dashboard's "data notices" are observed
-data-quality facts, not diagnostics.
+Forecast figures are explicitly labelled as **estimates**: they assume the observed balance
+continues, and the panel states what it assumed. They are never written back into the game's
+power simulation.
+
+Not implemented yet: optional load management (Phase 7). The dashboard's "data notices" are
+observed data-quality facts, not diagnostics.
 
 ## Requirements
 
@@ -94,7 +111,7 @@ tail -n 80 "$HOME/.config/unity3d/Ludeon Studios/RimWorld by Ludeon Studios/Play
 dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release   # .NET 8 SDK
 ```
 
-The harness links the production sources against minimal game doubles and runs 252 checks
+The harness links the production sources against minimal game doubles and runs 493 checks
 across monitoring, dashboard, history and localization logic. It proves logic only; see
 [Testing](Docs/TESTING.md) for the in-game checklist that still has to be executed.
 
@@ -110,5 +127,7 @@ Copy this folder (or a release folder containing `About/`, `Defs/`, `Languages/`
 - [Phase 2: monitoring core, measurement contracts](Docs/PHASE-2-MONITORING.md)
 - [Phase 3: dashboard, UI API verification, layout](Docs/PHASE-3-DASHBOARD.md)
 - [Phase 4: historical monitoring, retention, save/load](Docs/PHASE-4-HISTORY.md)
+- [Phase 5: diagnostics, advisory kinds, alert throttling](Docs/PHASE-5-DIAGNOSTICS.md)
+- [Phase 6: battery endurance forecasting, confidence](Docs/PHASE-6-FORECAST.md)
 - [Testing: what the harness proves and the in-game checklist](Docs/TESTING.md)
 - [Changelog](CHANGELOG.md)

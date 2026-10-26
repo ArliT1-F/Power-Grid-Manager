@@ -118,6 +118,21 @@ namespace RimWorld
         public List<PowerNet> AllNetsListForReading = new List<PowerNet>();
     }
 
+    // Mirrors Verse.MessageTypeDefOf: the [DefOf] table the game fills from its own defs. The
+    // harness only needs the two members the mod's notifier uses.
+    public static class MessageTypeDefOf
+    {
+        public static MessageTypeDef NegativeEvent = new MessageTypeDef("NegativeEvent");
+        public static MessageTypeDef NeutralEvent = new MessageTypeDef("NeutralEvent");
+        public static MessageTypeDef SituationResolved = new MessageTypeDef("SituationResolved");
+    }
+
+    public class MessageTypeDef : Verse.Def
+    {
+        public MessageTypeDef() { }
+        public MessageTypeDef(string name) { defName = name; label = name; }
+    }
+
     public abstract class MainTabWindow : Window
     {
         public MainButtonDef def;

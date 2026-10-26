@@ -34,7 +34,13 @@ namespace PowerGridManager
             return count;
         }
 
-        public void Draw(Rect rect, PowerGridSnapshot snapshot, int now, PowerGridManagerSettings settings)
+        /// <summary>
+        /// Draws the dashboard. <paramref name="forecast"/>, <paramref name="criticalCount"/> and
+        /// <paramref name="warningCount"/> come from the map component's last evaluation; when they
+        /// are unavailable the two tiles they feed simply report "unavailable" instead of guessing.
+        /// </summary>
+        public void Draw(Rect rect, PowerGridSnapshot snapshot, int now, PowerGridManagerSettings settings,
+            BatteryForecastResult forecast = null, int criticalCount = 0, int warningCount = 0)
         {
             float y = rect.y;
 
@@ -46,7 +52,7 @@ namespace PowerGridManager
             y += 26f;
 
             float tileWidth = (rect.width - TileGap * (Columns - 1)) / Columns;
-            const int Rows = 5;
+            const int Rows = 6;
             const float NotesHeight = 64f;
             float gridTop = y;
             // Prefer the standard tile height, but shrink to fit the window on small screens.
@@ -120,17 +126,36 @@ namespace PowerGridManager
                 snapshot.DataNoticeCount > 0 ? PowerUiDraw.Warn : Color.white,
                 "PGM_Tip_DataNotices".Translate());
 
-            // Row 4: comparison figures and cadence.
-            DrawTile(rect, gridTop, 4, 0, tileWidth, tileHeight, "PGM_Tile_NominalDraw",
+            // Row 4: advisories and endurance.
+            int advisories = criticalCount + warningCount;
+            DrawTile(rect, gridTop, 4, 0, tileWidth, tileHeight, "PGM_Tile_Advisories",
+                advisories.ToString(),
+                criticalCount > 0 ? PowerUiDraw.NoticeColor : warningCount > 0 ? PowerUiDraw.Warn : Color.white,
+                "PGM_Tip_Advisories".Translate());
+            DrawTile(rect, gridTop, 4, 1, tileWidth, tileHeight, "PGM_Tile_Critical",
+                criticalCount.ToString(),
+                criticalCount > 0 ? PowerUiDraw.NoticeColor : Color.white,
+                "PGM_Tip_Critical".Translate());
+            DrawTile(rect, gridTop, 4, 2, tileWidth, tileHeight, "PGM_Tile_Endurance",
+                EnduranceText(forecast),
+                EnduranceColor(forecast),
+                "PGM_Tip_Endurance".Translate());
+            DrawTile(rect, gridTop, 4, 3, tileWidth, tileHeight, "PGM_Tile_EnduranceBasis",
+                EnduranceBasisText(forecast),
+                PowerUiDraw.Muted,
+                "PGM_Tip_EnduranceBasis".Translate());
+
+            // Row 5: comparison figures and cadence.
+            DrawTile(rect, gridTop, 5, 0, tileWidth, tileHeight, "PGM_Tile_NominalDraw",
                 PowerFormatting.FormatWattsUnknown(snapshot.NominalConsumptionWatts), PowerUiDraw.Muted,
                 "PGM_Tip_NominalDraw".Translate());
-            DrawTile(rect, gridTop, 4, 1, tileWidth, tileHeight, "PGM_Tile_Unsupported",
+            DrawTile(rect, gridTop, 5, 1, tileWidth, tileHeight, "PGM_Tile_Unsupported",
                 snapshot.UnsupportedComponentCount.ToString(),
                 snapshot.UnsupportedComponentCount > 0 ? PowerUiDraw.Warn : Color.white,
                 "PGM_Tip_Unsupported".Translate());
-            DrawTile(rect, gridTop, 4, 2, tileWidth, tileHeight, "PGM_Tile_SwitchedOff",
+            DrawTile(rect, gridTop, 5, 2, tileWidth, tileHeight, "PGM_Tile_SwitchedOff",
                 switchedOffCount.ToString(), Color.white, "PGM_Tip_SwitchedOff".Translate());
-            DrawTile(rect, gridTop, 4, 3, tileWidth, tileHeight, "PGM_Tile_Sampling",
+            DrawTile(rect, gridTop, 5, 3, tileWidth, tileHeight, "PGM_Tile_Sampling",
                 PowerFormatting.FormatDuration(settings.SampleIntervalTicks),
                 settings.HistoryEnabled ? Color.white : PowerUiDraw.Muted,
                 "PGM_Tip_Sampling".Translate());
@@ -147,6 +172,47 @@ namespace PowerGridManager
             float top = gridTop + row * (tileHeight + TileGap);
             Rect tile = new Rect(x, top, tileWidth, tileHeight);
             PowerUiDraw.MetricTile(tile, labelKey.Translate(), value, valueColor, tooltip);
+        }
+
+        /// <summary>Short endurance summary for the overview tile; never a bare number.</summary>
+        private static string EnduranceText(BatteryForecastResult forecast)
+        {
+            if (forecast == null) return "PGM_Value_Unknown".Translate();
+            switch (forecast.Kind)
+            {
+                case BatteryForecastKind.NoBatteries: return "PGM_Endurance_NoBatteries".Translate();
+                case BatteryForecastKind.NoCapacity: return "PGM_Value_Unknown".Translate();
+                case BatteryForecastKind.Balanced: return "PGM_Endurance_Balanced".Translate();
+                case BatteryForecastKind.Depleting:
+                    return forecast.Saturated
+                        ? "PGM_Endurance_DepletingLong".Translate(
+                            PowerFormatting.FormatDuration(forecast.TicksToEmpty ?? 0))
+                        : "PGM_Endurance_Depleting".Translate(PowerFormatting.FormatDuration(forecast.TicksToEmpty ?? 0));
+                default:
+                    return forecast.Saturated
+                        ? "PGM_Endurance_ChargingLong".Translate(PowerFormatting.FormatDuration(forecast.TicksToFull ?? 0))
+                        : "PGM_Endurance_Charging".Translate(PowerFormatting.FormatDuration(forecast.TicksToFull ?? 0));
+            }
+        }
+
+        private static Color EnduranceColor(BatteryForecastResult forecast)
+        {
+            if (forecast == null) return PowerUiDraw.Muted;
+            if (forecast.Kind == BatteryForecastKind.Depleting) return PowerUiDraw.NoticeColor;
+            if (forecast.Kind == BatteryForecastKind.Charging) return PowerUiDraw.Good;
+            return Color.white;
+        }
+
+        private static string EnduranceBasisText(BatteryForecastResult forecast)
+        {
+            if (forecast == null) return "PGM_Value_Unknown".Translate();
+            switch (forecast.Confidence)
+            {
+                case ForecastConfidence.High: return "PGM_Confidence_High".Translate();
+                case ForecastConfidence.Medium: return "PGM_Confidence_Medium".Translate();
+                case ForecastConfidence.Low: return "PGM_Confidence_Low".Translate();
+                default: return "PGM_Confidence_Unavailable".Translate();
+            }
         }
 
         private static void DrawExplanation(Rect rect, PowerGridSnapshot snapshot)

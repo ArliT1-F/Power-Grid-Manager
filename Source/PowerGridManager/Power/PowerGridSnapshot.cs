@@ -141,6 +141,12 @@ namespace PowerGridManager
     {
         // Snapshot-local index, NOT a persistent network identity.
         public int Id { get; internal set; }
+
+        /// <summary>
+        /// The live network this row describes. Runtime identity only: it lets advisories follow a
+        /// network across refreshes for as long as the game keeps the same object. Never persisted.
+        /// </summary>
+        public PowerNet Net { get; internal set; }
         public int ConsumerCount { get; internal set; }
         public int GeneratorCount { get; internal set; }
         public int BatteryCount { get; internal set; }
@@ -152,6 +158,21 @@ namespace PowerGridManager
         public float CapacityWattDays { get; internal set; }
         public float? ChargeFraction => CapacityWattDays > 0 ? (float?)(StoredWattDays / CapacityWattDays) : null;
         public bool HasIncompleteData { get; internal set; }
+
+        /// <summary>Scratch accumulator: charge efficiency weighted by battery capacity.</summary>
+        public float EfficiencyWeightedSum { get; internal set; }
+
+        /// <summary>How many batteries reported a usable charge efficiency.</summary>
+        public int EfficiencySamples { get; internal set; }
+
+        /// <summary>
+        /// Capacity-weighted average charge efficiency, or null when any battery on the network did
+        /// not report one. Charging estimates are labelled as assuming no loss when this is null.
+        /// </summary>
+        public float? ChargeEfficiency => BatteryCount > 0 && CapacityWattDays > 0f &&
+                                          EfficiencySamples >= BatteryCount
+            ? (float?)(EfficiencyWeightedSum / CapacityWattDays)
+            : null;
     }
 
     /// <summary>
@@ -171,6 +192,18 @@ namespace PowerGridManager
         public float StoredWattDays { get; internal set; }
         public float AvailableStoredWattDays { get; internal set; }
         public float CapacityWattDays { get; internal set; }
+
+        /// <summary>Scratch accumulator: charge efficiency weighted by battery capacity.</summary>
+        public float EfficiencyWeightedSum { get; internal set; }
+
+        /// <summary>How many batteries reported a usable charge efficiency.</summary>
+        public int EfficiencySamples { get; internal set; }
+
+        /// <summary>Map-wide capacity-weighted charge efficiency, or null when not fully known.</summary>
+        public float? ChargeEfficiency => BatteryCount > 0 && CapacityWattDays > 0f &&
+                                          EfficiencySamples >= BatteryCount
+            ? (float?)(EfficiencyWeightedSum / CapacityWattDays)
+            : null;
 
         /// <summary>Configured consumer draw for connected components; not a measurement.</summary>
         public float? NominalConsumptionWatts { get; internal set; }
