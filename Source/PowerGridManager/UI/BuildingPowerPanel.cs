@@ -49,7 +49,7 @@ namespace PowerGridManager
             {
                 Rect detail = new Rect(rect.x, tableRect.yMax + 6f, rect.width,
                     Mathf.Max(0f, rect.yMax - tableRect.yMax - 6f));
-                DrawDetail(detail, state, settings, management, tick, showManagement);
+                DrawDetail(detail, snapshot, state, settings, management, tick, showManagement);
             }
         }
 
@@ -339,8 +339,8 @@ namespace PowerGridManager
             statusColor = PowerUiDraw.Good;
         }
 
-        private void DrawDetail(Rect rect, PowerUiState state, PowerGridManagerSettings settings,
-            PowerManagementController management, int tick, bool showManagement)
+        private void DrawDetail(Rect rect, PowerGridSnapshot mapSnapshot, PowerUiState state,
+            PowerGridManagerSettings settings, PowerManagementController management, int tick, bool showManagement)
         {
             PowerUiDraw.Panel(rect);
             Building building = state.SelectedBuilding;
@@ -354,7 +354,7 @@ namespace PowerGridManager
                 PowerUiDraw.Muted, TextAnchor.MiddleRight);
             y += 24f;
 
-            BuildingPowerSnapshot snapshot = FindBuildingSnapshot(state, building);
+            BuildingPowerSnapshot snapshot = FindBuildingSnapshot(mapSnapshot, building);
             if (snapshot == null)
             {
                 PowerUiDraw.WrappedText(new Rect(rect.x + 8f, y, rect.width - 16f, 40f),
@@ -431,7 +431,7 @@ namespace PowerGridManager
             if (showManagement)
             {
                 DrawManagementRow(new Rect(rect.x + 8f, buttonY - 30f, rect.width - 16f, 26f),
-                    building, snapshot, snapshot, settings, management, tick);
+                    building, snapshot, mapSnapshot, settings, management, tick);
             }
         }
 
@@ -561,10 +561,9 @@ namespace PowerGridManager
             return anyOn ? "PGM_TraderState_On".Translate() : "PGM_TraderState_Off".Translate();
         }
 
-        private static BuildingPowerSnapshot FindBuildingSnapshot(PowerUiState state, Building building)
+        private static BuildingPowerSnapshot FindBuildingSnapshot(PowerGridSnapshot snapshot, Building building)
         {
             if (building == null) return null;
-            PowerGridSnapshot snapshot = state.LastSnapshot;
             if (snapshot == null) return null;
             IReadOnlyList<BuildingPowerSnapshot> buildings = snapshot.Buildings;
             for (int i = 0; i < buildings.Count; i++)
