@@ -50,6 +50,8 @@ namespace PowerGridManager
             if (failures.Count == 0)
             {
                 Console.WriteLine("ALL CHECKS PASSED (game doubles; not in-game validation).");
+                Annotate("::notice::" + EscapeAnnotation("Offline logic harness: " + TestAssert.Checks +
+                    " checks passed against game doubles (not in-game validation)."));
                 return 0;
             }
 

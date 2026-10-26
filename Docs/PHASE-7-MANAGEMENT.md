@@ -187,6 +187,9 @@ exclusion and headless UI rendering at 320/640/1010/2560 px.
 `Thing.thingIDNumber`, `Map.uniqueID`, `Faction.OfPlayer`, `Log.Warning` and a minimal
 designation stand-in.
 
+These checks pass in the `Offline logic tests` GitHub Actions job (Ubuntu, .NET 8), which
+compiles the production sources against the doubles and runs the full harness.
+
 **Not verified here:** compilation against official game assemblies, in-game switch behaviour
 with real colonists/designations, real save/load with the game, rendering, and 1.7's API
 signatures. See [PHASE-8-COMPATIBILITY.md](PHASE-8-COMPATIBILITY.md).

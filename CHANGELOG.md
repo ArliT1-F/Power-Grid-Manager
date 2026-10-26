@@ -24,8 +24,13 @@
 - Added `Docs/PHASE-8-COMPATIBILITY.md`: verification matrix, version status (1.5/1.6 API
   research, 1.7 configured but unverified), measured/configured/estimated contract, known
   limitations and an in-game validation checklist.
-- No official game binaries or profiler were available here: no compilation, frame-time
-  profiling, Harmony patch check or in-game exception scan was performed.
+- The offline harness now emits GitHub Actions annotations for failures and a notice with the
+  total check count. The `Offline logic tests` CI job (Ubuntu, .NET 8) compiles all production
+  sources against the doubles and runs the full harness successfully; the static checker runs
+  in the same job. This is a doubles-based compile, not a build against the game assemblies.
+- No official game binaries or profiler were available here: no compilation against the real
+  RimWorld assemblies, frame-time profiling, Harmony patch check or in-game exception scan was
+  performed.
 
 ## Unreleased — Phase 7: optional management (off by default)
 

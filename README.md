@@ -5,10 +5,11 @@ power simulation; it does not replace or patch it.
 
 > **Development status:** Phases 1–8 are implemented in source (project skeleton, monitoring
 > core, dashboard, historical monitoring, diagnostics, forecasting, optional management, and
-> compatibility/optimization work). The Phase 1–6 harness reported 493 checks in earlier work;
-> Phase 7/8 add more. **In this workspace no .NET SDK, game assemblies or RimWorld installation
-> are available**, so the C# harness and production build could not be executed here. The
-> dependency-free static checker and a Roslyn-based syntax check pass locally. Treat this as a
+> compatibility/optimization work). The offline logic harness and the dependency-free static
+> checker both pass in GitHub Actions CI against .NET 8 (the harness links the production
+> sources against minimal game doubles — it is *not* a build against the real RimWorld
+> assemblies). **No game assemblies or RimWorld installation are available here**, so the
+> production build (`build.sh`) and every in-game behaviour remain unverified. Treat this as a
 > development build, not a release, until the [in-game checklist](Docs/TESTING.md) is run.
 
 ## What it does today
@@ -132,11 +133,13 @@ compatibility. `--syntax` needs Node.js 22+ and `npm i @scalar/csharp-fmt`; set
 `PGM_CSHARP_FMT` if the package is installed elsewhere. CI runs the static checker and the
 harness on every push/PR.
 
-In this workspace the harness could **not** be run (no `dotnet`). What did run here:
-`python3 Tests/static_checks.py --syntax` — 1,853 static assertions including XML metadata,
-568 localization keys/placeholders, source hygiene and a Roslyn syntax parse of all 50 C#
-files, with zero failures. See [Phase 8](Docs/PHASE-8-COMPATIBILITY.md) for the full
-verification matrix and [Testing](Docs/TESTING.md) for the in-game checklist.
+The local workspace has no `dotnet`, but the `Offline logic tests` GitHub Actions job compiles
+the full production source set against the doubles and runs the harness on .NET 8; that job
+passes for this branch. Locally `python3 Tests/static_checks.py --syntax` also passes — 1,853
+static assertions including XML metadata, 568 localization keys/placeholders, source hygiene
+and a Roslyn syntax parse of all 50 C# files, with zero failures. See
+[Phase 8](Docs/PHASE-8-COMPATIBILITY.md) for the full verification matrix and
+[Testing](Docs/TESTING.md) for the in-game checklist.
 
 ## Install (once built)
 

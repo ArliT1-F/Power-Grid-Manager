@@ -5,9 +5,10 @@ Two separate levels exist, and they must not be confused:
 1. **Offline logic harness** — compiles the production sources against minimal game doubles.
    Proves measurement, filtering, history, chart, diagnostics, forecast, management and
    localization logic. It cannot prove compatibility with the real game assemblies, rendering,
-   or performance. **In the Phase 7/8 continuation no .NET SDK was available in this
-   workspace**, so the harness was extended but could not be executed here; CI and a local
-   `dotnet run` execute it.
+   or performance. **There is no .NET SDK in the development workspace itself**, but the
+   `Offline logic tests` GitHub Actions job compiles the full production source set against
+   the doubles and runs the harness on .NET 8 for every push and pull request; that job passes
+   for the Phase 7/8 branch. A local `dotnet run` reproduces it.
 2. **In-game validation** — requires an installed RimWorld build. Everything in this
    document's second half is still outstanding.
 
@@ -214,8 +215,9 @@ in the Phase 7/8 continuation workspace.** The following checks were run here in
   `JobDriver_Flick` and `WorkGiver_Flick`.
 - `git diff --check` for whitespace errors.
 
-**Not performed in this workspace:** semantic compilation against official game assemblies
-or even the doubles (no `dotnet`), execution of the C# harness, launching the game, real
-save/load, real rendering, Harmony patch verification or frame-time profiling. The
-`CompatibilityTests` timing assertions run only when the harness is executed in an
-environment with .NET; their generous bounds are regression guards, not performance claims.
+**Not performed in this workspace:** compilation against official game assemblies, launching
+the game, real save/load, real rendering, Harmony patch verification or frame-time profiling.
+The C# harness *is* executed on every push/PR by the GitHub Actions `Offline logic tests`
+job (Ubuntu, .NET 8), which compiles all production sources against the doubles and runs
+every check; that job passes for this branch. The `CompatibilityTests` timing assertions are
+generous regression guards in that environment, not performance claims about the real game.

@@ -210,7 +210,10 @@ verification matrix and limitations. Key additions to this research record:
 - **Version status**: the new APIs were cross-checked against 1.5 and 1.6 public references.
   The 1.7 build target remains configured but unverified: its runtime/assembly layout differs
   and no official 1.7 assemblies were available here.
-- **Validation honesty**: no .NET SDK, game assemblies or profiler were available in this
-  continuation. The C# harness was extended but not executed here; a Roslyn-based *syntax*
-  parse, XML/key checks and source hygiene checks were run with zero failures. In-game
-  compilation, launch, save/load, rendering and profiling remain open checklist items.
+- **Validation honesty**: no .NET SDK, game assemblies or profiler were available in the local
+  development workspace. A Roslyn-based *syntax* parse, XML/key checks and source hygiene
+  checks were run locally with zero failures. The `Offline logic tests` GitHub Actions job
+  (Ubuntu, .NET 8) then compiled all production sources against the test doubles and ran the
+  full C# harness successfully, so semantic/type correctness against the doubles and all
+  offline logic checks are verified. Compilation against the official RimWorld assemblies,
+  in-game launch, save/load, rendering and profiling remain open checklist items.

@@ -75,14 +75,14 @@ check against the project's game doubles. It is not an in-game or frame-time val
 | Area | Method | Result here | Still required |
 |---|---|---|---|
 | C# syntax | Roslyn parser via CSharpier WASM (`@scalar/csharp-fmt`) on all 50 source/test files | 0 parse failures | Full `dotnet build` against game assemblies |
-| Semantic/type correctness | Manual review + member cross-check script; `Tests/static_checks.py` | No known mismatch | Compilation (blocked here: no SDK/game DLLs) |
-| Logic tests | `Tests/*.cs` source added; harness requires .NET 8 | **Not executed in this workspace** | `dotnet run --project Tests/PowerGridManager.Tests.csproj -c Release` (CI runs it) |
+| Semantic/type correctness | `dotnet run` in CI compiles all production sources against the game doubles; `static_checks.py` | **CI compile passes** (doubles only) | Compilation against the official game assemblies |
+| Logic tests | `Tests/*.cs`; `Offline logic tests` CI job on .NET 8 | **Executed in CI, pass** (no SDK in the local workspace) | Re-run locally after any change; real modded saves in game |
 | Localization | `static_checks.py` + `LocalizationTests` (in harness) | 568 keys defined, 0 missing, 0 placeholder mismatches | In-game text rendering |
 | XML metadata | `static_checks.py` (About/Defs/Languages parse; icon exists) | pass | In-game def load |
-| Large colony | 10,000-building offline scenario in `CompatibilityTests` | Designed; timing bound generous | Real map profiling with a profiler |
-| Multi-map | `Map.uniqueID` staggering test | Designed in harness | In-game multi-map session |
-| Modded power components | Custom trader/battery/unknown component tests | Designed in harness | Real modded saves |
-| Save/load | Scribe doubles: component, registry, events, settings, missing/old nodes | Designed in harness | Real save/reload in each game version |
+| Large colony | 10,000-building offline scenario in `CompatibilityTests` | Executed in CI, passes (synthetic, generous timing bound) | Real map profiling with a profiler |
+| Multi-map | `Map.uniqueID` staggering test | Executed in CI, passes | In-game multi-map session |
+| Modded power components | Custom trader/battery/unknown component tests | Executed in CI, passes (doubles) | Real modded saves |
+| Save/load | Scribe doubles: component, registry, events, settings, missing/old nodes | Executed in CI, passes (doubles) | Real save/reload in each game version |
 | No DLC | Source audit: zero DLC namespaces, zero `PackageReference`, no Harmony | pass | Launch without DLC installed |
 | 1.5 API | Public 1.5.4409 decompilation cross-check of every new member | Consistent | Compile/load with official 1.5 DLLs |
 | 1.6 API | Public 1.6 decompilation cross-check (commit `79ca2aa…`) | Consistent | Compile/load with official 1.6 DLLs |
