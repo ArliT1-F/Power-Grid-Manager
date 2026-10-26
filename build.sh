@@ -37,7 +37,7 @@ case "$VERSION" in
       echo 'Example: RIMWORLD_MANAGED_DIR="/games/RimWorld/RimWorldLinux_Data/Managed" ./build.sh' >&2
       exit 2
     fi
-    for f in Assembly-CSharp.dll UnityEngine.CoreModule.dll UnityEngine.IMGUIModule.dll; do
+    for f in Assembly-CSharp.dll UnityEngine.CoreModule.dll UnityEngine.IMGUIModule.dll UnityEngine.TextRenderingModule.dll; do
       if [ ! -f "$RIMWORLD_MANAGED_DIR/$f" ]; then
         echo "$f not found under: $RIMWORLD_MANAGED_DIR" >&2
         exit 2
@@ -83,6 +83,7 @@ elif command -v mcs >/dev/null 2>&1 || command -v csc >/dev/null 2>&1; then
     -r:"$RIMWORLD_MANAGED_DIR/Assembly-CSharp.dll" \
     -r:"$RIMWORLD_MANAGED_DIR/UnityEngine.CoreModule.dll" \
     -r:"$RIMWORLD_MANAGED_DIR/UnityEngine.IMGUIModule.dll" \
+    -r:"$RIMWORLD_MANAGED_DIR/UnityEngine.TextRenderingModule.dll" \
     $(find "$ROOT/Source/PowerGridManager" -name '*.cs')
 else
   echo "No C# compiler found. Install the .NET SDK (dotnet) or Mono (mono-devel/msbuild), then retry." >&2

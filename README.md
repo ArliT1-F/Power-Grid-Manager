@@ -63,8 +63,9 @@ RIMWORLD_DIR="/path/to/RimWorld-1.7" ./build.sh
 
 - The version is detected from `Version.txt` next to the `Managed` directory; set
   `RIMWORLD_GAME_VERSION=1.5` (or `1.6`/`1.7`) to override it.
-- 1.5/1.6 need `Assembly-CSharp.dll`, `UnityEngine.CoreModule.dll` and
-  `UnityEngine.IMGUIModule.dll` from that install; the script verifies them first.
+- 1.5/1.6 need `Assembly-CSharp.dll`, `UnityEngine.CoreModule.dll`,
+  `UnityEngine.IMGUIModule.dll` and `UnityEngine.TextRenderingModule.dll` from that install;
+  the script verifies them first.
 - The build uses `dotnet` or `msbuild`. On Linux the .NET SDK restores the .NET Framework
   4.7.2 reference assemblies from NuGet, so the first build needs network access. If no
   `dotnet`/`msbuild` is present, the script falls back to `mcs`/`csc` against the game's own

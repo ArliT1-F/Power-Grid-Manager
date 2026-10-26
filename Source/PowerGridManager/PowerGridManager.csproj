@@ -31,6 +31,10 @@
       <HintPath>$(RimWorldManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(RimWorldManagedDir)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <!-- RimWorld 1.7 has a different .NET runtime and assembly layout; compile a separate binary. -->
@@ -64,6 +68,8 @@
            Text="UnityEngine.CoreModule.dll was not found in '$(RimWorldManagedDir)'." />
     <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And !Exists('$(RimWorldManagedDir)/UnityEngine.IMGUIModule.dll')"
            Text="UnityEngine.IMGUIModule.dll was not found in '$(RimWorldManagedDir)'." />
+    <Error Condition="('$(RimWorldGameVersion)' == '1.5' Or '$(RimWorldGameVersion)' == '1.6') And !Exists('$(RimWorldManagedDir)/UnityEngine.TextRenderingModule.dll')"
+           Text="UnityEngine.TextRenderingModule.dll was not found in '$(RimWorldManagedDir)'." />
     <Error Condition="'$(RimWorldGameVersion)' == '1.7' And '$(RimWorldDir)' == ''"
            Text="Set RimWorldDir or RIMWORLD_DIR to the RimWorld 1.7 installation root." />
     <Error Condition="'$(RimWorldGameVersion)' == '1.7' And !Exists('$(RimWorldDir)/Assembly-CSharp.dll')"
