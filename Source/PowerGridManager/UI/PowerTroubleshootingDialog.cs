@@ -1,18 +1,20 @@
 using System;
-using System.Collections.Generic;
+using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 
 namespace PowerGridManager
 {
     /// <summary>
-    /// Guided "Diagnose Power Problem" dialog. It produces a deterministic, rule-based
-    /// report for the whole map, a selected network, or a selected building, and lets the
-    /// player navigate to the affected elements. Nothing here changes the power simulation.
+    /// Modernized guided "Diagnose Power Problem" dialog. Produces a deterministic,
+    /// rule-based report for the whole map, a selected network, or a selected building,
+    /// styled in the dark electrical-grid monitoring palette with full-bleed custom chrome.
     /// </summary>
     public sealed class PowerTroubleshootingDialog : Window
     {
-        public override Vector2 InitialSize => new Vector2(740f, 560f);
+        public override Vector2 InitialSize => new Vector2(760f, 560f);
+
+        protected override float Margin => 0f;
 
         private readonly PowerGridManagerComponent component;
         private readonly PowerUiState state;
@@ -21,6 +23,7 @@ namespace PowerGridManager
         private DiagnosisScope scope = DiagnosisScope.WholeMap;
         private PowerDiagnosticReport report;
         private bool reportReady;
+        private Vector2 reportScroll;
 
         public PowerTroubleshootingDialog(PowerGridManagerComponent component, PowerUiState state)
         {
@@ -29,35 +32,59 @@ namespace PowerGridManager
             this.settings = PowerGridManagerMod.Settings;
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
-            doCloseButton = true;
+            doCloseButton = false;
+            doCloseX = false;
+            doWindowBackground = false;
             closeOnAccept = true;
         }
 
         public override void DoWindowContents(Rect inRect)
         {
-            float y = inRect.y;
-            Rect title = new Rect(inRect.x, y, inRect.width, 30f);
-            PowerUiDraw.DrawText(title, "PGM_Trouble_Title".Translate(), Color.white);
-            y += 34f;
+            if (inRect.width <= 8f || inRect.height <= 8f) return;
 
-            Rect scopeArea = new Rect(inRect.x, y, inRect.width, 34f);
-            DrawScope(scopeArea);
-            y += 40f;
+            PowerUiDraw.DrawWindowBackground(inRect);
+            Rect content = inRect.ContractedBy(12f);
 
-            Rect buttonArea = new Rect(inRect.x, y, inRect.width, 30f);
-            if (Widgets.ButtonText(buttonArea, "PGM_Trouble_Diagnose".Translate()))
+            float y = content.y;
+
+            // Header bar with close button.
+            Rect headerRect = new Rect(content.x, y, content.width, 36f);
+            PowerUiDraw.Panel(headerRect);
+            Widgets.DrawBoxSolid(new Rect(headerRect.x, headerRect.y, headerRect.width, 2f),
+                PowerUiDraw.AccentPrimary);
+            PowerUiDraw.TextEllipsized(
+                new Rect(headerRect.x + 12f, headerRect.y + 6f, Mathf.Max(40f, headerRect.width - 52f), 24f),
+                "PGM_Trouble_Title".Translate(), PowerUiDraw.TextPrimary,
+                TextAnchor.MiddleLeft, GameFont.Small);
+            Rect closeRect = new Rect(headerRect.xMax - 30f, headerRect.y + 6f, 24f, 24f);
+            if (PowerUiDraw.Button(closeRect, "\u00D7", false, false, true, PowerUiDraw.NoticeColor))
+            {
+                Close();
+                return;
+            }
+            y += 44f;
+
+            // Scope + Diagnose control card.
+            Rect ctrlCard = new Rect(content.x, y, content.width, 74f);
+            PowerUiDraw.Panel(ctrlCard);
+            Rect ctrlInner = ctrlCard.ContractedBy(8f);
+            DrawScope(new Rect(ctrlInner.x, ctrlInner.y, ctrlInner.width, 26f));
+
+            Rect buttonArea = new Rect(ctrlInner.x, ctrlInner.y + 32f, ctrlInner.width, 26f);
+            if (PowerUiDraw.Button(buttonArea, "PGM_Trouble_Diagnose".Translate(), false, true))
             {
                 RunDiagnosis();
             }
             PowerUiDraw.Tip(buttonArea, "PGM_Trouble_DiagnoseTip".Translate());
-            y += 36f;
+            y += 82f;
 
-            Rect body = new Rect(inRect.x, y, inRect.width, Mathf.Max(100f, inRect.yMax - y));
+            // Report body.
+            Rect body = new Rect(content.x, y, content.width, Mathf.Max(60f, content.yMax - y));
             PowerUiDraw.Panel(body);
             if (!reportReady)
             {
-                PowerUiDraw.WrappedText(new Rect(body.x + 10f, body.y + 10f, body.width - 20f, 60f),
-                    "PGM_Trouble_Prompt".Translate(), PowerUiDraw.Muted);
+                PowerUiDraw.WrappedText(new Rect(body.x + 12f, body.y + 12f, body.width - 24f, 68f),
+                    "PGM_Trouble_Prompt".Translate(), PowerUiDraw.TextSecondary);
                 return;
             }
             DrawReport(body);
@@ -66,24 +93,33 @@ namespace PowerGridManager
         private void DrawScope(Rect rect)
         {
             float x = rect.x;
-            float width = Mathf.Min(160f, rect.width / 3f - 8f);
-            Action<DiagnosisScope, string> button = (scopeValue, label) =>
+            float width = Mathf.Max(60f, (rect.width - 12f) / 3f);
+            DiagnosisScope[] scopes =
             {
-                Rect b = new Rect(x, rect.y, width, 26f);
-                bool selected = this.scope == scopeValue;
-                if (selected) Widgets.DrawBoxSolid(b, new Color(1f, 1f, 1f, 0.14f));
-                if (Widgets.ButtonText(b, label)) this.scope = scopeValue;
-                x += width + 8f;
+                DiagnosisScope.WholeMap,
+                DiagnosisScope.SelectedNetwork,
+                DiagnosisScope.SelectedBuilding
             };
-            button(DiagnosisScope.WholeMap, "PGM_Trouble_Scope_Map".Translate());
-            button(DiagnosisScope.SelectedNetwork, "PGM_Trouble_Scope_Network".Translate());
-            button(DiagnosisScope.SelectedBuilding, "PGM_Trouble_Scope_Building".Translate());
+            string[] labels =
+            {
+                "PGM_Trouble_Scope_Map".Translate(),
+                "PGM_Trouble_Scope_Network".Translate(),
+                "PGM_Trouble_Scope_Building".Translate()
+            };
+            for (int i = 0; i < scopes.Length; i++)
+            {
+                DiagnosisScope s = scopes[i];
+                Rect b = new Rect(x, rect.y, width, 26f);
+                if (PowerUiDraw.Button(b, labels[i], this.scope == s))
+                    this.scope = s;
+                x += width + 6f;
+            }
         }
 
         private void RunDiagnosis()
         {
             PowerGridSnapshot snapshot = component == null ? null : component.Snapshot;
-            int now = Find.TickManager.TicksGame;
+            int now = Find.TickManager != null ? Find.TickManager.TicksGame : 0;
             Building selected = state == null ? null : state.SelectedBuilding;
             int? network = state == null ? (int?)null : state.SelectedNetworkId;
             report = PowerTroubleshootingAssistant.Diagnose(scope, snapshot, settings,
@@ -94,71 +130,104 @@ namespace PowerGridManager
         private void DrawReport(Rect rect)
         {
             if (report == null) return;
-            Color severityColor = PowerUiDraw.SeverityColor(report.Severity);
-            float y = rect.y + 8f;
 
-            Rect problem = new Rect(rect.x + 8f, y, rect.width - 16f, 26f);
-            PowerUiDraw.DrawText(problem, report.ProblemKey.Translate(report.ProblemArgs), Color.white);
-            y += 30f;
+            Rect outer = rect.ContractedBy(8f);
+            int actionCount = report.RecommendedActionKeys == null ? 0 : report.RecommendedActionKeys.Length;
+            float estHeight = 200f + actionCount * 22f;
+            Rect view = new Rect(0f, 0f, Mathf.Max(140f, outer.width - 18f), Mathf.Max(outer.height, estHeight));
 
-            Rect pill = new Rect(rect.x + 8f, y, 118f, 18f);
-            PowerUiDraw.StatusPill(pill,
-                PowerGridUtilities.SeverityLabelKey(report.Severity).Translate(), severityColor);
-            y += 26f;
-
-            if (!string.IsNullOrEmpty(report.EvidenceKey))
+            Widgets.BeginScrollView(outer, ref reportScroll, view);
+            try
             {
-                Rect evidence = new Rect(rect.x + 8f, y, rect.width - 16f, 34f);
-                PowerUiDraw.WrappedText(evidence, report.EvidenceKey.Translate(report.EvidenceArgs),
-                    new Color(0.86f, 0.86f, 0.86f));
-                y += 40f;
-            }
+                bool noProblem = report.ProblemKey == "PGM_Trouble_Problem_None";
+                Color severityColor = noProblem
+                    ? PowerUiDraw.Good
+                    : PowerUiDraw.SeverityColor(report.Severity);
+                string symbol = noProblem ? "OK" : PowerUiDraw.SeveritySymbol(report.Severity);
 
-            if (!string.IsNullOrEmpty(report.LikelyCauseKey))
-            {
-                Rect causeLabel = new Rect(rect.x + 8f, y, rect.width - 16f, 18f);
-                PowerUiDraw.DrawText(causeLabel, "PGM_Trouble_LikelyCause".Translate(), PowerUiDraw.Muted);
-                y += 20f;
-                Rect cause = new Rect(rect.x + 8f, y, rect.width - 16f, 34f);
-                PowerUiDraw.WrappedText(cause, report.LikelyCauseKey.Translate(report.CauseArgs),
-                    Color.white);
-                y += 40f;
-            }
+                Rect summaryCard = new Rect(0f, 0f, view.width, 64f);
+                PowerUiDraw.AccentCard(summaryCard, severityColor, PowerUiDraw.BgElevated);
+                Rect sumInner = summaryCard.ContractedBy(8f);
 
-            if (report.RecommendedActionKeys != null && report.RecommendedActionKeys.Length > 0)
-            {
-                Rect actionsLabel = new Rect(rect.x + 8f, y, rect.width - 16f, 18f);
-                PowerUiDraw.DrawText(actionsLabel, "PGM_Trouble_RecommendedActions".Translate(),
-                    PowerUiDraw.Muted);
-                y += 20f;
-                for (int i = 0; i < report.RecommendedActionKeys.Length; i++)
+                Rect pill = new Rect(sumInner.x, sumInner.y, 118f, 20f);
+                string sevText = noProblem
+                    ? (string)"PGM_Overview_NominalBadge".Translate()
+                    : (string)PowerGridUtilities.SeverityLabelKey(report.Severity).Translate();
+                PowerUiDraw.StatusBadge(pill, sevText, severityColor, symbol);
+
+                PowerUiDraw.TextEllipsized(
+                    new Rect(sumInner.x, sumInner.y + 24f, sumInner.width, 24f),
+                    FormatKey(report.ProblemKey, report.ProblemArgs),
+                    PowerUiDraw.TextPrimary, TextAnchor.MiddleLeft, GameFont.Small);
+
+                float y = summaryCard.yMax + 8f;
+
+                if (!string.IsNullOrEmpty(report.EvidenceKey))
                 {
-                    Rect action = new Rect(rect.x + 8f, y, rect.width - 16f, 22f);
-                    PowerUiDraw.DrawText(action, "• " + report.RecommendedActionKeys[i].Translate(),
-                        Color.white);
+                    Rect evBox = new Rect(0f, y, view.width, 38f);
+                    Widgets.DrawBoxSolid(evBox, PowerUiDraw.BgRecessed);
+                    PowerUiDraw.DrawBorder(evBox, PowerUiDraw.BorderPanel, 1);
+                    PowerUiDraw.WrappedText(evBox.ContractedBy(6f),
+                        FormatKey(report.EvidenceKey, report.EvidenceArgs),
+                        PowerUiDraw.TextPrimary);
+                    y += 46f;
+                }
+
+                if (!string.IsNullOrEmpty(report.LikelyCauseKey))
+                {
+                    PowerUiDraw.SectionHeader(new Rect(0f, y, view.width, 20f),
+                        "PGM_Trouble_LikelyCause".Translate());
                     y += 22f;
+                    PowerUiDraw.WrappedText(new Rect(0f, y, view.width, 36f),
+                        FormatKey(report.LikelyCauseKey, report.CauseArgs),
+                        PowerUiDraw.TextSecondary);
+                    y += 40f;
                 }
-                y += 6f;
-            }
 
-            Rect nav = new Rect(rect.x + 8f, y, rect.width - 16f, 26f);
-            if (report.HasNavigationBuilding)
-            {
-                if (Widgets.ButtonText(nav, "PGM_Trouble_Locate".Translate()))
+                if (report.RecommendedActionKeys != null && report.RecommendedActionKeys.Length > 0)
                 {
-                    CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(report.NavigationBuilding));
+                    PowerUiDraw.SectionHeader(new Rect(0f, y, view.width, 20f),
+                        "PGM_Trouble_RecommendedActions".Translate());
+                    y += 22f;
+                    for (int i = 0; i < report.RecommendedActionKeys.Length; i++)
+                    {
+                        PowerUiDraw.TextEllipsized(new Rect(4f, y, view.width - 8f, 22f),
+                            "\u2022 " + FormatKey(report.RecommendedActionKeys[i], null),
+                            PowerUiDraw.AccentCyan);
+                        y += 22f;
+                    }
+                    y += 6f;
                 }
-                PowerUiDraw.Tip(nav, "PGM_Trouble_LocateTip".Translate());
-                nav = new Rect(nav.x + 100f, nav.y, Mathf.Max(0f, nav.width - 100f), nav.height);
-            }
-            if (report.HasNavigationBuilding)
-            {
-                if (Widgets.ButtonText(nav, "PGM_Trouble_Inspect".Translate()))
+
+                if (report.HasNavigationBuilding)
                 {
-                    Find.WindowStack.Add(new Dialog_InfoCard(report.NavigationBuilding));
+                    float btnW = Mathf.Min(140f, (view.width - 8f) * 0.5f);
+                    Rect locateRect = new Rect(0f, y, btnW, 26f);
+                    if (PowerUiDraw.Button(locateRect, "PGM_Trouble_Locate".Translate(), false, true))
+                    {
+                        CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(report.NavigationBuilding));
+                    }
+                    PowerUiDraw.Tip(locateRect, "PGM_Trouble_LocateTip".Translate());
+
+                    Rect inspectRect = new Rect(locateRect.xMax + 8f, y, btnW, 26f);
+                    if (PowerUiDraw.Button(inspectRect, "PGM_Trouble_Inspect".Translate()))
+                    {
+                        Find.WindowStack.Add(new Dialog_InfoCard(report.NavigationBuilding));
+                    }
+                    PowerUiDraw.Tip(inspectRect, "PGM_Trouble_InspectTip".Translate());
                 }
-                PowerUiDraw.Tip(nav, "PGM_Trouble_InspectTip".Translate());
             }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+        }
+
+        private static string FormatKey(string key, object[] args)
+        {
+            if (string.IsNullOrEmpty(key)) return string.Empty;
+            if (args == null || args.Length == 0) return key.Translate();
+            return key.Translate(args);
         }
     }
 }

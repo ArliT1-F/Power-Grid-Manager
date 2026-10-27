@@ -4,14 +4,13 @@ using Verse;
 namespace PowerGridManager
 {
     /// <summary>
-    /// Historical charts over the recorded aggregate samples. Chart geometry is cached
-    /// and only rebuilt when the sample set, the range or the pixel size changes, so
-    /// drawing is cheap and does not allocate per frame.
+    /// Historical charts over recorded aggregate samples. Chart geometry is cached and
+    /// rebuilt only when the sample set, time range, or viewport dimensions change.
     /// </summary>
     public sealed class PowerHistoryPanel
     {
-        private const float RangeRowHeight = 28f;
-        private const float ChartGap = 6f;
+        private const float RangeRowHeight = 36f;
+        private const float ChartGap = 8f;
 
         private PowerChartData generationChart;
         private PowerChartData netChart;
@@ -24,16 +23,19 @@ namespace PowerGridManager
         private PowerTimeRange cachedRange;
         private int cachedSampleCount = -1;
         private int cachedNewestTick = -1;
+        private Vector2 chartScroll;
 
         public void Draw(Rect rect, PowerHistoryTracker history, PowerUiState state,
             PowerGridManagerSettings settings, int now)
         {
-            float y = rect.y;
-            DrawRangeRow(new Rect(rect.x, y, rect.width, RangeRowHeight), state, history, settings, now);
-            y += RangeRowHeight + 4f;
+            if (state == null || rect.width <= 8f || rect.height <= 8f) return;
 
-            Rect chartArea = new Rect(rect.x, y, rect.width, rect.yMax - y);
-            if (chartArea.height < 90f) return;
+            float rangeH = rect.height < 140f ? 26f : RangeRowHeight;
+            DrawRangeRow(new Rect(rect.x, rect.y, rect.width, rangeH), state, history, settings);
+            float y = rect.y + rangeH + PowerUiDraw.SpaceRelated;
+
+            Rect chartArea = new Rect(rect.x, y, rect.width, Mathf.Max(0f, rect.yMax - y));
+            if (chartArea.height < 40f) return;
 
             if (history == null || !history.HasSamples)
             {
@@ -42,51 +44,104 @@ namespace PowerGridManager
                     ? "PGM_History_Disabled".Translate()
                     : "PGM_History_Empty".Translate(PowerFormatting.FormatDuration(
                         settings == null ? 2500 : settings.SampleIntervalTicks));
-                PowerUiDraw.WrappedText(new Rect(chartArea.x + 10f, chartArea.y + 10f, chartArea.width - 20f, 90f),
-                    message, PowerUiDraw.Muted);
+                PowerUiDraw.Label(chartArea.ContractedBy(14f), message,
+                    GameFont.Small, PowerUiDraw.TextSecondary, TextAnchor.MiddleCenter, true);
                 return;
             }
 
             if (history.Count < 2)
             {
                 PowerUiDraw.Panel(chartArea);
-                PowerUiDraw.WrappedText(new Rect(chartArea.x + 10f, chartArea.y + 10f, chartArea.width - 20f, 70f),
-                    "PGM_History_NotEnoughSamples".Translate(), PowerUiDraw.Muted);
+                PowerUiDraw.Label(chartArea.ContractedBy(14f),
+                    "PGM_History_NotEnoughSamples".Translate(),
+                    GameFont.Small, PowerUiDraw.TextSecondary, TextAnchor.MiddleCenter, true);
                 return;
             }
 
-            float chartHeight = (chartArea.height - ChartGap * 3f) / 4f;
-            EnsureCharts(chartArea.width, chartHeight, history, state.Range);
+            // Use a 2x2 grid on wide windows for generous vertical plot height, or stacked scroll on compact sizes.
+            bool twoByTwo = chartArea.width >= 760f && chartArea.height >= 260f;
+            if (twoByTwo)
+            {
+                float halfW = (chartArea.width - ChartGap) * 0.5f;
+                float halfH = (chartArea.height - ChartGap) * 0.5f;
+                EnsureCharts(halfW, halfH, history, state.Range);
 
-            int endTick = history.NewestTick;
-            int startTick = endTick - PowerChartBuilder.TicksFor(state.Range);
-            string startLabel = "PGM_Chart_Ago".Translate(
-                PowerFormatting.FormatDuration(endTick - startTick));
-            string endLabel = "PGM_Chart_NewestSample".Translate(
-                PowerFormatting.FormatDuration(Mathf.Max(0, now - endTick)));
+                int endTick = history.NewestTick;
+                int startTick = endTick - PowerChartBuilder.TicksFor(state.Range);
+                string startLabel = "PGM_Chart_Ago".Translate(PowerFormatting.FormatDuration(endTick - startTick));
+                string endLabel = "PGM_Chart_NewestSample".Translate(
+                    PowerFormatting.FormatDuration(Mathf.Max(0, now - endTick)));
 
-            Rect first = new Rect(chartArea.x, chartArea.y, chartArea.width, chartHeight);
-            Rect second = new Rect(chartArea.x, first.yMax + ChartGap, chartArea.width, chartHeight);
-            Rect third = new Rect(chartArea.x, second.yMax + ChartGap, chartArea.width, chartHeight);
-            Rect fourth = new Rect(chartArea.x, third.yMax + ChartGap, chartArea.width, chartHeight);
+                PowerChartWidget.Draw(new Rect(chartArea.x, chartArea.y, halfW, halfH),
+                    generationChart, "PGM_Chart_GenerationTitle".Translate(),
+                    "PGM_Unit_Watt".Translate(), "PGM_Chart_LegendGeneration".Translate(),
+                    "PGM_Chart_LegendConsumption".Translate(), startLabel, endLabel);
 
-            PowerChartWidget.Draw(first, generationChart, "PGM_Chart_GenerationTitle".Translate(),
-                "PGM_Unit_Watt".Translate(), "PGM_Chart_LegendGeneration".Translate(),
-                "PGM_Chart_LegendConsumption".Translate(), startLabel, endLabel);
-            PowerChartWidget.Draw(second, netChart, "PGM_Chart_NetTitle".Translate(),
-                "PGM_Unit_Watt".Translate(), "PGM_Chart_LegendNet".Translate(), null, startLabel, endLabel);
-            PowerChartWidget.Draw(third, chargeChart, "PGM_Chart_ChargeTitle".Translate(), "%",
-                "PGM_Chart_LegendCharge".Translate(), null, startLabel, endLabel);
-            PowerChartWidget.Draw(fourth, loadChart, "PGM_Chart_LoadTitle".Translate(), "%",
-                "PGM_Chart_LegendLoad".Translate(), null, startLabel, endLabel);
+                PowerChartWidget.Draw(new Rect(chartArea.x + halfW + ChartGap, chartArea.y, halfW, halfH),
+                    netChart, "PGM_Chart_NetTitle".Translate(),
+                    "PGM_Unit_Watt".Translate(), "PGM_Chart_LegendNet".Translate(), null, startLabel, endLabel);
+
+                PowerChartWidget.Draw(new Rect(chartArea.x, chartArea.y + halfH + ChartGap, halfW, halfH),
+                    chargeChart, "PGM_Chart_ChargeTitle".Translate(), "%",
+                    "PGM_Chart_LegendCharge".Translate(), null, startLabel, endLabel);
+
+                PowerChartWidget.Draw(new Rect(chartArea.x + halfW + ChartGap, chartArea.y + halfH + ChartGap, halfW, halfH),
+                    loadChart, "PGM_Chart_LoadTitle".Translate(), "%",
+                    "PGM_Chart_LegendLoad".Translate(), null, startLabel, endLabel);
+                return;
+            }
+
+            float minEach = 110f;
+            float neededH = minEach * 4f + ChartGap * 3f;
+            float viewW = chartArea.height < neededH ? Mathf.Max(40f, chartArea.width - 16f) : chartArea.width;
+            float eachH = Mathf.Max(minEach, (chartArea.height - ChartGap * 3f) / 4f);
+            EnsureCharts(viewW, eachH, history, state.Range);
+
+            int endT = history.NewestTick;
+            int startT = endT - PowerChartBuilder.TicksFor(state.Range);
+            string sLabel = "PGM_Chart_Ago".Translate(PowerFormatting.FormatDuration(endT - startT));
+            string eLabel = "PGM_Chart_NewestSample".Translate(PowerFormatting.FormatDuration(Mathf.Max(0, now - endT)));
+
+            Rect view = new Rect(0f, 0f, viewW, eachH * 4f + ChartGap * 3f);
+            Widgets.BeginScrollView(chartArea, ref chartScroll, view);
+            try
+            {
+                float cy = 0f;
+                PowerChartWidget.Draw(new Rect(0f, cy, viewW, eachH), generationChart,
+                    "PGM_Chart_GenerationTitle".Translate(), "PGM_Unit_Watt".Translate(),
+                    "PGM_Chart_LegendGeneration".Translate(), "PGM_Chart_LegendConsumption".Translate(),
+                    sLabel, eLabel);
+                cy += eachH + ChartGap;
+
+                PowerChartWidget.Draw(new Rect(0f, cy, viewW, eachH), netChart,
+                    "PGM_Chart_NetTitle".Translate(), "PGM_Unit_Watt".Translate(),
+                    "PGM_Chart_LegendNet".Translate(), null, sLabel, eLabel);
+                cy += eachH + ChartGap;
+
+                PowerChartWidget.Draw(new Rect(0f, cy, viewW, eachH), chargeChart,
+                    "PGM_Chart_ChargeTitle".Translate(), "%",
+                    "PGM_Chart_LegendCharge".Translate(), null, sLabel, eLabel);
+                cy += eachH + ChartGap;
+
+                PowerChartWidget.Draw(new Rect(0f, cy, viewW, eachH), loadChart,
+                    "PGM_Chart_LoadTitle".Translate(), "%",
+                    "PGM_Chart_LegendLoad".Translate(), null, sLabel, eLabel);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
-        private void DrawRangeRow(Rect rect, PowerUiState state, PowerHistoryTracker history,
-            PowerGridManagerSettings settings, int now)
+        private static void DrawRangeRow(Rect rect, PowerUiState state, PowerHistoryTracker history,
+            PowerGridManagerSettings settings)
         {
-            // Five range buttons plus optional summary text; shrink the buttons rather than clip.
-            float buttonWidth = Mathf.Clamp((rect.width - 16f) / 5f, 54f, 96f);
-            float x = rect.x;
+            PowerUiDraw.Panel(rect);
+            Rect inner = new Rect(rect.x + 6f, rect.y + (rect.height - 26f) * 0.5f,
+                Mathf.Max(20f, rect.width - 12f), Mathf.Min(26f, rect.height - 2f));
+
+            float buttonWidth = Mathf.Clamp((inner.width - 20f) / 5f, 48f, 106f);
+            float x = inner.x;
             PowerTimeRange[] ranges =
             {
                 PowerTimeRange.LastHour, PowerTimeRange.LastSixHours, PowerTimeRange.LastDay,
@@ -94,39 +149,35 @@ namespace PowerGridManager
             };
             for (int i = 0; i < ranges.Length; i++)
             {
-                Rect button = new Rect(x, rect.y, buttonWidth, 26f);
+                Rect button = new Rect(x, inner.y, buttonWidth, inner.height);
                 bool selected = state.Range == ranges[i];
-                if (selected) Widgets.DrawBoxSolid(button, new Color(1f, 1f, 1f, 0.14f));
-                if (Widgets.ButtonText(button, PowerGridUtilities.TimeRangeLabelKey(ranges[i]).Translate()))
-                {
+                if (PowerUiDraw.Button(button, PowerGridUtilities.TimeRangeLabelKey(ranges[i]).Translate(), selected))
                     state.Range = ranges[i];
-                }
                 x += buttonWidth + 4f;
             }
 
-            Rect infoRect = new Rect(x + 8f, rect.y, Mathf.Max(0f, rect.xMax - x - 8f), 26f);
-            bool showInfo = infoRect.width > 120f;
-            if (!showInfo) return;
+            Rect infoRect = new Rect(x + 8f, inner.y, Mathf.Max(0f, inner.xMax - x - 10f), inner.height);
+            if (infoRect.width <= 110f) return;
+
             if (history == null || !history.HasSamples)
             {
-                PowerUiDraw.TextEllipsized(infoRect, "PGM_History_NoSamplesShort".Translate(), PowerUiDraw.Muted,
-                    TextAnchor.MiddleRight);
+                PowerUiDraw.TextEllipsized(infoRect, "PGM_History_NoSamplesShort".Translate(),
+                    PowerUiDraw.TextSecondary, TextAnchor.MiddleRight);
                 return;
             }
 
             string info = "PGM_History_Info".Translate(history.Count,
                 PowerFormatting.FormatDuration(history.LastSampleIntervalTicks));
-            PowerUiDraw.TextEllipsized(infoRect, info, PowerUiDraw.Muted, TextAnchor.MiddleRight);
+            if (history.DiscardedSampleCount > 0)
+                info = info + "  \u00B7  " + "PGM_History_Discarded".Translate(history.DiscardedSampleCount);
+
+            PowerUiDraw.TextEllipsized(infoRect, info,
+                history.DiscardedSampleCount > 0 ? PowerUiDraw.Warn : PowerUiDraw.TextSecondary,
+                TextAnchor.MiddleRight);
             PowerUiDraw.Tip(infoRect, "PGM_Tip_HistoryInfo".Translate(
                 PowerFormatting.FormatDuration(history.LastSampleIntervalTicks),
                 settings == null ? 7 : settings.RetentionDays,
                 PowerFormatting.FormatDuration(history.NewestTick - history.OldestTick)));
-
-            if (history.DiscardedSampleCount > 0)
-            {
-                PowerUiDraw.DrawText(new Rect(rect.x, rect.yMax - 2f, rect.width, 16f),
-                    "PGM_History_Discarded".Translate(history.DiscardedSampleCount), PowerUiDraw.Warn);
-            }
         }
 
         private void EnsureCharts(float width, float chartHeight, PowerHistoryTracker history, PowerTimeRange range)

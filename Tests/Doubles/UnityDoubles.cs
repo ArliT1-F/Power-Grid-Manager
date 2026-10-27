@@ -60,6 +60,17 @@ namespace UnityEngine
         public static Color black => new Color(0f, 0f, 0f, 1f);
         public static Color gray => new Color(0.5f, 0.5f, 0.5f, 1f);
         public static Color clear => new Color(0f, 0f, 0f, 0f);
+
+        public static bool operator ==(Color lhs, Color rhs) =>
+            Math.Abs(lhs.r - rhs.r) < 1e-5f &&
+            Math.Abs(lhs.g - rhs.g) < 1e-5f &&
+            Math.Abs(lhs.b - rhs.b) < 1e-5f &&
+            Math.Abs(lhs.a - rhs.a) < 1e-5f;
+
+        public static bool operator !=(Color lhs, Color rhs) => !(lhs == rhs);
+
+        public override bool Equals(object obj) => obj is Color other && this == other;
+        public override int GetHashCode() => r.GetHashCode() ^ (g.GetHashCode() << 2) ^ (b.GetHashCode() >> 2) ^ (a.GetHashCode() >> 1);
     }
 
     public class Texture2D { }
@@ -96,6 +107,7 @@ namespace UnityEngine
         public static float Clamp(float value, float min, float max) => value < min ? min : value > max ? max : value;
         public static int Clamp(int value, int min, int max) => value < min ? min : value > max ? max : value;
         public static float Clamp01(float value) => Clamp(value, 0f, 1f);
+        public static float Floor(float value) => (float)Math.Floor(value);
         public static int RoundToInt(float value) => (int)Math.Round(value, MidpointRounding.AwayFromZero);
         public static int FloorToInt(float value) => (int)Math.Floor(value);
         public static int CeilToInt(float value) => (int)Math.Ceiling(value);

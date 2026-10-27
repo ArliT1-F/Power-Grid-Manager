@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using PowerGridManager.Tests;
+using PowerScenario = PowerGridManager.Tests.PowerScenario;
 
 namespace PowerGridManager
 {

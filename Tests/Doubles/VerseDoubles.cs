@@ -35,6 +35,15 @@ namespace Verse
         }
     }
 
+    public static class GenUI
+    {
+        public static Rect ContractedBy(this Rect rect, float margin) =>
+            new Rect(rect.x + margin, rect.y + margin, rect.width - margin * 2f, rect.height - margin * 2f);
+
+        public static Rect ContractedBy(this Rect rect, float marginX, float marginY) =>
+            new Rect(rect.x + marginX, rect.y + marginY, rect.width - marginX * 2f, rect.height - marginY * 2f);
+    }
+
     public static class GenText
     {
         public static string CapitalizeFirst(this string text)
@@ -240,7 +249,10 @@ namespace Verse
         public WindowLayer layer = WindowLayer.Dialog;
         public bool doCloseX;
         public bool doCloseButton;
+        public bool closeOnAccept = true;
+        public bool closeOnCancel = true;
         public bool closeOnClickedOutside;
+        public bool doWindowBackground = true;
         public bool forcePause;
         public bool preventCameraMotion = true;
         public bool absorbInputAroundWindow;
@@ -411,6 +423,7 @@ namespace Verse
         public static void LabelEllipses(Rect rect, string label) { }
         public static void DrawBoxSolid(Rect rect, Color color) { }
         public static void DrawBox(Rect rect, int thickness = 1, Texture2D lineTexture = null) { }
+        public static void DrawLine(Vector2 start, Vector2 end, Color color, float width) { }
         public static void DrawLineHorizontal(float x, float y, float length, Color color) { }
         public static void DrawLineHorizontal(float x, float y, float length) { }
         public static void DrawHighlightSelected(Rect rect) { }

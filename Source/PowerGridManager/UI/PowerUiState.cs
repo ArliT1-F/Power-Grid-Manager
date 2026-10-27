@@ -16,7 +16,8 @@ namespace PowerGridManager
         Management,
         Optimization,
         Planning,
-        Heatmap
+        Heatmap,
+        Settings
     }
 
     /// <summary>Which advisories the diagnostics tab shows.</summary>
@@ -122,14 +123,22 @@ namespace PowerGridManager
         public int? SelectedNetworkId;
         public Building SelectedBuilding;
 
+        public Vector2 OverviewScroll;
+        public Vector2 OverviewConsumersScroll;
+        public Vector2 OverviewAlertsScroll;
+        public bool OverviewConsumersAscending;
+
         public Vector2 NetworkScroll;
+        public Vector2 NetworkConsumersScroll;
         public Vector2 BuildingScroll;
         public Vector2 DetailScroll;
         public Vector2 DiagnosticScroll;
         public Vector2 RecommendationScroll;
         public Vector2 ForecastScroll;
         public Vector2 ManagementScroll;
+        public Vector2 ScenarioScroll;
         public Vector2 HeatmapScroll;
+        public Vector2 SettingsScroll;
 
         // Management tab view state. Never persisted: it is transient UI state only.
         public string ManagementSelectedId;

@@ -829,4 +829,60 @@
   <PGM_Mgmt_RecoverySetting_Label>Recovery rule: {0}</PGM_Mgmt_RecoverySetting_Label>
   <PGM_Mgmt_RecoverySetting_Tip>Staged restores a few buildings at a time (most important first). All at once restores every tracked building. Manual only leaves restoration to the Restore now button.</PGM_Mgmt_RecoverySetting_Tip>
   <PGM_Mgmt_SettingsNote>Switch priorities (1–6) and group membership are configured per building in the Management tab. A higher priority number is shed first and restored last. Unmarked buildings are always protected.</PGM_Mgmt_SettingsNote>
+  <PGM_Header_Title>POWER GRID MANAGER</PGM_Header_Title>
+  <PGM_Header_Subtitle>Electrical Infrastructure Overview</PGM_Header_Subtitle>
+  <PGM_Header_CloseTip>Close Power Grid Manager.</PGM_Header_CloseTip>
+  <PGM_Tab_Settings>Settings</PGM_Tab_Settings>
+  <PGM_Tab_SettingsTip>Configure refresh intervals, diagnostic thresholds, forecasting options, and optional automation rules.</PGM_Tab_SettingsTip>
+  <PGM_Settings_MonitoringSub>Snapshot refresh cadence and historical trend sampling</PGM_Settings_MonitoringSub>
+  <PGM_Settings_DiagnosticsSub>Alert thresholds, endurance warnings, and reserve margin targets</PGM_Settings_DiagnosticsSub>
+  <PGM_Settings_MutedSub>Silence individual advisory kinds without disabling diagnostics</PGM_Settings_MutedSub>
+  <PGM_Buildings_Clear>Reset</PGM_Buildings_Clear>
+  <PGM_Overview_GenCardSub>{0} generators · {1} configured</PGM_Overview_GenCardSub>
+  <PGM_Overview_ConCardSub>{0} consumers · {1} load</PGM_Overview_ConCardSub>
+  <PGM_Overview_BatCardSub>{0} / {1} ({2} batteries)</PGM_Overview_BatCardSub>
+  <PGM_Overview_NetCountSub>{0} networks</PGM_Overview_NetCountSub>
+  <PGM_Overview_NetSummaryDeficit>{0} networks ({1} in deficit)</PGM_Overview_NetSummaryDeficit>
+  <PGM_Overview_NetSummaryHighLoad>{0} networks ({1} high load)</PGM_Overview_NetSummaryHighLoad>
+  <PGM_Overview_Panel_Power>Power Overview</PGM_Overview_Panel_Power>
+  <PGM_Overview_LiveSnapshot>Live snapshot</PGM_Overview_LiveSnapshot>
+  <PGM_Overview_CfgGenShort>Configured gen</PGM_Overview_CfgGenShort>
+  <PGM_Overview_NomDrawShort>Nominal draw</PGM_Overview_NomDrawShort>
+  <PGM_Overview_OffShort>Switched off</PGM_Overview_OffShort>
+  <PGM_Overview_Panel_NetworkStatus>Network Status</PGM_Overview_Panel_NetworkStatus>
+  <PGM_Overview_StatusNoGrid>No power grid</PGM_Overview_StatusNoGrid>
+  <PGM_Overview_BuildingCounts>{0} gen · {1} con · {2} bat</PGM_Overview_BuildingCounts>
+  <PGM_Overview_ConnectedUnits>Connected units</PGM_Overview_ConnectedUnits>
+  <PGM_Overview_UsableReserve>Usable reserve</PGM_Overview_UsableReserve>
+  <PGM_Overview_UsableVsStored>{0} ({1} stored)</PGM_Overview_UsableVsStored>
+  <PGM_Overview_DisconnectedSummary>{0} disconnected · {1} notices</PGM_Overview_DisconnectedSummary>
+  <PGM_Overview_Panel_TopConsumers>Top Power Consumers</PGM_Overview_Panel_TopConsumers>
+  <PGM_Overview_SortHighLow>High to low</PGM_Overview_SortHighLow>
+  <PGM_Overview_SortLowHigh>Low to high</PGM_Overview_SortLowHigh>
+  <PGM_Overview_SortConsumersTip>Toggle consumer sort order between highest draw first and lowest active draw first.</PGM_Overview_SortConsumersTip>
+  <PGM_Overview_NoActiveConsumers>No active power consumers on this map.</PGM_Overview_NoActiveConsumers>
+  <PGM_Overview_ConsumerHigh>High</PGM_Overview_ConsumerHigh>
+  <PGM_Overview_InspectBuildingTip>Inspect {0} in the Buildings tab.</PGM_Overview_InspectBuildingTip>
+  <PGM_Overview_Panel_Alerts>Alerts &amp; Recommendations</PGM_Overview_Panel_Alerts>
+  <PGM_Overview_AlertSummaryCount>{0} critical · {1} warnings</PGM_Overview_AlertSummaryCount>
+  <PGM_Overview_NoActiveAlertsShort>All clear</PGM_Overview_NoActiveAlertsShort>
+  <PGM_Overview_NominalBadge>Nominal</PGM_Overview_NominalBadge>
+  <PGM_Overview_NominalTitle>All monitored circuits nominal</PGM_Overview_NominalTitle>
+  <PGM_Overview_NominalDetail>{0} networks monitored · {1} net balance. No active advisories or actionable recommendations.</PGM_Overview_NominalDetail>
+  <PGM_Overview_FooterNote>Measured output {0} vs demand {1}. Figures reflect observed colony state only.</PGM_Overview_FooterNote>
+  <PGM_Inspector_RoleGenerator>Generator</PGM_Inspector_RoleGenerator>
+  <PGM_Inspector_RoleBattery>Battery</PGM_Inspector_RoleBattery>
+  <PGM_Inspector_RoleConsumer>Consumer</PGM_Inspector_RoleConsumer>
+  <PGM_Inspector_GenOutputTitle>Current output</PGM_Inspector_GenOutputTitle>
+  <PGM_Inspector_GenOnline>Generating</PGM_Inspector_GenOnline>
+  <PGM_Inspector_GenIdle>Zero output</PGM_Inspector_GenIdle>
+  <PGM_Inspector_SwitchState>Switch state</PGM_Inspector_SwitchState>
+  <PGM_Inspector_Efficiency>Charge efficiency</PGM_Inspector_Efficiency>
+  <PGM_Inspector_BatteryStunned>EMP stunned</PGM_Inspector_BatteryStunned>
+  <PGM_Inspector_BatteryFull>Full</PGM_Inspector_BatteryFull>
+  <PGM_Inspector_BatteryDepleted>Depleted</PGM_Inspector_BatteryDepleted>
+  <PGM_Inspector_AutoPolicy>Load-shed policy</PGM_Inspector_AutoPolicy>
+  <PGM_Inspector_ControlPath>Control path</PGM_Inspector_ControlPath>
+  <PGM_Inspector_GroupLabel>Monitoring group</PGM_Inspector_GroupLabel>
+  <PGM_Inspector_ManualOnly>Manual controls only</PGM_Inspector_ManualOnly>
 </LanguageData>
