@@ -745,13 +745,13 @@ namespace PowerGridManager
                     for (int i = 0; i < recommendations.Count && drawn < 8; i++)
                     {
                         PowerRecommendation rec = recommendations[i];
-                        if (rec == null || !rec.IsOngoing || rec.Dismissed) continue;
+                        if (rec == null || !rec.Ongoing || rec.Dismissed) continue;
                         Rect card = new Rect(0f, cy, view.width, cardH);
-                        PowerDiagnosticSeverity sev = MapPriorityToSeverity(rec.Priority);
+                        PowerDiagnosticSeverity sev = (PowerDiagnosticSeverity)rec.Severity;
                         string title = TranslateSafe(rec.TitleKey);
                         string detail = TranslateFormattedSafe(rec.EvidenceKey, rec.EvidenceArgs);
-                        string action = rec.RecommendedActionKeys != null && rec.RecommendedActionKeys.Length > 0
-                            ? TranslateSafe(rec.RecommendedActionKeys[0])
+                        string action = rec.ActionKeys != null && rec.ActionKeys.Length > 0
+                            ? TranslateSafe(rec.ActionKeys[0])
                             : TranslateSafe(rec.ExplanationKey);
                         DrawCompactAlertCard(card, sev, title, detail, action, onOpenDiagnostics);
                         cy += cardH + gap;
@@ -996,23 +996,9 @@ namespace PowerGridManager
             int n = 0;
             for (int i = 0; i < recs.Count; i++)
             {
-                if (recs[i] != null && recs[i].IsOngoing && !recs[i].Dismissed) n++;
+                if (recs[i] != null && recs[i].Ongoing && !recs[i].Dismissed) n++;
             }
             return n;
-        }
-
-        private static PowerDiagnosticSeverity MapPriorityToSeverity(RecommendationPriority p)
-        {
-            switch (p)
-            {
-                case RecommendationPriority.Critical:
-                    return PowerDiagnosticSeverity.Critical;
-                case RecommendationPriority.High:
-                case RecommendationPriority.Medium:
-                    return PowerDiagnosticSeverity.Warning;
-                default:
-                    return PowerDiagnosticSeverity.Info;
-            }
         }
 
         private static string ConfidenceLabel(ForecastConfidence confidence)
@@ -1038,17 +1024,14 @@ namespace PowerGridManager
             return keyOrText;
         }
 
-        private static string TranslateFormattedSafe(string keyOrText, string[] args)
+        private static string TranslateFormattedSafe(string keyOrText, object[] args)
         {
             if (string.IsNullOrEmpty(keyOrText)) return string.Empty;
             if (!keyOrText.StartsWith("PGM_", StringComparison.Ordinal))
                 return keyOrText;
             if (args == null || args.Length == 0)
                 return keyOrText.Translate();
-            NamedArgument[] named = new NamedArgument[args.Length];
-            for (int i = 0; i < args.Length; i++)
-                named[i] = args[i] ?? string.Empty;
-            return keyOrText.Translate(named);
+            return keyOrText.Translate(args);
         }
     }
 }
