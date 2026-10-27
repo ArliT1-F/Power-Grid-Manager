@@ -24,13 +24,14 @@ namespace PowerGridManager
             Formatting();
             Compatibility();
             UiSmoke();
+            ModernizedUiAndInspectorSmoke();
             Console.WriteLine("Phase 3 dashboard checks passed: " + (TestAssert.Checks - start));
             return TestAssert.Checks - start;
         }
 
         private static void SnapshotAggregates()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantDef = ThingDefFactory.Simple("plant");
             var plantBuilding = scenario.AddBuilding(plantDef);
@@ -93,7 +94,7 @@ namespace PowerGridManager
             TestAssert.Equal(snapshot.LoadRatio.Value, 0.125f, "load ratio is consumption over generation");
 
             // A generator without a declared configured output must not be guessed.
-            var undeclared = new PowerScenario();
+            var undeclared = new PowerGridManager.Tests.PowerScenario();
             var undeclaredNet = undeclared.AddNet();
             var undeclaredBuilding = undeclared.CreateBuilding(ThingDefFactory.Simple("solar"));
             undeclared.AddTrader<CompPowerPlant>(undeclaredNet, undeclaredBuilding, 600f, true, 0f);
@@ -104,7 +105,7 @@ namespace PowerGridManager
                 "load ratio is zero when a generator runs with no consumption");
 
             // No generation at all: the ratio must be undefined rather than infinite.
-            var idle = new PowerScenario();
+            var idle = new PowerGridManager.Tests.PowerScenario();
             idle.AddNet();
             var idleBuilding = idle.CreateBuilding(ThingDefFactory.Simple("idle lamp"));
             idle.AddTrader(null, idleBuilding, 0f, false, 40f);
@@ -179,7 +180,7 @@ namespace PowerGridManager
 
         private static void FilteringAndSearch()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var otherNet = scenario.AddNet();
 
@@ -282,7 +283,7 @@ namespace PowerGridManager
 
         private static void Sorting()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var alpha = scenario.CreateBuilding(ThingDefFactory.Simple("alpha"));
             var beta = scenario.CreateBuilding(ThingDefFactory.Simple("beta"));
@@ -320,7 +321,7 @@ namespace PowerGridManager
 
         private static void Grouping()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var lamp = scenario.CreateBuilding(ThingDefFactory.Simple("lamp", typeof(CompGlower)));
             scenario.AddTrader(net, lamp, -10f, true, 10f);
@@ -343,7 +344,7 @@ namespace PowerGridManager
 
         private static void Classification()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
 
             var research = scenario.CreateBuilding(new ThingDef
@@ -418,7 +419,7 @@ namespace PowerGridManager
 
         private static void Compatibility()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var building = scenario.CreateBuilding(ThingDefFactory.Simple("thing"));
             scenario.AddTrader(net, building, -10f, true, 10f);
@@ -437,7 +438,7 @@ namespace PowerGridManager
 
         private static void UiSmoke()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("plant"));
             scenario.AddTrader<CompPowerPlant>(net, plantBuilding, 2000f);
@@ -551,7 +552,7 @@ namespace PowerGridManager
             buildings.Draw(large, component.Snapshot, state, settings);
 
             // Empty map state.
-            var emptyScenario = new PowerScenario();
+            var emptyScenario = new PowerGridManager.Tests.PowerScenario();
             var emptyComponent = new PowerGridManagerComponent(emptyScenario.Map);
             emptyComponent.MapComponentTick();
             var emptyState = new PowerUiState { LastSnapshot = emptyComponent.Snapshot };
@@ -572,6 +573,153 @@ namespace PowerGridManager
             TestAssert.Check(menu.options.Count >= 10, "filter menu lists the documented filters");
             Find.WindowStack.windows.Clear();
             WidgetsQueue.Reset();
+        }
+
+        private static void ModernizedUiAndInspectorSmoke()
+        {
+            var scenario = new PowerGridManager.Tests.PowerScenario();
+            var net = scenario.AddNet();
+            var plantBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("geothermal"));
+            scenario.AddTrader<CompPowerPlant>(net, plantBuilding, 3600f, true, -3600f);
+
+            var lampBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("sunlamp", typeof(CompGlower)));
+            scenario.AddTrader(net, lampBuilding, -2900f, true, 2900f);
+            scenario.AddFlickable(lampBuilding, true);
+
+            var idleBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("bench"));
+            scenario.AddTrader(net, idleBuilding, -200f, true, 200f);
+            scenario.AddFlickable(idleBuilding, false);
+
+            var batteryBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("battery"));
+            var batteryComp = scenario.AddBattery(net, batteryBuilding, 360f, 600f);
+
+            var component = new PowerGridManagerComponent(scenario.Map);
+            scenario.Map.RegisterComponent(component);
+            var mod = new PowerGridManagerMod(new ModContentPack());
+            var settings = PowerGridManagerMod.Settings;
+            settings.SampleIntervalTicks = 500;
+
+            Map previousMap = Find.CurrentMap;
+            try
+            {
+                Find.CurrentMap = scenario.Map;
+                for (int i = 1; i <= 5; i++)
+                {
+                    Find.TickManager.TicksGame = i * 500;
+                    component.MapComponentTick();
+                }
+
+                Find.WindowStack.windows.Clear();
+                WidgetsQueue.Reset();
+
+                Rect[] resolutions =
+                {
+                    new Rect(0f, 0f, 320f, 180f),
+                    new Rect(0f, 0f, 1010f, 640f),
+                    new Rect(0f, 0f, 1120f, 720f),
+                    new Rect(0f, 0f, 2560f, 1400f)
+                };
+
+                PowerGridTab[] allTabs =
+                {
+                    PowerGridTab.Overview,
+                    PowerGridTab.Networks,
+                    PowerGridTab.Buildings,
+                    PowerGridTab.History,
+                    PowerGridTab.Diagnostics,
+                    PowerGridTab.Optimization,
+                    PowerGridTab.Planning,
+                    PowerGridTab.Heatmap,
+                    PowerGridTab.Forecast,
+                    PowerGridTab.Management,
+                    PowerGridTab.Settings
+                };
+
+                var window = new MainTabWindow_PowerGridManager();
+                window.PostOpen();
+                for (int r = 0; r < resolutions.Length; r++)
+                {
+                    Rect viewport = resolutions[r];
+                    for (int t = 0; t < allTabs.Length; t++)
+                    {
+                        GUI.color = Color.white;
+                        Text.Font = GameFont.Small;
+                        Text.Anchor = TextAnchor.UpperLeft;
+                        Text.WordWrap = false;
+
+                        window.UiState.Tab = allTabs[t];
+                        window.DoWindowContents(viewport);
+
+                        TestAssert.Check(GUI.color == Color.white,
+                            "GUI.color restored after tab " + allTabs[t] + " at " + viewport.width + "x" + viewport.height);
+                        TestAssert.Equal(Text.Font, GameFont.Small,
+                            "Text.Font restored after tab " + allTabs[t]);
+                        TestAssert.Equal(Text.Anchor, TextAnchor.UpperLeft,
+                            "Text.Anchor restored after tab " + allTabs[t]);
+                        TestAssert.Equal(Text.WordWrap, false,
+                            "Text.WordWrap restored after tab " + allTabs[t]);
+                        TestAssert.Equal(Find.WindowStack.windows.Count, 0,
+                            "passive draw did not leak windows on tab " + allTabs[t]);
+                    }
+
+                    mod.DoSettingsWindowContents(viewport);
+                    TestAssert.Check(GUI.color == Color.white,
+                        "GUI.color restored after DoSettingsWindowContents");
+                }
+
+                // Role-specialized inspector: Generator, Battery (normal + EMP stunned), Consumer (controls off + on).
+                PowerGridSnapshot snap = component.Snapshot;
+                var inspectorState = new PowerUiState { LastSnapshot = snap };
+                BuildingPowerSnapshot genSnap = FindBuilding(snap, plantBuilding);
+                BuildingPowerSnapshot batSnap = FindBuilding(snap, batteryBuilding);
+                BuildingPowerSnapshot conSnap = FindBuilding(snap, lampBuilding);
+
+                Rect normalInsp = new Rect(0f, 0f, 680f, 200f);
+                Rect tinyInsp = new Rect(0f, 0f, 240f, 110f);
+
+                settings.ManagementEnabled = false;
+                PowerBuildingInspector.Draw(normalInsp, snap, plantBuilding, genSnap, inspectorState, settings, component.Management, 2500);
+                PowerBuildingInspector.Draw(normalInsp, snap, batteryBuilding, batSnap, inspectorState, settings, component.Management, 2500);
+                PowerBuildingInspector.Draw(normalInsp, snap, lampBuilding, conSnap, inspectorState, settings, component.Management, 2500);
+
+                settings.ManagementEnabled = true;
+                PowerBuildingInspector.Draw(normalInsp, snap, lampBuilding, conSnap, inspectorState, settings, component.Management, 2500);
+                PowerBuildingInspector.Draw(tinyInsp, snap, lampBuilding, conSnap, inspectorState, settings, component.Management, 2500);
+
+                batteryComp.StunnedByEMP = true;
+                PowerGridSnapshot empSnap = new PowerGridScanner().Scan(scenario.Map, 2600);
+                PowerBuildingInspector.Draw(normalInsp, empSnap, batteryBuilding, FindBuilding(empSnap, batteryBuilding),
+                    inspectorState, settings, component.Management, 2600);
+                batteryComp.StunnedByEMP = false;
+                settings.ManagementEnabled = false;
+
+                // Guided troubleshooting dialog across scopes (including null selection safety) and viewports.
+                var dialogState = new PowerUiState { LastSnapshot = snap };
+                var dialog = new PowerTroubleshootingDialog(component, dialogState);
+                dialog.DoWindowContents(new Rect(0f, 0f, 760f, 560f));
+
+                // Click "Selected network" (button 2: 0=close, 1=map, 2=network, 3=building, 4=diagnose) with null network.
+                WidgetsQueue.ClickTextAt(2);
+                dialog.DoWindowContents(new Rect(0f, 0f, 760f, 560f));
+                WidgetsQueue.Reset();
+                WidgetsQueue.ClickTextAt(4);
+                dialog.DoWindowContents(new Rect(0f, 0f, 760f, 560f));
+                WidgetsQueue.Reset();
+                dialog.DoWindowContents(new Rect(0f, 0f, 320f, 180f));
+
+                // Select network 1 and run diagnosis again.
+                dialogState.SelectedNetworkId = 1;
+                WidgetsQueue.ClickTextAt(4);
+                dialog.DoWindowContents(new Rect(0f, 0f, 760f, 560f));
+                WidgetsQueue.Reset();
+                TestAssert.Check(GUI.color == Color.white, "GUI.color restored after troubleshooting dialog");
+            }
+            finally
+            {
+                Find.CurrentMap = previousMap;
+                Find.WindowStack.windows.Clear();
+                WidgetsQueue.Reset();
+            }
         }
 
         /// <summary>Unrecognised power component used to exercise the unsupported path.</summary>

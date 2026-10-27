@@ -79,11 +79,13 @@ namespace PowerGridManager
                         matches = true;
                         break;
                     case DiagnosisScope.SelectedNetwork:
-                        matches = advisory.NetworkId.HasValue &&
+                        matches = selectedNetworkId.HasValue &&
+                            advisory.NetworkId.HasValue &&
                             advisory.NetworkId.Value == selectedNetworkId.Value;
                         break;
                     case DiagnosisScope.SelectedBuilding:
-                        matches = ReferenceEquals(advisory.Building, selectedBuilding);
+                        matches = selectedBuilding != null &&
+                            ReferenceEquals(advisory.Building, selectedBuilding);
                         break;
                 }
                 if (matches) result.Add(advisory);

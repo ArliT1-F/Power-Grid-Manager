@@ -7,24 +7,40 @@ using Verse;
 namespace PowerGridManager
 {
     /// <summary>
-    /// List of the map's simulated power networks plus a detail view for the selected
-    /// one. Network identity is snapshot-local: it is a list position, not a persistent
-    /// id, so a selection is revalidated on every draw.
+    /// Master-detail power network view: selectable dark network cards on the left with
+    /// status stripe, live balance, and battery charge bar; structured KPI cards, endurance,
+    /// and top consumers on the right.
     /// </summary>
     public sealed class PowerNetworkPanel
     {
-        private const float ListWidth = 330f;
-        private const float ListRowHeight = 58f;
+        private const float ListWidth = 340f;
+        private const float ListRowHeight = 68f;
 
         private readonly List<BuildingPowerSnapshot> networkBuildings = new List<BuildingPowerSnapshot>();
         private readonly List<int> rankedIndices = new List<int>();
+        private Vector2 detailScroll;
 
         public void Draw(Rect rect, PowerGridSnapshot snapshot, PowerUiState state,
             PowerGridManagerSettings settings, Action<int> showBuildingsOnNetwork)
         {
-            float listWidth = Mathf.Min(ListWidth, rect.width * 0.45f);
+            if (snapshot == null || state == null || settings == null) return;
+            if (rect.width <= 8f || rect.height <= 8f) return;
+
+            if (rect.width < 520f)
+            {
+                float topH = Mathf.Floor(rect.height * 0.42f);
+                Rect listCompact = new Rect(rect.x, rect.y, rect.width, topH);
+                Rect detailCompact = new Rect(rect.x, listCompact.yMax + PowerUiDraw.SpaceRelated,
+                    rect.width, Mathf.Max(0f, rect.yMax - listCompact.yMax - PowerUiDraw.SpaceRelated));
+                DrawList(listCompact, snapshot, state, settings);
+                DrawDetail(detailCompact, snapshot, state, settings, showBuildingsOnNetwork);
+                return;
+            }
+
+            float listWidth = Mathf.Min(ListWidth, rect.width * 0.40f);
             Rect listRect = new Rect(rect.x, rect.y, listWidth, rect.height);
-            Rect detailRect = new Rect(listRect.xMax + 8f, rect.y, rect.width - listWidth - 8f, rect.height);
+            Rect detailRect = new Rect(listRect.xMax + PowerUiDraw.SectionGap, rect.y,
+                Mathf.Max(0f, rect.width - listWidth - PowerUiDraw.SectionGap), rect.height);
             DrawList(listRect, snapshot, state, settings);
             DrawDetail(detailRect, snapshot, state, settings, showBuildingsOnNetwork);
         }
@@ -33,19 +49,22 @@ namespace PowerGridManager
             PowerGridManagerSettings settings)
         {
             PowerUiDraw.Panel(rect);
-            PowerUiDraw.SectionHeader(new Rect(rect.x + 6f, rect.y + 4f, rect.width - 12f, 20f),
+            Rect inner = rect.ContractedBy(PowerUiDraw.PadPanel);
+            if (inner.width <= 8f || inner.height <= 24f) return;
+
+            PowerUiDraw.SectionHeader(new Rect(inner.x, inner.y, inner.width, 22f),
                 "PGM_Networks_Header".Translate(snapshot.Networks.Count));
 
-            Rect viewOuter = new Rect(rect.x + 4f, rect.y + 28f, rect.width - 8f, rect.height - 32f);
-            float contentHeight = snapshot.Networks.Count * (ListRowHeight + 2f);
-            Rect view = new Rect(0f, 0f, viewOuter.width - 18f, Mathf.Max(contentHeight, viewOuter.height));
+            Rect viewOuter = new Rect(inner.x, inner.y + 28f, inner.width, Mathf.Max(10f, inner.height - 28f));
+            float contentHeight = snapshot.Networks.Count * (ListRowHeight + 6f);
+            Rect view = new Rect(0f, 0f, Mathf.Max(40f, viewOuter.width - 16f), Mathf.Max(contentHeight, viewOuter.height));
             Widgets.BeginScrollView(viewOuter, ref state.NetworkScroll, view);
             try
             {
                 if (snapshot.Networks.Count == 0)
                 {
-                    PowerUiDraw.WrappedText(new Rect(0f, 0f, view.width, 60f),
-                        "PGM_Networks_Empty".Translate(), PowerUiDraw.Muted);
+                    PowerUiDraw.WrappedText(new Rect(4f, 4f, view.width - 8f, 60f),
+                        "PGM_Networks_Empty".Translate(), PowerUiDraw.TextSecondary);
                     return;
                 }
 
@@ -55,54 +74,68 @@ namespace PowerGridManager
                     PowerNetworkSnapshot network = snapshot.Networks[i];
                     Rect row = new Rect(0f, y, view.width, ListRowHeight);
                     bool selected = state.SelectedNetworkId.HasValue && state.SelectedNetworkId.Value == network.Id;
-                    if (selected) Widgets.DrawHighlightSelected(row);
-                    else Widgets.DrawHighlightIfMouseover(row);
-                    Widgets.DrawBox(row, 1);
+                    bool hovered = Mouse.IsOver(row);
 
                     NetworkStatus status = PowerGridUtilities.EvaluateStatus(network, settings.HighLoadThreshold);
+                    Color statusCol = PowerUiDraw.StatusColor(status);
 
-                    // Three compact lines that stay readable even in a narrow list pane.
-                    float balanceWidth = 104f;
+                    Widgets.DrawBoxSolid(row, selected
+                        ? PowerUiDraw.BgSelected
+                        : (hovered ? PowerUiDraw.BgHover : PowerUiDraw.BgElevated));
+                    PowerUiDraw.DrawBorder(row, selected ? PowerUiDraw.AccentCyan : PowerUiDraw.BorderPanel, 1);
+                    Widgets.DrawBoxSolid(new Rect(row.x, row.y, 4f, row.height), selected ? PowerUiDraw.AccentCyan : statusCol);
+
+                    float balanceWidth = Mathf.Min(108f, row.width * 0.38f);
                     PowerUiDraw.TextEllipsized(
-                        new Rect(row.x + 6f, row.y + 2f, Mathf.Max(40f, row.width - balanceWidth - 12f), 20f),
-                        "PGM_Network_Number".Translate(network.Id), Color.white);
+                        new Rect(row.x + 10f, row.y + 4f, Mathf.Max(36f, row.width - balanceWidth - 18f), 20f),
+                        "PGM_Network_Number".Translate(network.Id), PowerUiDraw.TextPrimary);
                     PowerUiDraw.DrawText(
-                        new Rect(row.xMax - balanceWidth - 6f, row.y + 2f, balanceWidth, 20f),
+                        new Rect(row.xMax - balanceWidth - 8f, row.y + 4f, balanceWidth, 20f),
                         PowerFormatting.FormatWattsSigned(network.NetWatts),
-                        network.NetWatts < -0.01f ? PowerUiDraw.NoticeColor : Color.white, TextAnchor.MiddleRight);
+                        PowerUiDraw.SignedColor(network.NetWatts), TextAnchor.MiddleRight);
 
-                    float pillWidth = Mathf.Min(116f, row.width * 0.42f);
-                    Rect pill = new Rect(row.x + 6f, row.y + 22f, pillWidth, 16f);
-                    PowerUiDraw.StatusPill(pill, PowerGridUtilities.StatusLabelKey(status).Translate(),
-                        PowerUiDraw.StatusColor(status));
-                    Rect countsRect = new Rect(pill.xMax + 4f, row.y + 22f,
-                        Mathf.Max(0f, row.xMax - pill.xMax - 10f), 16f);
-                    if (countsRect.width > 66f)
+                    float pillWidth = Mathf.Min(126f, row.width * 0.48f);
+                    Rect pill = new Rect(row.x + 10f, row.y + 25f, pillWidth, 18f);
+                    PowerUiDraw.StatusBadge(pill,
+                        PowerGridUtilities.StatusLabelKey(status).Translate(),
+                        statusCol,
+                        PowerUiDraw.StatusSymbol(status));
+
+                    Rect countsRect = new Rect(pill.xMax + 6f, row.y + 25f,
+                        Mathf.Max(0f, row.xMax - pill.xMax - 14f), 18f);
+                    if (countsRect.width > 60f)
                     {
                         PowerUiDraw.TextEllipsized(countsRect,
                             "PGM_Networks_RowCounts".Translate(network.ConsumerCount, network.GeneratorCount),
-                            PowerUiDraw.Muted, TextAnchor.MiddleRight);
+                            PowerUiDraw.TextSecondary, TextAnchor.MiddleRight);
                     }
 
-                    // Battery information: count, stored energy and charge share.
-                    string batteryInfo = network.BatteryCount == 0
-                        ? "PGM_Networks_NoBatteries".Translate()
-                        : "PGM_Networks_BatteryInfo".Translate(network.BatteryCount,
-                            PowerFormatting.FormatEnergy(network.StoredWattDays),
-                            PowerFormatting.FormatEnergy(network.CapacityWattDays));
-                    PowerUiDraw.TextEllipsized(
-                        new Rect(row.x + 6f, row.y + 40f, Mathf.Max(40f, row.width - 58f), 16f), batteryInfo,
-                        PowerUiDraw.Muted);
-                    PowerUiDraw.DrawText(new Rect(row.xMax - 52f, row.y + 40f, 46f, 16f),
-                        PowerFormatting.FormatCharge(network.ChargeFraction), Color.white, TextAnchor.MiddleRight);
+                    if (network.BatteryCount > 0)
+                    {
+                        Color batCol = PowerUiDraw.ChargeColor(network.ChargeFraction, settings.LowBatteryWarningFraction);
+                        float pctW = 46f;
+                        Rect barRect = new Rect(row.x + 10f, row.y + 50f,
+                            Mathf.Max(20f, row.width - pctW - 22f), 8f);
+                        PowerUiDraw.Bar(barRect, network.ChargeFraction ?? 0f, batCol);
+                        PowerUiDraw.DrawText(new Rect(row.xMax - pctW - 6f, row.y + 45f, pctW, 18f),
+                            PowerFormatting.FormatCharge(network.ChargeFraction),
+                            batCol, TextAnchor.MiddleRight);
+                    }
+                    else
+                    {
+                        PowerUiDraw.TextEllipsized(
+                            new Rect(row.x + 10f, row.y + 46f, Mathf.Max(30f, row.width - 18f), 16f),
+                            "PGM_Networks_NoBatteries".Translate(), PowerUiDraw.TextSecondary);
+                    }
 
                     PowerUiDraw.Tip(row, "PGM_Networks_RowTip".Translate(
                         PowerFormatting.FormatWatts(network.GenerationWatts),
                         PowerFormatting.FormatWatts(network.ConsumptionWatts),
                         network.ConsumerCount, network.GeneratorCount, network.BatteryCount));
 
-                    if (Widgets.ButtonInvisible(row)) state.SelectNetwork(network.Id);
-                    y += ListRowHeight + 2f;
+                    if (Widgets.ButtonInvisible(row))
+                        state.SelectNetwork(network.Id);
+                    y += ListRowHeight + 6f;
                 }
             }
             finally
@@ -115,127 +148,215 @@ namespace PowerGridManager
             PowerGridManagerSettings settings, Action<int> showBuildingsOnNetwork)
         {
             PowerUiDraw.Panel(rect);
+            Rect inner = rect.ContractedBy(PowerUiDraw.PadPanel);
+            if (inner.width <= 8f || inner.height <= 24f) return;
 
             PowerNetworkSnapshot network = FindNetwork(snapshot, state.SelectedNetworkId);
             if (network == null)
             {
-                PowerUiDraw.WrappedText(new Rect(rect.x + 10f, rect.y + 10f, rect.width - 20f, 80f),
+                PowerUiDraw.RecessedBox(inner);
+                PowerUiDraw.Label(inner.ContractedBy(14f),
                     snapshot.Networks.Count == 0
                         ? "PGM_Networks_Empty".Translate()
                         : "PGM_Networks_SelectPrompt".Translate(),
-                    PowerUiDraw.Muted);
+                    GameFont.Small, PowerUiDraw.TextSecondary, TextAnchor.MiddleCenter, true);
                 return;
             }
 
-            float y = rect.y + 8f;
-            NetworkStatus status = PowerGridUtilities.EvaluateStatus(network, settings.HighLoadThreshold);
-
-            float statusWidth = Mathf.Min(152f, rect.width * 0.45f);
-            Rect title = new Rect(rect.x + 10f, y, Mathf.Max(40f, rect.width - statusWidth - 22f), 26f);
-            PowerUiDraw.TextEllipsized(title, "PGM_Network_DetailTitle".Translate(network.Id), Color.white);
-            Rect pill = new Rect(rect.xMax - statusWidth - 10f, y + 3f, statusWidth, 20f);
-            PowerUiDraw.StatusPill(pill, PowerGridUtilities.StatusLabelKey(status).Translate(),
-                PowerUiDraw.StatusColor(status));
-            y += 30f;
-
-            float labelWidth = Mathf.Clamp(rect.width * 0.52f, 100f, 190f);
-            DrawStat(rect, ref y, "PGM_Detail_Generation", PowerFormatting.FormatWatts(network.GenerationWatts), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Consumption", PowerFormatting.FormatWatts(network.ConsumptionWatts), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Net", PowerFormatting.FormatWattsSigned(network.NetWatts), labelWidth,
-                network.NetWatts < -0.01f ? PowerUiDraw.NoticeColor : Color.white);
-            DrawStat(rect, ref y, "PGM_Detail_Consumers", network.ConsumerCount.ToString(), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Generators", network.GeneratorCount.ToString(), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Batteries", network.BatteryCount.ToString(), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Stored", PowerFormatting.FormatEnergy(network.StoredWattDays), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Capacity", PowerFormatting.FormatEnergy(network.CapacityWattDays), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_Charge", PowerFormatting.FormatCharge(network.ChargeFraction), labelWidth);
-            DrawStat(rect, ref y, "PGM_Detail_LoadRatio",
-                network.GenerationWatts > 0.01f
-                    ? PowerFormatting.FormatCharge(network.ConsumptionWatts / network.GenerationWatts)
-                    : "PGM_Value_Unknown".Translate(), labelWidth);
-
-            // Endurance for this network: the same arithmetic as the forecast tab, using only the
-            // balance observed right now, and labelled as such by the tooltip.
-            BatteryForecastResult forecast = BatteryForecast.ForNetwork(network, settings.ForecastIncludeSelfDischarge);
-            DrawStat(rect, ref y, "PGM_Detail_Endurance", EnduranceText(forecast), labelWidth,
-                EnduranceColor(forecast));
-            PowerUiDraw.Tip(new Rect(rect.x + 10f, y - 20f, Mathf.Max(20f, rect.width - 20f), 20f),
-                "PGM_Tip_NetworkEndurance".Translate());
-
-            Rect bar = new Rect(rect.x + 10f, y, Mathf.Min(280f, rect.width - 20f), 8f);
-            PowerUiDraw.Bar(bar, network.ChargeFraction ?? 0f, PowerUiDraw.Good);
-            y += 16f;
-
-            if (network.HasIncompleteData)
-            {
-                PowerUiDraw.WrappedText(new Rect(rect.x + 10f, y, rect.width - 20f, 34f),
-                    "PGM_Networks_Incomplete".Translate(), PowerUiDraw.Warn);
-                y += 36f;
-            }
-
-            y += 4f;
-            Rect headerRow = new Rect(rect.x + 10f, y, rect.width - 20f, 20f);
-            PowerUiDraw.SectionHeader(headerRow, "PGM_Networks_TopConsumers".Translate());
-            y += 24f;
+            // Action bar reserved at bottom so buttons are always visible and maintain exact click indices.
+            const float actionBarH = 30f;
+            Rect bodyArea = new Rect(inner.x, inner.y, inner.width, Mathf.Max(20f, inner.height - actionBarH - 8f));
+            Rect actionArea = new Rect(inner.x, inner.yMax - actionBarH, inner.width, actionBarH);
 
             CollectTopConsumers(snapshot, network, 6);
-            if (rankedIndices.Count == 0)
+
+            const float minBodyH = 340f;
+            if (bodyArea.height < minBodyH)
             {
-                PowerUiDraw.WrappedText(new Rect(rect.x + 10f, y, rect.width - 20f, 36f),
-                    "PGM_Networks_NoConsumers".Translate(), PowerUiDraw.Muted);
-                y += 38f;
+                Rect view = new Rect(0f, 0f, Mathf.Max(40f, bodyArea.width - 16f), minBodyH);
+                Widgets.BeginScrollView(bodyArea, ref detailScroll, view);
+                try
+                {
+                    DrawDetailBody(view, network, state, settings);
+                }
+                finally
+                {
+                    Widgets.EndScrollView();
+                }
             }
             else
             {
+                DrawDetailBody(bodyArea, network, state, settings);
+            }
+
+            // Footer action buttons: index 0 = ShowBuildings, index 1 = Locate (when hasJumpTarget).
+            float btnW = Mathf.Min(190f, (actionArea.width - 8f) * 0.5f);
+            Rect showBtn = new Rect(actionArea.x, actionArea.y + 1f, btnW, 28f);
+            if (PowerUiDraw.Button(showBtn, "PGM_Networks_ShowBuildings".Translate(), false, true))
+            {
+                if (showBuildingsOnNetwork != null)
+                    showBuildingsOnNetwork(network.Id);
+            }
+            PowerUiDraw.Tip(showBtn, "PGM_Networks_ShowBuildingsTip".Translate());
+
+            Rect jumpRect = new Rect(showBtn.xMax + 8f, showBtn.y, btnW, 28f);
+            bool hasJumpTarget = networkBuildings.Count > 0 && rankedIndices.Count > 0;
+            if (hasJumpTarget)
+            {
+                if (PowerUiDraw.Button(jumpRect, "PGM_Networks_Locate".Translate()))
+                {
+                    Building target = networkBuildings[rankedIndices[0]].Building;
+                    CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(target));
+                }
+            }
+            else
+            {
+                Widgets.DrawBoxSolid(jumpRect, PowerUiDraw.BgButtonDisabled);
+                PowerUiDraw.DrawBorder(jumpRect, PowerUiDraw.BorderSubtle, 1);
+                PowerUiDraw.Label(jumpRect, "PGM_Networks_Locate".Translate(),
+                    GameFont.Small, PowerUiDraw.TextDisabled, TextAnchor.MiddleCenter);
+            }
+            PowerUiDraw.Tip(jumpRect, "PGM_Networks_LocateTip".Translate());
+        }
+
+        private void DrawDetailBody(Rect area, PowerNetworkSnapshot network,
+            PowerUiState state, PowerGridManagerSettings settings)
+        {
+            float y = area.y;
+            NetworkStatus status = PowerGridUtilities.EvaluateStatus(network, settings.HighLoadThreshold);
+            Color statusCol = PowerUiDraw.StatusColor(status);
+
+            // Title + status badge.
+            float badgeW = Mathf.Min(164f, area.width * 0.44f);
+            PowerUiDraw.Label(new Rect(area.x, y, Mathf.Max(40f, area.width - badgeW - 8f), 26f),
+                "PGM_Network_DetailTitle".Translate(network.Id), GameFont.Medium, PowerUiDraw.TextPrimary);
+            PowerUiDraw.StatusBadge(new Rect(area.xMax - badgeW, y + 2f, badgeW, 22f),
+                PowerGridUtilities.StatusLabelKey(status).Translate(),
+                statusCol, PowerUiDraw.StatusSymbol(status));
+            y += 32f;
+
+            // Mini 3-card KPI row (Generation, Consumption, Net Balance).
+            if (area.width >= 320f)
+            {
+                float gap = 8f;
+                float cw = (area.width - gap * 2f) / 3f;
+                const float ch = 60f;
+                PowerUiDraw.StatCard(new Rect(area.x, y, cw, ch),
+                    "PGM_Detail_Generation".Translate(),
+                    PowerFormatting.FormatWatts(network.GenerationWatts),
+                    network.GenerationWatts > 0.01f ? PowerUiDraw.AccentCyan : PowerUiDraw.TextSecondary,
+                    PowerUiDraw.AccentCyan);
+                PowerUiDraw.StatCard(new Rect(area.x + cw + gap, y, cw, ch),
+                    "PGM_Detail_Consumption".Translate(),
+                    PowerFormatting.FormatWatts(network.ConsumptionWatts),
+                    PowerUiDraw.TextPrimary,
+                    PowerUiDraw.AccentPrimary);
+                PowerUiDraw.StatCard(new Rect(area.x + (cw + gap) * 2f, y, cw, ch),
+                    "PGM_Detail_Net".Translate(),
+                    PowerFormatting.FormatWattsSigned(network.NetWatts),
+                    PowerUiDraw.SignedColor(network.NetWatts),
+                    PowerUiDraw.SignedColor(network.NetWatts));
+                y += ch + 10f;
+            }
+
+            // Storage & topology block.
+            BatteryForecastResult forecast = BatteryForecast.ForNetwork(network, settings.ForecastIncludeSelfDischarge);
+            Rect metaBox = new Rect(area.x, y, area.width, 108f);
+            PowerUiDraw.ElevatedPanel(metaBox);
+            Rect mp = metaBox.ContractedBy(8f);
+
+            Color chargeCol = PowerUiDraw.ChargeColor(network.ChargeFraction, settings.LowBatteryWarningFraction);
+            PowerUiDraw.KeyValueRow(new Rect(mp.x, mp.y, mp.width, 18f),
+                "PGM_Detail_Charge".Translate(),
+                PowerFormatting.FormatCharge(network.ChargeFraction) + "  (" +
+                PowerFormatting.FormatEnergy(network.StoredWattDays) + " / " +
+                PowerFormatting.FormatEnergy(network.CapacityWattDays) + ")",
+                chargeCol);
+            PowerUiDraw.BatteryBar(new Rect(mp.x, mp.y + 20f, mp.width, 11f),
+                network.ChargeFraction ?? 0f, chargeCol, settings.LowBatteryWarningFraction);
+
+            float halfW = (mp.width - 14f) * 0.5f;
+            float ry = mp.y + 36f;
+            PowerUiDraw.KeyValueRow(new Rect(mp.x, ry, halfW, 18f),
+                "PGM_Detail_Generators".Translate(), network.GeneratorCount.ToString());
+            PowerUiDraw.KeyValueRow(new Rect(mp.x + halfW + 14f, ry, halfW, 18f),
+                "PGM_Detail_Consumers".Translate(), network.ConsumerCount.ToString());
+            ry += 19f;
+            PowerUiDraw.KeyValueRow(new Rect(mp.x, ry, halfW, 18f),
+                "PGM_Detail_Batteries".Translate(), network.BatteryCount.ToString());
+            PowerUiDraw.KeyValueRow(new Rect(mp.x + halfW + 14f, ry, halfW, 18f),
+                "PGM_Detail_LoadRatio".Translate(),
+                network.GenerationWatts > 0.01f
+                    ? PowerFormatting.FormatCharge(network.ConsumptionWatts / network.GenerationWatts)
+                    : (string)"PGM_Value_Unknown".Translate());
+            ry += 19f;
+            PowerUiDraw.KeyValueRow(new Rect(mp.x, ry, mp.width, 18f),
+                "PGM_Detail_Endurance".Translate(),
+                EnduranceText(forecast),
+                EnduranceColor(forecast),
+                "PGM_Tip_NetworkEndurance".Translate());
+
+            y = metaBox.yMax + 8f;
+
+            if (network.HasIncompleteData)
+            {
+                PowerUiDraw.NotificationCardShell(new Rect(area.x, y, area.width, 32f), PowerUiDraw.Warn, true);
+                PowerUiDraw.TextEllipsized(new Rect(area.x + 10f, y, area.width - 16f, 32f),
+                    "PGM_Networks_Incomplete".Translate(), PowerUiDraw.Warn);
+                y += 38f;
+            }
+
+            // Top consumers on this network.
+            PowerUiDraw.SectionHeader(new Rect(area.x, y, area.width, 22f),
+                "PGM_Networks_TopConsumers".Translate());
+            y += 26f;
+
+            if (rankedIndices.Count == 0)
+            {
+                PowerUiDraw.WrappedText(new Rect(area.x + 4f, y, area.width - 8f, 34f),
+                    "PGM_Networks_NoConsumers".Translate(), PowerUiDraw.TextSecondary);
+            }
+            else
+            {
+                float maxDraw = Mathf.Max(1f, networkBuildings[rankedIndices[0]].ConsumptionWatts);
                 for (int i = 0; i < rankedIndices.Count; i++)
                 {
+                    if (y + PowerUiDraw.RowHeight > area.yMax + 2f) break;
                     BuildingPowerSnapshot building = networkBuildings[rankedIndices[i]];
-                    Rect row = new Rect(rect.x + 10f, y, rect.width - 20f, PowerUiDraw.RowHeight);
-                    if (Widgets.ButtonInvisible(row))
+                    Rect row = new Rect(area.x, y, area.width, PowerUiDraw.RowHeight);
+                    bool sel = state.SelectedBuilding != null && state.SelectedBuilding == building.Building;
+                    PowerUiDraw.RowBackground(row, i, sel);
+
+                    string bLabel = PowerGridUtilities.BuildingLabel(building.Building);
+                    float wattsW = 86f;
+                    float barW = row.width >= 260f ? 68f : 0f;
+                    PowerUiDraw.TextEllipsized(
+                        new Rect(row.x + 6f, row.y, Mathf.Max(30f, row.width - wattsW - barW - 20f), row.height),
+                        bLabel, PowerUiDraw.TextPrimary);
+                    if (barW > 0f)
                     {
-                        state.SelectBuilding(building.Building);
+                        PowerUiDraw.Bar(
+                            new Rect(row.xMax - wattsW - barW - 8f, row.y + (row.height - 7f) * 0.5f, barW, 7f),
+                            Mathf.Clamp01(building.ConsumptionWatts / maxDraw),
+                            PowerUiDraw.AccentPrimary);
                     }
-                    Widgets.DrawHighlightIfMouseover(row);
-                    string label = building.Building.def != null ? building.Building.def.label : "";
-                    PowerUiDraw.DrawText(new Rect(row.x, row.y, row.width - 110f, row.height), label.CapitalizeFirst(),
-                        Color.white);
-                    PowerUiDraw.DrawText(new Rect(row.xMax - 104f, row.y, 104f, row.height),
-                        PowerFormatting.FormatWatts(building.ConsumptionWatts), PowerUiDraw.Muted,
-                        TextAnchor.MiddleRight);
+                    PowerUiDraw.DrawText(new Rect(row.xMax - wattsW - 4f, row.y, wattsW, row.height),
+                        PowerFormatting.FormatWatts(building.ConsumptionWatts),
+                        PowerUiDraw.TextPrimary, TextAnchor.MiddleRight);
+
+                    if (Widgets.ButtonInvisible(row))
+                        state.SelectBuilding(building.Building);
                     y += PowerUiDraw.RowHeight;
                 }
             }
-
-            float buttonWidth = Mathf.Min(180f, (rect.width - 26f) / 2f);
-            Rect buttonRect = new Rect(rect.x + 10f, rect.yMax - 32f, buttonWidth, 26f);
-            if (Widgets.ButtonText(buttonRect, "PGM_Networks_ShowBuildings".Translate()))
-            {
-                showBuildingsOnNetwork?.Invoke(network.Id);
-            }
-            PowerUiDraw.Tip(buttonRect, "PGM_Networks_ShowBuildingsTip".Translate());
-
-            // Jumping to the largest consumer is a real relationship the game exposes:
-            // the building is a confirmed member of this network.
-            Rect jumpRect = new Rect(buttonRect.xMax + 6f, buttonRect.y, buttonWidth, 26f);
-            bool hasJumpTarget = networkBuildings.Count > 0;
-            if (hasJumpTarget && Widgets.ButtonText(jumpRect, "PGM_Networks_Locate".Translate()))
-            {
-                Building target = networkBuildings[rankedIndices[0]].Building;
-                CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(target));
-            }
-            if (!hasJumpTarget) Widgets.DrawBoxSolid(jumpRect, new Color(0f, 0f, 0f, 0.25f));
-            PowerUiDraw.Tip(jumpRect, "PGM_Networks_LocateTip".Translate());
         }
 
         private static PowerNetworkSnapshot FindNetwork(PowerGridSnapshot snapshot, int? selectedId)
         {
-            if (snapshot == null || snapshot.Networks.Count == 0) return null;
-            if (selectedId.HasValue)
+            if (snapshot == null || snapshot.Networks.Count == 0 || !selectedId.HasValue) return null;
+            for (int i = 0; i < snapshot.Networks.Count; i++)
             {
-                for (int i = 0; i < snapshot.Networks.Count; i++)
-                {
-                    if (snapshot.Networks[i].Id == selectedId.Value) return snapshot.Networks[i];
-                }
+                if (snapshot.Networks[i].Id == selectedId.Value) return snapshot.Networks[i];
             }
             return null;
         }
@@ -246,7 +367,6 @@ namespace PowerGridManager
             rankedIndices.Clear();
             if (snapshot == null) return;
 
-            // Uses the shared helper so "on this network" has exactly one definition.
             PowerGridUtilities.CollectNetworkBuildings(snapshot, network.Id, networkBuildings);
             for (int i = networkBuildings.Count - 1; i >= 0; i--)
             {
@@ -277,17 +397,8 @@ namespace PowerGridManager
         private static Color EnduranceColor(BatteryForecastResult forecast)
         {
             if (forecast.Kind == BatteryForecastKind.Depleting) return PowerUiDraw.NoticeColor;
-            if (forecast.Kind == BatteryForecastKind.Charging) return PowerUiDraw.Good;
-            return PowerUiDraw.Muted;
-        }
-
-        private static void DrawStat(Rect area, ref float y, string labelKey, string value, float labelWidth,
-            Color? valueColor = null)
-        {
-            Rect row = new Rect(area.x + 10f, y, Mathf.Max(20f, area.width - 20f), 20f);
-            PowerUiDraw.LabelValue(row, labelKey.Translate(), value, Mathf.Min(labelWidth, row.width * 0.6f),
-                valueColor);
-            y += 20f;
+            if (forecast.Kind == BatteryForecastKind.Charging) return PowerUiDraw.AccentCyan;
+            return PowerUiDraw.TextSecondary;
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Verse;
 
 namespace PowerGridManager
@@ -259,15 +260,6 @@ namespace PowerGridManager
                 if (presetNames.Count > PowerPresetManager.MaxPresets)
                     presetNames.RemoveRange(PowerPresetManager.MaxPresets,
                         presetNames.Count - PowerPresetManager.MaxPresets);
-            }
-        }
-
-        private static void ClampList<T>(List<T> list, int count)
-        {
-            if (list == null) return;
-            while (list.Count > count) list.RemoveAt(list.Count - 1);
-            while (list.Count < count) list.Add(default(T));
-        }
 
                 DeficitAlertWatts = Clamp(DeficitAlertWatts, 1f, 100000f);
                 LowBatteryWarningFraction = Clamp(LowBatteryWarningFraction, 0.01f, 0.99f);
@@ -281,6 +273,13 @@ namespace PowerGridManager
 
                 NormalizeManagement();
             }
+        }
+
+        private static void ClampList<T>(List<T> list, int count)
+        {
+            if (list == null) return;
+            while (list.Count > count) list.RemoveAt(list.Count - 1);
+            while (list.Count < count) list.Add(default(T));
         }
 
         /// <summary>

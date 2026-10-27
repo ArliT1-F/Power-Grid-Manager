@@ -1,99 +1,135 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
 namespace PowerGridManager
 {
     /// <summary>
-    /// The scenario-planning section of the Planning tab. Evaluates hypothetical changes
-    /// (added generation, batteries, consumers, switched-off load) and presents the
-    /// projected balance and endurance. Nothing here modifies the live game.
+    /// Modernized Planning tab: evaluates hypothetical power-system changes (added generation,
+    /// batteries, consumers, switched-off load) and presents projected balance, reserve margin,
+    /// endurance, and explicit assumptions in the dark monitoring aesthetic without touching
+    /// the live simulation.
     /// </summary>
     public sealed class PowerScenarioPanel
     {
-        private const float InputRowHeight = 28f;
-        private const float TileHeight = 62f;
-        private const float TileGap = 6f;
-        private const float RowHeight = 22f;
+        private const float TileHeight = 68f;
+        private const float TileGap = 8f;
 
         private string addedGenerationText = "";
         private string addedBatteryText = "";
         private string addedConsumerText = "";
         private string switchedOffText = "";
+        private Vector2 outerScroll;
 
         public void Draw(Rect rect, PowerGridSnapshot snapshot, PowerUiState state,
             PowerGridManagerSettings settings)
         {
-            float y = rect.y;
+            if (rect.width <= 8f || rect.height <= 8f) return;
 
-            Rect inputArea = new Rect(rect.x, y, rect.width, 96f);
-            DrawInputs(inputArea, snapshot, settings);
-            y += 96f + 6f;
+            bool compact = rect.width < 680f;
+            float inputH = compact ? 156f : 112f;
+            float tilesH = compact ? (TileHeight * 2f + TileGap) : TileHeight;
+            float resultH = 116f;
+            float minAssumptionsH = 150f;
+            float minTotal = inputH + TileGap + tilesH + TileGap + resultH + TileGap + minAssumptionsH;
 
-            PowerScenario scenario = ReadScenario(settings);
-            PowerScenario projected = PowerScenarioPlanner.Evaluate(snapshot, scenario, settings,
-                settings == null ? 0f : settings.ReserveMarginWatts);
+            bool scroll = rect.height < minTotal;
+            Rect view = new Rect(0f, 0f, scroll ? Mathf.Max(160f, rect.width - 18f) : rect.width,
+                scroll ? minTotal : rect.height);
+            if (scroll) Widgets.BeginScrollView(rect, ref outerScroll, view);
+            try
+            {
+                float x0 = scroll ? 0f : rect.x;
+                float y = scroll ? 0f : rect.y;
+                float w = view.width;
 
-            float tileWidth = (rect.width - TileGap * 3f) / 4f;
-            DrawTile(rect.x, y, tileWidth, "PGM_Scenario_ProjectedGeneration",
-                PowerFormatting.FormatWatts(projected.ProjectedGenerationWatts), Color.white);
-            DrawTile(rect.x + (tileWidth + TileGap), y, tileWidth,
-                "PGM_Scenario_ProjectedConsumption",
-                PowerFormatting.FormatWatts(projected.ProjectedConsumptionWatts), Color.white);
-            DrawTile(rect.x + (tileWidth + TileGap) * 2f, y, tileWidth,
-                "PGM_Scenario_ProjectedNet",
-                PowerFormatting.FormatWattsSigned(projected.ProjectedNetWatts),
-                projected.ProjectedNetWatts < -0.01f ? PowerUiDraw.NoticeColor : Color.white);
-            DrawTile(rect.x + (tileWidth + TileGap) * 3f, y, tileWidth,
-                "PGM_Scenario_ReserveMargin",
-                PowerFormatting.FormatWatts(projected.ReserveMarginWatts),
-                projected.ReserveTargetSatisfied ? PowerUiDraw.Good : PowerUiDraw.Warn);
-            y += TileHeight + 6f;
+                DrawInputs(new Rect(x0, y, w, inputH), compact);
+                y += inputH + TileGap;
 
-            Rect result = new Rect(rect.x, y, rect.width, 100f);
-            DrawResult(result, projected);
-            y += 100f + 6f;
+                PowerScenario scenario = ReadScenario();
+                PowerScenario projected = PowerScenarioPlanner.Evaluate(snapshot, scenario, settings,
+                    settings == null ? 0f : settings.ReserveMarginWatts);
 
-            DrawAssumptions(new Rect(rect.x, y, rect.width, rect.yMax - y), projected);
+                DrawTiles(new Rect(x0, y, w, tilesH), projected, compact);
+                y += tilesH + TileGap;
+
+                DrawResult(new Rect(x0, y, w, resultH), projected);
+                y += resultH + TileGap;
+
+                float remH = scroll ? minAssumptionsH : Mathf.Max(80f, (rect.yMax) - y);
+                DrawAssumptions(new Rect(x0, y, w, remH), projected);
+            }
+            finally
+            {
+                if (scroll) Widgets.EndScrollView();
+            }
         }
 
-        private void DrawInputs(Rect rect, PowerGridSnapshot snapshot,
-            PowerGridManagerSettings settings)
+        private void DrawInputs(Rect rect, bool compact)
         {
             PowerUiDraw.Panel(rect);
-            PowerUiDraw.SectionHeader(new Rect(rect.x + 6f, rect.y + 4f, rect.width - 12f, 20f),
+            Rect inner = rect.ContractedBy(10f);
+
+            float resetW = 72f;
+            PowerUiDraw.SectionHeader(new Rect(inner.x, inner.y, Mathf.Max(40f, inner.width - resetW - 8f), 20f),
                 "PGM_Scenario_InputsHeader".Translate());
+            Rect resetBtn = new Rect(inner.xMax - resetW, inner.y - 2f, resetW, 22f);
+            if (PowerUiDraw.Button(resetBtn, "PGM_Buildings_Clear".Translate()))
+            {
+                addedGenerationText = "";
+                addedBatteryText = "";
+                addedConsumerText = "";
+                switchedOffText = "";
+            }
 
-            float y = rect.y + 28f;
-            float x = rect.x + 6f;
-            float fieldWidth = Mathf.Min(160f, (rect.width - 30f) / 4f);
+            float y = inner.y + 24f;
+            if (!compact)
+            {
+                float fieldWidth = Mathf.Max(60f, (inner.width - 24f) / 4f);
+                float x = inner.x;
+                addedGenerationText = Field(new Rect(x, y, fieldWidth, 42f),
+                    "PGM_Scenario_AddGeneration".Translate(), addedGenerationText);
+                x += fieldWidth + 8f;
+                addedBatteryText = Field(new Rect(x, y, fieldWidth, 42f),
+                    "PGM_Scenario_AddBattery".Translate(), addedBatteryText);
+                x += fieldWidth + 8f;
+                addedConsumerText = Field(new Rect(x, y, fieldWidth, 42f),
+                    "PGM_Scenario_AddConsumer".Translate(), addedConsumerText);
+                x += fieldWidth + 8f;
+                switchedOffText = Field(new Rect(x, y, Mathf.Max(40f, inner.xMax - x), 42f),
+                    "PGM_Scenario_SwitchOff".Translate(), switchedOffText);
+                y += 46f;
+            }
+            else
+            {
+                float fieldWidth = Mathf.Max(60f, (inner.width - 8f) * 0.5f);
+                addedGenerationText = Field(new Rect(inner.x, y, fieldWidth, 40f),
+                    "PGM_Scenario_AddGeneration".Translate(), addedGenerationText);
+                addedBatteryText = Field(new Rect(inner.x + fieldWidth + 8f, y, fieldWidth, 40f),
+                    "PGM_Scenario_AddBattery".Translate(), addedBatteryText);
+                y += 44f;
+                addedConsumerText = Field(new Rect(inner.x, y, fieldWidth, 40f),
+                    "PGM_Scenario_AddConsumer".Translate(), addedConsumerText);
+                switchedOffText = Field(new Rect(inner.x + fieldWidth + 8f, y, fieldWidth, 40f),
+                    "PGM_Scenario_SwitchOff".Translate(), switchedOffText);
+                y += 44f;
+            }
 
-            addedGenerationText = Field(new Rect(x, y, fieldWidth, 24f),
-                "PGM_Scenario_AddGeneration".Translate(), addedGenerationText);
-            x += fieldWidth + 6f;
-            addedBatteryText = Field(new Rect(x, y, fieldWidth, 24f),
-                "PGM_Scenario_AddBattery".Translate(), addedBatteryText);
-            x += fieldWidth + 6f;
-            addedConsumerText = Field(new Rect(x, y, fieldWidth, 24f),
-                "PGM_Scenario_AddConsumer".Translate(), addedConsumerText);
-            x += fieldWidth + 6f;
-            switchedOffText = Field(new Rect(x, y, fieldWidth, 24f),
-                "PGM_Scenario_SwitchOff".Translate(), switchedOffText);
-
-            y += 28f;
-            PowerUiDraw.WrappedText(new Rect(rect.x + 6f, y, rect.width - 12f, 44f),
-                "PGM_Scenario_InputsTip".Translate(), PowerUiDraw.Muted);
+            PowerUiDraw.WrappedText(new Rect(inner.x, y, inner.width, Mathf.Max(18f, inner.yMax - y)),
+                "PGM_Scenario_InputsTip".Translate(), PowerUiDraw.TextSecondary);
         }
 
         private static string Field(Rect rect, string label, string text)
         {
-            PowerUiDraw.DrawText(new Rect(rect.x, rect.y, rect.width, 18f), label,
-                PowerUiDraw.Muted, TextAnchor.MiddleLeft);
-            Rect field = new Rect(rect.x, rect.y + 18f, rect.width, 20f);
-            return Widgets.TextField(field, text);
+            PowerUiDraw.TextEllipsized(new Rect(rect.x, rect.y, rect.width, 18f), label,
+                PowerUiDraw.TextSecondary);
+            Rect field = new Rect(rect.x, rect.y + 18f, rect.width, 22f);
+            Widgets.DrawBoxSolid(field, PowerUiDraw.BgRecessed);
+            string updated = Widgets.TextField(field, text ?? string.Empty);
+            PowerUiDraw.DrawBorder(field, PowerUiDraw.BorderPanel, 1);
+            return updated;
         }
 
-        private PowerScenario ReadScenario(PowerGridManagerSettings settings)
+        private PowerScenario ReadScenario()
         {
             return new PowerScenario
             {
@@ -113,27 +149,88 @@ namespace PowerGridManager
             return 0f;
         }
 
-        private void DrawTile(float x, float y, float width, string labelKey, string value,
-            Color color)
+        private static void DrawTiles(Rect rect, PowerScenario projected, bool compact)
         {
-            Rect tile = new Rect(x, y, width, TileHeight);
-            PowerUiDraw.MetricTile(tile, labelKey.Translate(), value, color);
+            Color netCol = projected.ProjectedNetWatts < -0.01f
+                ? PowerUiDraw.NoticeColor
+                : (projected.ProjectedNetWatts > 0.01f ? PowerUiDraw.Good : PowerUiDraw.TextPrimary);
+            Color marginCol = projected.ReserveTargetSatisfied ? PowerUiDraw.Good : PowerUiDraw.Warn;
+
+            if (!compact)
+            {
+                float tileWidth = (rect.width - TileGap * 3f) / 4f;
+                float x = rect.x;
+                PowerUiDraw.StatCard(new Rect(x, rect.y, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedGeneration".Translate(),
+                    PowerFormatting.FormatWatts(projected.ProjectedGenerationWatts),
+                    PowerUiDraw.TextPrimary, PowerUiDraw.AccentCyan);
+                x += tileWidth + TileGap;
+
+                PowerUiDraw.StatCard(new Rect(x, rect.y, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedConsumption".Translate(),
+                    PowerFormatting.FormatWatts(projected.ProjectedConsumptionWatts),
+                    PowerUiDraw.TextPrimary, PowerUiDraw.Warn);
+                x += tileWidth + TileGap;
+
+                PowerUiDraw.StatCard(new Rect(x, rect.y, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedNet".Translate(),
+                    PowerFormatting.FormatWattsSigned(projected.ProjectedNetWatts),
+                    netCol, netCol);
+                x += tileWidth + TileGap;
+
+                PowerUiDraw.StatCard(new Rect(x, rect.y, Mathf.Max(40f, rect.xMax - x), TileHeight),
+                    "PGM_Scenario_ReserveMargin".Translate(),
+                    PowerFormatting.FormatWattsSigned(projected.ReserveMarginWatts),
+                    marginCol, marginCol);
+            }
+            else
+            {
+                float tileWidth = (rect.width - TileGap) * 0.5f;
+                PowerUiDraw.StatCard(new Rect(rect.x, rect.y, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedGeneration".Translate(),
+                    PowerFormatting.FormatWatts(projected.ProjectedGenerationWatts),
+                    PowerUiDraw.TextPrimary, PowerUiDraw.AccentCyan);
+                PowerUiDraw.StatCard(new Rect(rect.x + tileWidth + TileGap, rect.y, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedConsumption".Translate(),
+                    PowerFormatting.FormatWatts(projected.ProjectedConsumptionWatts),
+                    PowerUiDraw.TextPrimary, PowerUiDraw.Warn);
+                float r2 = rect.y + TileHeight + TileGap;
+                PowerUiDraw.StatCard(new Rect(rect.x, r2, tileWidth, TileHeight),
+                    "PGM_Scenario_ProjectedNet".Translate(),
+                    PowerFormatting.FormatWattsSigned(projected.ProjectedNetWatts),
+                    netCol, netCol);
+                PowerUiDraw.StatCard(new Rect(rect.x + tileWidth + TileGap, r2, tileWidth, TileHeight),
+                    "PGM_Scenario_ReserveMargin".Translate(),
+                    PowerFormatting.FormatWattsSigned(projected.ReserveMarginWatts),
+                    marginCol, marginCol);
+            }
         }
 
-        private void DrawResult(Rect rect, PowerScenario projected)
+        private static void DrawResult(Rect rect, PowerScenario projected)
         {
-            PowerUiDraw.Panel(rect);
-            Widgets.DrawBox(rect, 1);
-            PowerUiDraw.SectionHeader(new Rect(rect.x + 6f, rect.y + 4f, rect.width - 12f, 20f),
+            bool deficit = projected.ProjectedNetWatts < -0.01f;
+            Color accent = deficit ? PowerUiDraw.NoticeColor : PowerUiDraw.Good;
+            PowerUiDraw.AccentCard(rect, accent, PowerUiDraw.BgSecondary);
+            Rect inner = rect.ContractedBy(10f);
+
+            string confText = "PGM_Scenario_Confidence".Translate(ConfidenceLabel(projected.ProjectedConfidence));
+            float badgeW = Mathf.Min(180f, inner.width * 0.42f);
+            Rect confRect = new Rect(inner.xMax - badgeW, inner.y, badgeW, 20f);
+            Color confColor = ConfidenceColor(projected.ProjectedConfidence);
+            PowerUiDraw.StatusBadge(confRect, confText, confColor);
+
+            PowerUiDraw.SectionHeader(
+                new Rect(inner.x, inner.y, Mathf.Max(40f, confRect.x - inner.x - 8f), 20f),
                 "PGM_Scenario_ResultHeader".Translate());
 
-            float y = rect.y + 26f;
-            string balance = projected.ProjectedNetWatts >= -0.01f
-                ? "PGM_Scenario_Surplus".Translate(PowerFormatting.FormatWattsSigned(projected.ProjectedNetWatts))
-                : "PGM_Scenario_Deficit".Translate(PowerFormatting.FormatWattsSigned(-projected.ProjectedNetWatts));
-            PowerUiDraw.DrawText(new Rect(rect.x + 6f, y, rect.width - 12f, 20f), balance,
-                projected.ProjectedNetWatts < -0.01f ? PowerUiDraw.NoticeColor : Color.white);
-            y += 22f;
+            float y = inner.y + 26f;
+            string balance = !deficit
+                ? (string)"PGM_Scenario_Surplus".Translate(PowerFormatting.FormatWattsSigned(projected.ProjectedNetWatts))
+                : (string)"PGM_Scenario_Deficit".Translate(PowerFormatting.FormatWatts(Mathf.Abs(projected.ProjectedNetWatts)));
+            string prefix = deficit ? "[!!] " : "[OK] ";
+            PowerUiDraw.TextEllipsized(new Rect(inner.x, y, inner.width, 22f),
+                prefix + balance, accent);
+            y += 24f;
 
             string endurance;
             if (projected.ProjectedKind == BatteryForecastKind.NoBatteries)
@@ -146,28 +243,33 @@ namespace PowerGridManager
                     PowerFormatting.FormatDuration(projected.ProjectedTicksToFull.Value));
             else
                 endurance = "PGM_Scenario_Balanced".Translate();
-            PowerUiDraw.DrawText(new Rect(rect.x + 6f, y, rect.width - 12f, 20f), endurance,
-                PowerUiDraw.Muted);
-            y += 22f;
 
-            PowerUiDraw.DrawText(new Rect(rect.x + 6f, y, rect.width - 12f, 20f),
-                "PGM_Scenario_Confidence".Translate(
-                    ConfidenceLabel(projected.ProjectedConfidence)), PowerUiDraw.Muted);
+            PowerUiDraw.TextEllipsized(new Rect(inner.x, y, inner.width, 20f),
+                endurance, PowerUiDraw.TextPrimary);
+
+            if (projected.ProjectedChargeFraction.HasValue && inner.yMax - (y + 22f) >= 16f)
+            {
+                Rect bar = new Rect(inner.x, y + 22f, inner.width, 16f);
+                PowerUiDraw.BatteryBar(bar, projected.ProjectedChargeFraction.Value,
+                    PowerFormatting.FormatCharge(projected.ProjectedChargeFraction.Value), accent);
+            }
         }
 
-        private void DrawAssumptions(Rect rect, PowerScenario projected)
+        private static void DrawAssumptions(Rect rect, PowerScenario projected)
         {
             PowerUiDraw.Panel(rect);
-            PowerUiDraw.SectionHeader(new Rect(rect.x + 6f, rect.y + 4f, rect.width - 12f, 20f),
+            Rect inner = rect.ContractedBy(10f);
+            PowerUiDraw.SectionHeader(new Rect(inner.x, inner.y, inner.width, 20f),
                 "PGM_Scenario_AssumptionsHeader".Translate());
-            float y = rect.y + 26f;
-            float usableHeight = rect.height - 30f;
+            float y = inner.y + 24f;
             for (int i = 0; i < projected.Assumptions.Count; i++)
             {
-                if (y + 18f > rect.yMax) break;
-                PowerUiDraw.DrawText(new Rect(rect.x + 6f, y, rect.width - 12f, 18f),
-                    "• " + projected.Assumptions[i], PowerUiDraw.Muted);
-                y += 18f;
+                float rem = inner.yMax - y;
+                if (rem < 18f) break;
+                float lineH = Mathf.Min(34f, rem);
+                PowerUiDraw.WrappedText(new Rect(inner.x, y, inner.width, lineH),
+                    "\u2022 " + projected.Assumptions[i], PowerUiDraw.TextSecondary);
+                y += lineH;
             }
         }
 
@@ -179,6 +281,17 @@ namespace PowerGridManager
                 case ForecastConfidence.Medium: return "PGM_Confidence_Medium".Translate();
                 case ForecastConfidence.Low: return "PGM_Confidence_Low".Translate();
                 default: return "PGM_Confidence_Unavailable".Translate();
+            }
+        }
+
+        private static Color ConfidenceColor(ForecastConfidence confidence)
+        {
+            switch (confidence)
+            {
+                case ForecastConfidence.High: return PowerUiDraw.Good;
+                case ForecastConfidence.Medium: return PowerUiDraw.AccentCyan;
+                case ForecastConfidence.Low: return PowerUiDraw.Warn;
+                default: return PowerUiDraw.TextSecondary;
             }
         }
     }

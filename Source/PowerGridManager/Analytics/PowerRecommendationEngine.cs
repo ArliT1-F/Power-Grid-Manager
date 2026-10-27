@@ -106,15 +106,15 @@ namespace PowerGridManager
                     ? network.ConsumptionWatts / network.GenerationWatts : 0f;
                 bool nearCapacity = loadRatio >= Settings.NearCapacityThreshold;
 
-                int deficitSustained = tracker.Register(network.Net, RecommendationKind.PersistentDeficit,
+                int deficitSustained = Tracker.Register(network.Net, RecommendationKind.PersistentDeficit,
                     inDeficit, now);
-                int lowSustained = tracker.Register(network.Net, RecommendationKind.LowBatteryReserve,
+                int lowSustained = Tracker.Register(network.Net, RecommendationKind.LowBatteryReserve,
                     lowReserve, now);
-                int dischargeSustained = tracker.Register(network.Net, RecommendationKind.BatteryDischarge,
+                int dischargeSustained = Tracker.Register(network.Net, RecommendationKind.BatteryDischarge,
                     inDeficit && network.BatteryCount > 0 && network.StoredWattDays > 0.001f, now);
-                int demandSustained = tracker.Register(network.Net, RecommendationKind.HighDemand,
+                int demandSustained = Tracker.Register(network.Net, RecommendationKind.HighDemand,
                     loadRatio >= Settings.HighLoadThreshold && network.GenerationWatts > 0.01f, now);
-                int capacitySustained = tracker.Register(network.Net, RecommendationKind.NearCapacity,
+                int capacitySustained = Tracker.Register(network.Net, RecommendationKind.NearCapacity,
                     nearCapacity && network.GenerationWatts > 0.01f, now);
 
                 if (inDeficit && deficitSustained > 0)
@@ -291,7 +291,7 @@ namespace PowerGridManager
                 // Idle consumer: switch is off yet the building still draws power.
                 bool idle = building.IsFlickable && building.SwitchIsOn == false &&
                             building.ConsumptionWatts > 0.01f;
-                int idleSustained = tracker.Register(building.Building, RecommendationKind.IdleConsumer,
+                int idleSustained = Tracker.Register(building.Building, RecommendationKind.IdleConsumer,
                     idle, now);
                 if (idle && idleSustained > 0)
                 {
@@ -322,7 +322,7 @@ namespace PowerGridManager
                                    building.ConsumptionWatts >= Settings.HighConsumptionWatts &&
                                    Settings.HighConsumptionWatts > 0f &&
                                    (Registry == null || !Registry.IsSheddable(building.Building));
-                int unnecessarySustained = tracker.Register(building.Building,
+                int unnecessarySustained = Tracker.Register(building.Building,
                     RecommendationKind.UnnecessaryConsumption, unnecessary, now);
                 if (unnecessary && unnecessarySustained > 0)
                 {
@@ -354,7 +354,7 @@ namespace PowerGridManager
                                       building.ConsumptionWatts > 0.01f &&
                                       CompatibilityRegistry.EvaluateControl(building, Registry) ==
                                       PowerControlSupport.Unsupported;
-                int uncontrollableSustained = tracker.Register(building.Building,
+                int uncontrollableSustained = Tracker.Register(building.Building,
                     RecommendationKind.UncontrollableBuilding, uncontrollable, now);
                 if (uncontrollable && uncontrollableSustained > 0)
                 {
@@ -412,7 +412,7 @@ namespace PowerGridManager
 
             if (deficitNet != null && surplusNet != null)
             {
-                int sustained = tracker.Register(deficitNet.Net, RecommendationKind.ImbalancedGeneration,
+                int sustained = Tracker.Register(deficitNet.Net, RecommendationKind.ImbalancedGeneration,
                     true, now);
                 if (sustained > 0)
                 {

@@ -7,20 +7,17 @@ using Verse;
 namespace PowerGridManager
 {
     /// <summary>
-    /// The diagnostics tab: one card per advisory, each with severity, what was observed, the
-    /// evidence behind it, what to do about it, and whether the condition is ongoing or resolved.
-    /// <para>
-    /// The list is produced by <see cref="PowerDiagnostics"/> on refresh; this panel only filters
-    /// and formats it. Rows are a fixed height so the scroll view stays stable while scrolling.
-    /// </para>
+    /// Modernized diagnostics panel: renders observed power advisories as structured software
+    /// notification cards with severity stripe + symbol + text badge, concise explanation,
+    /// recessed measurement evidence strip, cyan recommended action, and quick actions.
     /// </summary>
     public sealed class PowerDiagnosticsPanel
     {
-        private const float HeaderHeight = 28f;
-        private const float RowHeight = 116f;
-        private const float RowGap = 4f;
-        private const float PillWidth = 118f;
-        private const float ButtonWidth = 84f;
+        private const float HeaderHeight = 38f;
+        private const float RowHeight = 128f;
+        private const float RowGap = 8f;
+        private const float PillWidth = 122f;
+        private const float ButtonWidth = 88f;
 
         private readonly List<PowerDiagnostic> visible = new List<PowerDiagnostic>(32);
         private int criticalCount;
@@ -33,24 +30,46 @@ namespace PowerGridManager
             PowerGridManagerSettings settings, PowerDiagnosticTracker tracker,
             IReadOnlyList<PowerDiagnostic> advisories, Action<int> showBuildingsOnNetwork)
         {
-            float y = rect.y;
-            DrawHeader(new Rect(rect.x, y, rect.width, HeaderHeight), state, settings, tracker);
-            y += HeaderHeight + 4f;
-
-            Rect body = new Rect(rect.x, y, rect.width, Mathf.Max(60f, rect.yMax - y));
-            PowerUiDraw.Panel(body);
+            if (state == null || rect.width <= 8f || rect.height <= 8f) return;
 
             BuildVisible(advisories, state.DiagnosticView);
+
+            float headerH = rect.height < 140f ? 28f : HeaderHeight;
+            Rect headerRect = new Rect(rect.x, rect.y, rect.width, headerH);
+            Rect deferredDiagnoseRect;
+            DrawHeader(headerRect, state, settings, tracker, out deferredDiagnoseRect);
+
+            float y = headerRect.yMax + PowerUiDraw.SpaceRelated;
+            Rect body = new Rect(rect.x, y, rect.width, Mathf.Max(36f, rect.yMax - y));
+            PowerUiDraw.Panel(body);
+
             if (visible.Count == 0)
             {
-                PowerUiDraw.WrappedText(new Rect(body.x + 10f, body.y + 10f, body.width - 20f, 80f),
-                    EmptyMessage(advisories, state.DiagnosticView, settings), PowerUiDraw.Muted);
+                Rect emptyInner = body.ContractedBy(PowerUiDraw.PadPanel);
+                bool allHealthy = (advisories == null || advisories.Count == 0) &&
+                                  (settings == null || settings.DiagnosticsEnabled);
+                if (allHealthy && emptyInner.height >= 56f)
+                {
+                    PowerUiDraw.PositiveStatusCard(
+                        new Rect(emptyInner.x, emptyInner.y, emptyInner.width, Mathf.Min(92f, emptyInner.height)),
+                        "PGM_Overview_NominalBadge".Translate(),
+                        "PGM_Overview_NominalTitle".Translate(),
+                        EmptyMessage(advisories, state.DiagnosticView, settings));
+                }
+                else
+                {
+                    PowerUiDraw.WrappedText(emptyInner,
+                        EmptyMessage(advisories, state.DiagnosticView, settings),
+                        PowerUiDraw.TextSecondary);
+                }
+
+                DrawDeferredDiagnoseButton(deferredDiagnoseRect, state);
                 return;
             }
 
-            Rect outer = new Rect(body.x + 4f, body.y + 4f, body.width - 8f, body.height - 8f);
+            Rect outer = body.ContractedBy(8f);
             float contentHeight = visible.Count * (RowHeight + RowGap);
-            Rect view = new Rect(0f, 0f, outer.width - 18f, Mathf.Max(contentHeight, outer.height));
+            Rect view = new Rect(0f, 0f, Mathf.Max(40f, outer.width - 18f), Mathf.Max(contentHeight, outer.height));
             Widgets.BeginScrollView(outer, ref state.DiagnosticScroll, view);
             try
             {
@@ -58,7 +77,7 @@ namespace PowerGridManager
                 for (int i = 0; i < visible.Count; i++)
                 {
                     Rect row = new Rect(0f, rowY, view.width, RowHeight);
-                    DrawRow(row, visible[i], snapshot, state, settings, tracker, showBuildingsOnNetwork);
+                    DrawRow(row, visible[i], snapshot, settings, tracker, showBuildingsOnNetwork);
                     rowY += RowHeight + RowGap;
                 }
             }
@@ -66,21 +85,82 @@ namespace PowerGridManager
             {
                 Widgets.EndScrollView();
             }
+
+            DrawDeferredDiagnoseButton(deferredDiagnoseRect, state);
         }
 
         private void DrawHeader(Rect rect, PowerUiState state, PowerGridManagerSettings settings,
-            PowerDiagnosticTracker tracker)
+            PowerDiagnosticTracker tracker, out Rect diagnoseRect)
         {
-            float x = rect.x;
-            PowerUiDraw.DrawText(new Rect(x, rect.y + 4f, 190f, 24f), "PGM_Diag_Title".Translate(), Color.white);
-            x += 196f;
+            PowerUiDraw.Panel(rect);
+            Rect inner = new Rect(rect.x + 10f, rect.y + (rect.height - 26f) * 0.5f,
+                Mathf.Max(20f, rect.width - 20f), Mathf.Min(26f, rect.height - 4f));
 
-            string counts = "PGM_Diag_Counts".Translate(criticalCount, warningCount, resolvedCount);
-            PowerUiDraw.DrawText(new Rect(x, rect.y + 4f, 210f, 24f), counts, PowerUiDraw.Muted);
-            x += 216f;
+            // Reserve right-side button slots so Filter stays ButtonText index 0 (and Restore index 1).
+            bool hasRestore = tracker != null && tracker.DismissedCount > 0;
+            bool showDiagnose = inner.width >= 480f;
+            float diagW = showDiagnose ? 156f : 0f;
+            float restoreW = hasRestore && inner.width >= 360f ? 136f : 0f;
+            float filterW = Mathf.Min(154f, Mathf.Max(78f, inner.width * 0.28f));
 
-            Rect diagnoseRect = new Rect(x, rect.y, 128f, 26f);
-            if (Widgets.ButtonText(diagnoseRect, "PGM_Diag_Diagnose".Translate()))
+            float rightStart = inner.xMax - diagW - (diagW > 0f ? 6f : 0f)
+                - restoreW - (restoreW > 0f ? 6f : 0f) - filterW;
+            rightStart = Mathf.Max(inner.x, rightStart);
+
+            Rect filterRect = new Rect(rightStart, inner.y, filterW, inner.height);
+            if (PowerUiDraw.Button(filterRect,
+                "PGM_Diag_FilterButton".Translate(FilterLabel(state.DiagnosticView)),
+                state.DiagnosticView != DiagnosticFilter.All))
+            {
+                OpenFilterMenu(state);
+            }
+
+            float nextX = filterRect.xMax + 6f;
+            if (restoreW > 0f)
+            {
+                Rect restoreRect = new Rect(nextX, inner.y, restoreW, inner.height);
+                if (PowerUiDraw.Button(restoreRect, "PGM_Diag_Restore".Translate(tracker.DismissedCount)))
+                {
+                    tracker.ClearDismissals();
+                }
+                PowerUiDraw.Tip(restoreRect, "PGM_Diag_RestoreTip".Translate());
+                nextX = restoreRect.xMax + 6f;
+            }
+
+            diagnoseRect = showDiagnose
+                ? new Rect(nextX, inner.y, diagW, inner.height)
+                : new Rect(0f, 0f, 0f, 0f);
+
+            float leftW = Mathf.Max(0f, filterRect.x - inner.x - 10f);
+            if (leftW >= 80f)
+            {
+                string title = "PGM_Diag_Title".Translate();
+                float titleW = Mathf.Min(leftW * 0.45f, Text.CalcSize(title).x + 16f);
+                Widgets.DrawBoxSolid(new Rect(inner.x, inner.y + 5f, 3f, Mathf.Max(6f, inner.height - 10f)),
+                    PowerUiDraw.AccentPrimary);
+                PowerUiDraw.TextEllipsized(new Rect(inner.x + 8f, inner.y, titleW, inner.height),
+                    title, PowerUiDraw.TextPrimary);
+
+                float countsX = inner.x + 8f + titleW + 6f;
+                float countsW = Mathf.Max(0f, filterRect.x - countsX - 8f);
+                if (countsW >= 60f)
+                {
+                    string counts = "PGM_Diag_Counts".Translate(criticalCount, warningCount, resolvedCount);
+                    if (settings != null && settings.MutedKindCount > 0)
+                        counts = counts + "  \u00B7  " + "PGM_Diag_MutedCount".Translate(settings.MutedKindCount);
+                    Color cntCol = criticalCount > 0
+                        ? PowerUiDraw.NoticeColor
+                        : (warningCount > 0 ? PowerUiDraw.Warn : PowerUiDraw.TextSecondary);
+                    PowerUiDraw.TextEllipsized(new Rect(countsX, inner.y, countsW, inner.height),
+                        counts, cntCol);
+                }
+            }
+        }
+
+        private static void DrawDeferredDiagnoseButton(Rect diagnoseRect, PowerUiState state)
+        {
+            if (diagnoseRect.width <= 0f || diagnoseRect.height <= 0f) return;
+            if (PowerUiDraw.Button(diagnoseRect, "PGM_Diag_Diagnose".Translate(), false, true))
             {
                 Map map = Find.CurrentMap;
                 PowerGridManagerComponent component = map == null ? null
@@ -89,30 +169,6 @@ namespace PowerGridManager
                     Find.WindowStack.Add(new PowerTroubleshootingDialog(component, state));
             }
             PowerUiDraw.Tip(diagnoseRect, "PGM_Diag_DiagnoseTip".Translate());
-            x += diagnoseRect.width + 4f;
-
-            Rect filterRect = new Rect(x, rect.y, 118f, 26f);
-            if (Widgets.ButtonText(filterRect, "PGM_Diag_FilterButton".Translate(FilterLabel(state.DiagnosticView))))
-            {
-                OpenFilterMenu(state);
-            }
-            x += filterRect.width + 4f;
-
-            if (tracker != null && tracker.DismissedCount > 0)
-            {
-                Rect restoreRect = new Rect(x, rect.y, 132f, 26f);
-                if (Widgets.ButtonText(restoreRect, "PGM_Diag_Restore".Translate(tracker.DismissedCount)))
-                {
-                    tracker.ClearDismissals();
-                }
-                PowerUiDraw.Tip(restoreRect, "PGM_Diag_RestoreTip".Translate());
-            }
-
-            if (settings != null && settings.MutedKindCount > 0)
-            {
-                PowerUiDraw.DrawText(new Rect(rect.x, rect.yMax - 2f, rect.width, 16f),
-                    "PGM_Diag_MutedCount".Translate(settings.MutedKindCount), PowerUiDraw.Warn);
-            }
         }
 
         private void BuildVisible(IReadOnlyList<PowerDiagnostic> advisories, DiagnosticFilter filter)
@@ -146,52 +202,63 @@ namespace PowerGridManager
             }
         }
 
-        private void DrawRow(Rect rect, PowerDiagnostic advisory, PowerGridSnapshot snapshot, PowerUiState state,
-            PowerGridManagerSettings settings, PowerDiagnosticTracker tracker, Action<int> showBuildingsOnNetwork)
+        private static void DrawRow(Rect rect, PowerDiagnostic advisory, PowerGridSnapshot snapshot,
+            PowerGridManagerSettings settings, PowerDiagnosticTracker tracker,
+            Action<int> showBuildingsOnNetwork)
         {
-            Widgets.DrawBox(rect, 1);
-            if (!advisory.Ongoing) Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.03f));
-
             Color severityColor = PowerUiDraw.SeverityColor(advisory.Severity);
-            Rect pill = new Rect(rect.x + 6f, rect.y + 6f, PillWidth, 18f);
-            PowerUiDraw.StatusPill(pill, PowerGridUtilities.SeverityLabelKey(advisory.Severity).Translate(),
-                severityColor);
+            PowerUiDraw.NotificationCardShell(rect, severityColor, advisory.Ongoing);
 
-            float titleX = pill.xMax + 6f;
-            float statusWidth = 132f;
+            float padX = rect.x + 12f;
+            float innerW = Mathf.Max(40f, rect.width - 20f);
+
+            // Row 1: Severity badge (symbol + text) + Title + Duration/Status on right.
+            Rect pill = new Rect(padX, rect.y + 6f, Mathf.Min(PillWidth, innerW * 0.35f), 20f);
+            PowerUiDraw.StatusBadge(pill,
+                PowerGridUtilities.SeverityLabelKey(advisory.Severity).Translate(),
+                severityColor,
+                PowerUiDraw.SeveritySymbol(advisory.Severity));
+
+            float statusWidth = Mathf.Min(150f, innerW * 0.32f);
+            float titleX = pill.xMax + 8f;
             PowerUiDraw.TextEllipsized(
-                new Rect(titleX, rect.y + 4f, Mathf.Max(40f, rect.xMax - titleX - statusWidth - 12f), 22f),
-                Title(advisory), Color.white);
-            PowerUiDraw.DrawText(new Rect(rect.xMax - statusWidth - 6f, rect.y + 4f, statusWidth, 22f),
-                Status(advisory), advisory.Ongoing ? severityColor : PowerUiDraw.Muted, TextAnchor.MiddleRight);
+                new Rect(titleX, rect.y + 5f, Mathf.Max(30f, rect.xMax - titleX - statusWidth - 14f), 22f),
+                FormatTitle(advisory), PowerUiDraw.TextPrimary);
+            PowerUiDraw.TextEllipsized(
+                new Rect(rect.xMax - statusWidth - 8f, rect.y + 5f, statusWidth, 22f),
+                FormatStatus(advisory),
+                advisory.Ongoing ? severityColor : PowerUiDraw.TextSecondary,
+                TextAnchor.MiddleRight);
 
-            float textX = rect.x + 8f;
-            float textWidth = Mathf.Max(60f, rect.width - 16f);
-            PowerUiDraw.WrappedText(new Rect(textX, rect.y + 28f, textWidth, 34f), Description(advisory),
-                new Color(0.86f, 0.86f, 0.86f));
-            PowerUiDraw.TextEllipsized(new Rect(textX, rect.y + 62f, textWidth, 18f), Evidence(advisory),
-                PowerUiDraw.Muted);
-            PowerUiDraw.TextEllipsized(new Rect(textX, rect.y + 80f, textWidth, 18f), Action(advisory),
-                PowerUiDraw.Info);
+            // Row 2: Concise explanation.
+            PowerUiDraw.WrappedText(new Rect(padX, rect.y + 30f, innerW, 34f),
+                FormatDescription(advisory), PowerUiDraw.TextSecondary);
 
-            float buttonY = rect.yMax - 28f;
-            float buttonX = rect.xMax - 6f;
+            // Row 3: Recessed measurement evidence strip.
+            Rect evBox = new Rect(padX, rect.y + 66f, innerW, 22f);
+            PowerUiDraw.RecessedBox(evBox);
+            PowerUiDraw.TextEllipsized(new Rect(evBox.x + 6f, evBox.y, Mathf.Max(0f, evBox.width - 12f), evBox.height),
+                FormatEvidence(advisory), PowerUiDraw.TextPrimary);
 
+            // Row 4: Recommended action on left + action buttons on right.
+            float buttonY = rect.yMax - 30f;
+            float buttonX = rect.xMax - 8f;
+
+            // Button order strictly preserved: Mute -> Dismiss -> Locate -> ShowBuildings.
             buttonX -= ButtonWidth;
-            string muteLabel = settings != null && settings.IsMuted(advisory.Kind)
-                ? "PGM_Diag_Unmute".Translate()
-                : "PGM_Diag_Mute".Translate();
+            bool isMuted = settings != null && settings.IsMuted(advisory.Kind);
+            string muteLabel = isMuted ? "PGM_Diag_Unmute".Translate() : "PGM_Diag_Mute".Translate();
             Rect muteRect = new Rect(buttonX, buttonY, ButtonWidth - 4f, 24f);
-            if (Widgets.ButtonText(muteRect, muteLabel) && settings != null)
+            if (PowerUiDraw.Button(muteRect, muteLabel, isMuted) && settings != null)
             {
-                settings.SetMuted(advisory.Kind, !settings.IsMuted(advisory.Kind));
+                settings.SetMuted(advisory.Kind, !isMuted);
                 PowerGridManagerMod.Save();
             }
             PowerUiDraw.Tip(muteRect, "PGM_Diag_MuteTip".Translate());
 
             buttonX -= ButtonWidth;
             Rect dismissRect = new Rect(buttonX, buttonY, ButtonWidth - 4f, 24f);
-            if (Widgets.ButtonText(dismissRect, "PGM_Diag_Dismiss".Translate()) && tracker != null)
+            if (PowerUiDraw.Button(dismissRect, "PGM_Diag_Dismiss".Translate()) && tracker != null)
             {
                 tracker.Dismiss(advisory, advisory.LastSeenTick);
             }
@@ -202,7 +269,7 @@ namespace PowerGridManager
             {
                 buttonX -= ButtonWidth;
                 Rect locateRect = new Rect(buttonX, buttonY, ButtonWidth - 4f, 24f);
-                if (Widgets.ButtonText(locateRect, "PGM_Diag_Locate".Translate()))
+                if (PowerUiDraw.Button(locateRect, "PGM_Diag_Locate".Translate()))
                 {
                     CameraJumper.TryJumpAndSelect(new GlobalTargetInfo(target));
                 }
@@ -212,25 +279,29 @@ namespace PowerGridManager
             {
                 buttonX -= ButtonWidth;
                 Rect showRect = new Rect(buttonX, buttonY, ButtonWidth - 4f, 24f);
-                if (Widgets.ButtonText(showRect, "PGM_Diag_ShowBuildings".Translate()))
+                if (PowerUiDraw.Button(showRect, "PGM_Diag_ShowBuildings".Translate(), false, true))
                 {
                     showBuildingsOnNetwork(advisory.NetworkId.Value);
                 }
             }
 
+            float actionW = Mathf.Max(0f, buttonX - padX - 8f);
+            if (actionW >= 60f)
+            {
+                PowerUiDraw.TextEllipsized(new Rect(padX, buttonY, actionW, 24f),
+                    FormatAction(advisory), PowerUiDraw.AccentCyan);
+            }
+
             PowerUiDraw.Tip(rect, "PGM_Diag_RowTip".Translate());
         }
 
-        /// <summary>The building a "locate" action should jump to, when one can be identified.</summary>
         private static Building LocateTarget(PowerDiagnostic advisory, PowerGridSnapshot snapshot)
         {
             if (advisory.Building != null && !advisory.Building.Destroyed && advisory.Building.Spawned)
-            {
                 return advisory.Building;
-            }
-            if (!advisory.NetworkId.HasValue || snapshot == null || snapshot.Buildings == null) return null;
+            if (!advisory.NetworkId.HasValue || snapshot == null || snapshot.Buildings == null)
+                return null;
 
-            // For a network advisory, jump to the largest consumer that is confirmed to be on it.
             Building best = null;
             float bestDraw = 0f;
             IReadOnlyList<BuildingPowerSnapshot> buildings = snapshot.Buildings;
@@ -246,9 +317,7 @@ namespace PowerGridManager
             return bestDraw > 0.01f ? best : null;
         }
 
-        // --- Row text ---------------------------------------------------------
-
-        private static string Title(PowerDiagnostic advisory)
+        internal static string FormatTitle(PowerDiagnostic advisory)
         {
             switch (advisory.Kind)
             {
@@ -275,7 +344,7 @@ namespace PowerGridManager
             }
         }
 
-        private static string Description(PowerDiagnostic advisory)
+        internal static string FormatDescription(PowerDiagnostic advisory)
         {
             switch (advisory.Kind)
             {
@@ -307,7 +376,7 @@ namespace PowerGridManager
             }
         }
 
-        private static string Evidence(PowerDiagnostic advisory)
+        internal static string FormatEvidence(PowerDiagnostic advisory)
         {
             switch (advisory.Kind)
             {
@@ -332,7 +401,7 @@ namespace PowerGridManager
                 case PowerDiagnosticKind.GeneratorUnderOutput:
                     return "PGM_Diag_Ev_Generator".Translate(advisory.NetworkId.HasValue
                         ? advisory.NetworkId.Value.ToString()
-                        : "PGM_Value_Unknown".Translate());
+                        : (string)"PGM_Value_Unknown".Translate());
                 case PowerDiagnosticKind.DrawAboveConfigured:
                     return "PGM_Diag_Ev_AboveConfig".Translate(PowerFormatting.FormatWatts(
                         advisory.MeasuredWatts - advisory.ConfiguredWatts));
@@ -343,7 +412,7 @@ namespace PowerGridManager
             }
         }
 
-        private static string Action(PowerDiagnostic advisory)
+        internal static string FormatAction(PowerDiagnostic advisory)
         {
             switch (advisory.Kind)
             {
@@ -370,13 +439,11 @@ namespace PowerGridManager
             }
         }
 
-        private static string Status(PowerDiagnostic advisory)
+        internal static string FormatStatus(PowerDiagnostic advisory)
         {
             string label = PowerGridUtilities.DiagnosticStatusKey(advisory.Ongoing).Translate();
             if (advisory.Ongoing)
-            {
                 return "PGM_Diag_Duration".Translate(label, PowerFormatting.FormatDuration(advisory.SustainedTicks));
-            }
             return label;
         }
 
