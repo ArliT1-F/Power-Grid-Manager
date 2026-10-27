@@ -6,10 +6,25 @@ namespace PowerGridManager
     /// Persistent user preferences for monitoring cadence and alert sensitivity.
     /// These settings do not alter RimWorld's power simulation.
     /// </summary>
+    /// <summary>
+    /// How heavily the mod samples and analyses the colony. Each mode changes real
+    /// collection behaviour: refresh cadence, history interval, retention and diagnostic
+    /// depth. None of them are cosmetic.
+    /// </summary>
+    public enum PerformanceMode
+    {
+        Lightweight = 0,
+        Balanced,
+        Detailed
+    }
+
     public sealed class PowerGridManagerSettings : ModSettings
     {
         /// <summary>Default history cadence, quoted by UI text that explains how estimates are fed.</summary>
         public const int DefaultSampleIntervalTicks = 2500;
+
+        /// <summary>Active performance mode. Changing it reapplies the mode's preset values.</summary>
+        public PerformanceMode PerformanceMode = PerformanceMode.Balanced;
 
         public int RefreshIntervalTicks = 120;
         public int SampleIntervalTicks = 2500;
@@ -18,6 +33,32 @@ namespace PowerGridManager
 
         /// <summary>Current draw above which a building is flagged as high consumption.</summary>
         public float HighConsumptionWatts = 500f;
+
+        /// <summary>Network load ratio (consumption / generation) above which a near-capacity
+        /// recommendation is raised.</summary>
+        public float NearCapacityThreshold = 0.90f;
+
+        /// <summary>Desired generation margin (headroom above demand), in watts. Used by
+        /// budgeting and scenario planning. Zero means no reserve target is configured.</summary>
+        public float ReserveMarginWatts = 0f;
+
+        // --- Presets (Feature Seven). Persisted as parallel primitive lists. ----------
+
+        public List<string> presetNames = new List<string>();
+        public List<string> presetDescriptions = new List<string>();
+        public List<float> presetLowThresholds = new List<float>();
+        public List<float> presetRestoreThresholds = new List<float>();
+        public List<int> presetStableTicks = new List<int>();
+        public List<int> presetCooldownTicks = new List<int>();
+        public List<int> presetMaxActionsPerPass = new List<int>();
+        public List<int> presetRecoveryModes = new List<int>();
+        public List<bool> presetRequireDeficit = new List<bool>();
+        public List<int> presetDefaultPriorities = new List<int>();
+        public List<bool> presetMarkNewSheddable = new List<bool>();
+        public List<float> presetActivateBelowCharge = new List<float>();
+        public List<float> presetRestoreAboveCharge = new List<float>();
+        public List<bool> presetAutoActivation = new List<bool>();
+        public List<bool> presetIsActive = new List<bool>();
 
         /// <summary>When false, no history samples are recorded (aggregates still refresh).</summary>
         public bool HistoryEnabled = true;
@@ -130,11 +171,38 @@ namespace PowerGridManager
 
         public override void ExposeData()
         {
+            Scribe_Values.Look(ref PerformanceMode, "performanceMode", PerformanceMode.Balanced);
             Scribe_Values.Look(ref RefreshIntervalTicks, "refreshIntervalTicks", 120);
             Scribe_Values.Look(ref SampleIntervalTicks, "sampleIntervalTicks", 2500);
             Scribe_Values.Look(ref RetentionDays, "retentionDays", 7);
             Scribe_Values.Look(ref HighLoadThreshold, "highLoadThreshold", 0.90f);
             Scribe_Values.Look(ref HighConsumptionWatts, "highConsumptionWatts", 500f);
+            Scribe_Values.Look(ref NearCapacityThreshold, "nearCapacityThreshold", 0.90f);
+            Scribe_Values.Look(ref ReserveMarginWatts, "reserveMarginWatts", 0f);
+
+            // --- Presets ---
+            Scribe_Collections.Look(ref presetNames, "presetNames", LookMode.Value);
+            Scribe_Collections.Look(ref presetDescriptions, "presetDescriptions", LookMode.Value);
+            Scribe_Collections.Look(ref presetLowThresholds, "presetLowThresholds", LookMode.Value);
+            Scribe_Collections.Look(ref presetRestoreThresholds, "presetRestoreThresholds",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetStableTicks, "presetStableTicks", LookMode.Value);
+            Scribe_Collections.Look(ref presetCooldownTicks, "presetCooldownTicks", LookMode.Value);
+            Scribe_Collections.Look(ref presetMaxActionsPerPass, "presetMaxActionsPerPass",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetRecoveryModes, "presetRecoveryModes", LookMode.Value);
+            Scribe_Collections.Look(ref presetRequireDeficit, "presetRequireDeficit", LookMode.Value);
+            Scribe_Collections.Look(ref presetDefaultPriorities, "presetDefaultPriorities",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetMarkNewSheddable, "presetMarkNewSheddable",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetActivateBelowCharge, "presetActivateBelowCharge",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetRestoreAboveCharge, "presetRestoreAboveCharge",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetAutoActivation, "presetAutoActivation",
+                LookMode.Value);
+            Scribe_Collections.Look(ref presetIsActive, "presetIsActive", LookMode.Value);
             Scribe_Values.Look(ref HistoryEnabled, "historyEnabled", true);
 
             Scribe_Values.Look(ref DiagnosticsEnabled, "diagnosticsEnabled", true);
@@ -167,6 +235,39 @@ namespace PowerGridManager
                 RetentionDays = Clamp(RetentionDays, 1, 30);
                 HighLoadThreshold = Clamp(HighLoadThreshold, 0.50f, 1.50f);
                 HighConsumptionWatts = Clamp(HighConsumptionWatts, 0f, 100000f);
+                NearCapacityThreshold = Clamp(NearCapacityThreshold, 0.50f, 1.50f);
+                ReserveMarginWatts = Clamp(ReserveMarginWatts, 0f, 100000f);
+                if (!System.Enum.IsDefined(typeof(PerformanceMode), PerformanceMode))
+                    PerformanceMode = PerformanceMode.Balanced;
+
+                // Keep preset parallel lists consistent in length.
+                int presetCount = presetNames.Count;
+                ClampList(presetDescriptions, presetCount);
+                ClampList(presetLowThresholds, presetCount);
+                ClampList(presetRestoreThresholds, presetCount);
+                ClampList(presetStableTicks, presetCount);
+                ClampList(presetCooldownTicks, presetCount);
+                ClampList(presetMaxActionsPerPass, presetCount);
+                ClampList(presetRecoveryModes, presetCount);
+                ClampList(presetRequireDeficit, presetCount);
+                ClampList(presetDefaultPriorities, presetCount);
+                ClampList(presetMarkNewSheddable, presetCount);
+                ClampList(presetActivateBelowCharge, presetCount);
+                ClampList(presetRestoreAboveCharge, presetCount);
+                ClampList(presetAutoActivation, presetCount);
+                ClampList(presetIsActive, presetCount);
+                if (presetNames.Count > PowerPresetManager.MaxPresets)
+                    presetNames.RemoveRange(PowerPresetManager.MaxPresets,
+                        presetNames.Count - PowerPresetManager.MaxPresets);
+            }
+        }
+
+        private static void ClampList<T>(List<T> list, int count)
+        {
+            if (list == null) return;
+            while (list.Count > count) list.RemoveAt(list.Count - 1);
+            while (list.Count < count) list.Add(default(T));
+        }
 
                 DeficitAlertWatts = Clamp(DeficitAlertWatts, 1f, 100000f);
                 LowBatteryWarningFraction = Clamp(LowBatteryWarningFraction, 0.01f, 0.99f);
@@ -196,6 +297,37 @@ namespace PowerGridManager
             LoadShedMaxActionsPerPass = Clamp(LoadShedMaxActionsPerPass, 1, 32);
             if (!System.Enum.IsDefined(typeof(LoadSheddingRecoveryMode), LoadShedRecovery))
                 LoadShedRecovery = LoadSheddingRecoveryMode.Staged;
+        }
+
+        /// <summary>Applies the active performance mode's preset values. This changes real
+        /// collection behaviour, so it is intentionally a separate explicit action rather
+        /// than something applied silently on every load.</summary>
+        public void ApplyPerformanceMode()
+        {
+            switch (PerformanceMode)
+            {
+                case PerformanceMode.Lightweight:
+                    RefreshIntervalTicks = 600;
+                    SampleIntervalTicks = 15000;
+                    RetentionDays = 3;
+                    ShowInfoDiagnostics = false;
+                    break;
+                case PerformanceMode.Balanced:
+                    RefreshIntervalTicks = 120;
+                    SampleIntervalTicks = 2500;
+                    RetentionDays = 7;
+                    ShowInfoDiagnostics = true;
+                    break;
+                case PerformanceMode.Detailed:
+                    RefreshIntervalTicks = 60;
+                    SampleIntervalTicks = 250;
+                    RetentionDays = 30;
+                    ShowInfoDiagnostics = true;
+                    break;
+            }
+            RefreshIntervalTicks = Clamp(RefreshIntervalTicks, 60, 600);
+            SampleIntervalTicks = Clamp(SampleIntervalTicks, 250, 15000);
+            RetentionDays = Clamp(RetentionDays, 1, 30);
         }
 
         /// <summary>Number of advisory kinds this build defines; bounds the persisted mute mask.</summary>

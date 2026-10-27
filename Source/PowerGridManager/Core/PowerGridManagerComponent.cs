@@ -21,6 +21,8 @@ namespace PowerGridManager
         private int criticalCount;
         private int warningCount;
         private int resolvedCount;
+        private readonly PowerRecommendationTracker recommendationTracker = new PowerRecommendationTracker();
+        private List<PowerRecommendation> recommendations = new List<PowerRecommendation>();
 
         public PowerGridSnapshot Snapshot { get; private set; }
 
@@ -32,6 +34,12 @@ namespace PowerGridManager
 
         /// <summary>Advisories from the latest evaluation, ranked worst first.</summary>
         public IReadOnlyList<PowerDiagnostic> Advisories => advisories;
+
+        /// <summary>Actionable optimization recommendations from the latest evaluation.</summary>
+        public IReadOnlyList<PowerRecommendation> Recommendations => recommendations.AsReadOnly();
+
+        /// <summary>Runtime episode memory for recommendations. Not persisted.</summary>
+        public PowerRecommendationTracker RecommendationTracker => recommendationTracker;
 
         /// <summary>Map-wide endurance estimate cached at the last refresh.</summary>
         public BatteryForecastResult Forecast => mapForecast;
@@ -107,6 +115,9 @@ namespace PowerGridManager
             PowerDiagnostics.Evaluate(Snapshot, history, settings, diagnostics, advisories,
                 management == null ? null : management.Registry);
 
+            PowerRecommendationEngine.Evaluate(Snapshot, settings, management.Registry,
+                recommendationTracker, recommendations, tick);
+
             criticalCount = 0;
             warningCount = 0;
             resolvedCount = 0;
@@ -167,6 +178,8 @@ namespace PowerGridManager
                 warningCount = 0;
                 resolvedCount = 0;
                 diagnostics.Reset();
+                recommendationTracker.Reset();
+                recommendations.Clear();
             }
         }
 

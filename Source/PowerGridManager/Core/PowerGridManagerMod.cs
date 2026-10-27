@@ -69,6 +69,26 @@ namespace PowerGridManager
                     "PGM_Retention_Tip", "1", "30"));
                 listing.Gap(8f);
 
+                listing.Label("PGM_PerformanceMode_Label".Translate());
+                Rect modeRect = listing.GetRect(26f);
+                float modeButtonWidth = (modeRect.width - 8f) / 3f;
+                for (int i = 0; i < 3; i++)
+                {
+                    PerformanceMode mode = (PerformanceMode)i;
+                    Rect b = new Rect(modeRect.x + i * (modeButtonWidth + 4f), modeRect.y,
+                        modeButtonWidth, 26f);
+                    bool selected = settings.PerformanceMode == mode;
+                    if (selected) Widgets.DrawBoxSolid(b, new Color(1f, 1f, 1f, 0.14f));
+                    if (Widgets.ButtonText(b, PerformanceModeLabel(mode).Translate()))
+                    {
+                        settings.PerformanceMode = mode;
+                        settings.ApplyPerformanceMode();
+                        Save();
+                    }
+                    PowerUiDraw.Tip(b, PerformanceModeTip(mode).Translate());
+                }
+                listing.Gap(12f);
+
                 listing.Label("PGM_HighLoad_Label".Translate((settings.HighLoadThreshold * 100f).ToString("F0")));
                 settings.HighLoadThreshold = Slider(listing, settings.HighLoadThreshold, 0.50f, 1.50f,
                     "PGM_HighLoad_Tip", "50%", "150%");
@@ -239,6 +259,29 @@ namespace PowerGridManager
             listing.Gap(2f);
             listing.Label(key.Translate());
             listing.Gap(2f);
+        }
+
+        private static string PerformanceModeLabel(PerformanceMode mode)
+        {
+            switch (mode)
+            {
+                case PerformanceMode.Lightweight: return "PGM_PerformanceMode_Lightweight";
+                case PerformanceMode.Detailed: return "PGM_PerformanceMode_Detailed";
+                default: return "PGM_PerformanceMode_Balanced";
+            }
+        }
+
+        private static string PerformanceModeTip(PerformanceMode mode)
+        {
+            switch (mode)
+            {
+                case PerformanceMode.Lightweight:
+                    return "PGM_PerformanceMode_LightweightTip";
+                case PerformanceMode.Detailed:
+                    return "PGM_PerformanceMode_DetailedTip";
+                default:
+                    return "PGM_PerformanceMode_BalancedTip";
+            }
         }
 
         /// <summary>

@@ -22,6 +22,13 @@
   <PGM_SampleInterval_Tip>How often one aggregate history sample is stored. One in-game hour is 2,500 ticks. Shorter intervals give smoother charts and use more save space.</PGM_SampleInterval_Tip>
   <PGM_Retention_Label>History retention: {0} days</PGM_Retention_Label>
   <PGM_Retention_Tip>Samples older than this many in-game days are discarded. History storage is bounded by this window.</PGM_Retention_Tip>
+  <PGM_PerformanceMode_Label>Performance mode</PGM_PerformanceMode_Label>
+  <PGM_PerformanceMode_Lightweight>Lightweight</PGM_PerformanceMode_Lightweight>
+  <PGM_PerformanceMode_Balanced>Balanced</PGM_PerformanceMode_Balanced>
+  <PGM_PerformanceMode_Detailed>Detailed</PGM_PerformanceMode_Detailed>
+  <PGM_PerformanceMode_LightweightTip>Lower sampling frequency, 3-day retention, essential diagnostics only. Least CPU and save size.</PGM_PerformanceMode_LightweightTip>
+  <PGM_PerformanceMode_BalancedTip>Standard monitoring, 7-day retention, routine diagnostics. Recommended default.</PGM_PerformanceMode_BalancedTip>
+  <PGM_PerformanceMode_DetailedTip>More frequent sampling, 30-day retention, full diagnostics. Highest CPU and save size.</PGM_PerformanceMode_DetailedTip>
   <PGM_HighLoad_Label>High-load threshold: {0}% of current generation</PGM_HighLoad_Label>
   <PGM_HighLoad_Tip>Networks whose consumption reaches this share of their current generation are labelled High Load. This compares against current output, not installed capacity.</PGM_HighLoad_Tip>
   <PGM_HighConsumption_Label>High-consumption threshold: {0} W</PGM_HighConsumption_Label>
@@ -478,6 +485,207 @@
   <PGM_Mgmt_Status_Watching>WATCHING</PGM_Mgmt_Status_Watching>
   <PGM_Mgmt_Status_Shedding>SHEDDING</PGM_Mgmt_Status_Shedding>
   <PGM_Mgmt_Status_Restoring>RESTORING</PGM_Mgmt_Status_Restoring>
+  <PGM_Mgmt_Status_Enabled>ENABLED</PGM_Mgmt_Status_Enabled>
+  <PGM_Mgmt_Status_Suspended>SUSPENDED</PGM_Mgmt_Status_Suspended>
+  <PGM_Mgmt_Status_Unavailable>UNAVAILABLE</PGM_Mgmt_Status_Unavailable>
+  <PGM_Mgmt_AutomationStatusTip>Automation status at the last refresh. Suspended means the emergency override is active; automatic switching is paused until you end the override.</PGM_Mgmt_AutomationStatusTip>
+  <PGM_Mgmt_EmergencyOn>EMERGENCY OVERRIDE</PGM_Mgmt_EmergencyOn>
+  <PGM_Mgmt_EmergencyOff>END OVERRIDE</PGM_Mgmt_EmergencyOff>
+  <PGM_Mgmt_EmergencyOnTip>Immediately suspend automatic load switching. Buildings already switched off by a policy stay off; use Restore now to bring them back. RimWorld's own electrical simulation is unaffected.</PGM_Mgmt_EmergencyOnTip>
+  <PGM_Mgmt_EmergencyOffTip>End the emergency override and let the configured load-shedding policy resume.</PGM_Mgmt_EmergencyOffTip>
+  <PGM_Mgmt_Event_EmergencyOverride>Emergency override</PGM_Mgmt_Event_EmergencyOverride>
+  <PGM_Mgmt_Event_EmergencyOn>Emergency override activated; automatic switching suspended.</PGM_Mgmt_Event_EmergencyOn>
+  <PGM_Mgmt_Event_EmergencyOff>Emergency override cleared; automation resumed.</PGM_Mgmt_Event_EmergencyOff>
+  <PGM_Tab_Optimization>Optimization</PGM_Tab_Optimization>
+  <PGM_Tab_OptimizationTip>Actionable power recommendations: where to save energy, where generation falls short, and what the automation cannot control.</PGM_Tab_OptimizationTip>
+  <PGM_Rec_Title>Recommendations</PGM_Rec_Title>
+  <PGM_Rec_Counts>{0} ongoing · {1} dismissed</PGM_Rec_Counts>
+  <PGM_Rec_FilterButton>Filter: {0}</PGM_Rec_FilterButton>
+  <PGM_Rec_Filter_All>All</PGM_Rec_Filter_All>
+  <PGM_Rec_Filter_Ongoing>Ongoing</PGM_Rec_Filter_Ongoing>
+  <PGM_Rec_Filter_Dismissed>Dismissed</PGM_Rec_Filter_Dismissed>
+  <PGM_Rec_Restore>Restore</PGM_Rec_Restore>
+  <PGM_Rec_RestoreTip>Show this dismissed recommendation again.</PGM_Rec_RestoreTip>
+  <PGM_Rec_RestoreAll>Restore hidden ({0})</PGM_Rec_RestoreAll>
+  <PGM_Rec_RestoreAllTip>Show previously dismissed recommendations again.</PGM_Rec_RestoreAllTip>
+  <PGM_Rec_Dismiss>Dismiss</PGM_Rec_Dismiss>
+  <PGM_Rec_DismissTip>Hide this recommendation. Dismissing it does not disable the underlying diagnostic.</PGM_Rec_DismissTip>
+  <PGM_Rec_Locate>Locate</PGM_Rec_Locate>
+  <PGM_Rec_LocateTip>Jump the camera to the affected building.</PGM_Rec_LocateTip>
+  <PGM_Rec_Inspect>Inspect</PGM_Rec_Inspect>
+  <PGM_Rec_InspectTip>Open the vanilla building inspector.</PGM_Rec_InspectTip>
+  <PGM_Rec_ShowBuildings>Show buildings</PGM_Rec_ShowBuildings>
+  <PGM_Rec_ShowBuildingsTip>Jump to the building table filtered to this network.</PGM_Rec_ShowBuildingsTip>
+  <PGM_Rec_RowTip>Recommendations are actionable suggestions. Estimated savings are labelled estimates, not guarantees.</PGM_Rec_RowTip>
+  <PGM_Rec_Empty>No recommendations. Your power configuration looks healthy.</PGM_Rec_Empty>
+  <PGM_Rec_EmptyFiltered>No recommendations match the current filter.</PGM_Rec_EmptyFiltered>
+  <PGM_Rec_Resolved>Resolved</PGM_Rec_Resolved>
+  <PGM_Rec_Benefit>Potential saving: {0}</PGM_Rec_Benefit>
+  <PGM_Rec_BenefitEstimate>Estimated saving: {0}</PGM_Rec_BenefitEstimate>
+  <PGM_Rec_BenefitNone>No direct saving.</PGM_Rec_BenefitNone>
+  <PGM_Rec_Duration>{0} for {1}</PGM_Rec_Duration>
+  <PGM_Rec_Act_InspectGenerators>Inspect the network's generators</PGM_Rec_Act_InspectGenerators>
+  <PGM_Rec_Act_InspectConsumers>Inspect the network's largest consumers</PGM_Rec_Act_InspectConsumers>
+  <PGM_Rec_Act_PreviewLoadShedding>Preview a load-shedding policy</PGM_Rec_Act_PreviewLoadShedding>
+  <PGM_Rec_Act_AddGeneration>Add generation</PGM_Rec_Act_AddGeneration>
+  <PGM_Rec_Act_ReduceDemand>Reduce demand</PGM_Rec_Act_ReduceDemand>
+  <PGM_Rec_Act_AddBatteries>Add battery storage</PGM_Rec_Act_AddBatteries>
+  <PGM_Rec_Act_SwitchOff>Switch the building off</PGM_Rec_Act_SwitchOff>
+  <PGM_Rec_Act_InspectBuilding>Inspect the building</PGM_Rec_Act_InspectBuilding>
+  <PGM_Rec_Act_MarkSheddable>Mark the building as sheddable</PGM_Rec_Act_MarkSheddable>
+  <PGM_Rec_Act_InspectDeficitNetwork>Inspect the deficit network</PGM_Rec_Act_InspectDeficitNetwork>
+  <PGM_Rec_Title_Deficit>Persistent deficit on network {0}</PGM_Rec_Title_Deficit>
+  <PGM_Rec_Expl_Deficit>The network consumes more than it generates, so it is running on stored battery energy.</PGM_Rec_Expl_Deficit>
+  <PGM_Rec_Ev_Deficit>Generation {0}, consumption {1}, deficit {2}, sustained {3}.</PGM_Rec_Ev_Deficit>
+  <PGM_Rec_Title_LowBattery>Low battery reserve on network {0}</PGM_Rec_Title_LowBattery>
+  <PGM_Rec_Expl_LowBattery>The network's battery charge is at or below the configured warning level.</PGM_Rec_Expl_LowBattery>
+  <PGM_Rec_Ev_LowBattery>Charge {0}, deficit {1}, sustained {2}.</PGM_Rec_Ev_LowBattery>
+  <PGM_Rec_Title_Discharge>Batteries discharging on network {0}</PGM_Rec_Title_Discharge>
+  <PGM_Rec_Expl_Discharge>The network has a generation deficit and batteries are covering it.</PGM_Rec_Expl_Discharge>
+  <PGM_Rec_Ev_Discharge>Deficit {0}, charge {1}, sustained {2}.</PGM_Rec_Ev_Discharge>
+  <PGM_Rec_Title_HighDemand>High demand on network {0}</PGM_Rec_Title_HighDemand>
+  <PGM_Rec_Expl_HighDemand>Consumption is close to or above generation on this network.</PGM_Rec_Expl_HighDemand>
+  <PGM_Rec_Ev_HighDemand>Load {0}; consumption {1}, generation {2}.</PGM_Rec_Ev_HighDemand>
+  <PGM_Rec_Title_NearCapacity>Network {0} near capacity</PGM_Rec_Title_NearCapacity>
+  <PGM_Rec_Expl_NearCapacity>Demand is a large share of generation; there is little margin for new loads.</PGM_Rec_Expl_NearCapacity>
+  <PGM_Rec_Ev_NearCapacity>Load {0} of capacity target {1}.</PGM_Rec_Ev_NearCapacity>
+  <PGM_Rec_Title_IdleConsumer>Idle consumer still drawing power</PGM_Rec_Title_IdleConsumer>
+  <PGM_Rec_Expl_IdleConsumer>A building whose switch is off still reports electrical draw.</PGM_Rec_Expl_IdleConsumer>
+  <PGM_Rec_Ev_IdleConsumer>{0} still draws {1} with its switch off.</PGM_Rec_Ev_IdleConsumer>
+  <PGM_Rec_Title_HighDraw>High-consumption consumer</PGM_Rec_Title_HighDraw>
+  <PGM_Rec_Expl_HighDraw>A consumer draws well above the high-consumption threshold and is not marked sheddable.</PGM_Rec_Expl_HighDraw>
+  <PGM_Rec_Ev_HighDraw>{0} draws {1}, above the {2} threshold.</PGM_Rec_Ev_HighDraw>
+  <PGM_Rec_Title_Uncontrollable>Uncontrollable consumer</PGM_Rec_Title_Uncontrollable>
+  <PGM_Rec_Expl_Uncontrollable>This consumer cannot be safely switched by the management system.</PGM_Rec_Expl_Uncontrollable>
+  <PGM_Rec_Ev_Uncontrollable>{0} has no supported on/off control.</PGM_Rec_Ev_Uncontrollable>
+  <PGM_Rec_Title_Imbalanced>Generation imbalanced across networks</PGM_Rec_Title_Imbalanced>
+  <PGM_Rec_Expl_Imbalanced>One network runs a deficit while another has surplus; power cannot be transferred between independent networks.</PGM_Rec_Expl_Imbalanced>
+  <PGM_Rec_Ev_Imbalanced>Network {0} deficit {1}; network {2} surplus {3}.</PGM_Rec_Ev_Imbalanced>
+  <PGM_Tab_Planning>Planning</PGM_Tab_Planning>
+  <PGM_Tab_PlanningTip>Scenario planning and power budgeting: evaluate hypothetical changes without touching the live game.</PGM_Tab_PlanningTip>
+  <PGM_Tab_Heatmap>Heatmap</PGM_Tab_Heatmap>
+  <PGM_Tab_HeatmapTip>Colour-coded building heatmap: consumption, generation, battery charge, network stability, isolation, idle draw and critical protection. Dashboard view only.</PGM_Tab_HeatmapTip>
+  <PGM_Heatmap_Empty>No power buildings found on this map.</PGM_Heatmap_Empty>
+  <PGM_Heatmap_SearchTip>Filter buildings by label.</PGM_Heatmap_SearchTip>
+  <PGM_Heatmap_Mode_Consumption>Consumption</PGM_Heatmap_Mode_Consumption>
+  <PGM_Heatmap_Mode_Generation>Generation</PGM_Heatmap_Mode_Generation>
+  <PGM_Heatmap_Mode_Battery>Battery</PGM_Heatmap_Mode_Battery>
+  <PGM_Heatmap_Mode_Stability>Stability</PGM_Heatmap_Mode_Stability>
+  <PGM_Heatmap_Mode_Isolation>Isolation</PGM_Heatmap_Mode_Isolation>
+  <PGM_Heatmap_Mode_Idle>Idle draw</PGM_Heatmap_Mode_Idle>
+  <PGM_Heatmap_Mode_Critical>Critical</PGM_Heatmap_Mode_Critical>
+  <PGM_Heatmap_Isolated>Isolated</PGM_Heatmap_Isolated>
+  <PGM_Heatmap_Policy_Sheddable>Sheddable</PGM_Heatmap_Policy_Sheddable>
+  <PGM_Heatmap_Policy_Protected>Protected</PGM_Heatmap_Policy_Protected>
+  <PGM_Heatmap_Inspect>Inspect</PGM_Heatmap_Inspect>
+  <PGM_Heatmap_InspectTip>Open the vanilla building info card.</PGM_Heatmap_InspectTip>
+  <PGM_Heatmap_Locate>Locate</PGM_Heatmap_Locate>
+  <PGM_Heatmap_LocateTip>Centre the map on this building.</PGM_Heatmap_LocateTip>
+  <PGM_Heatmap_Tooltip>{0} • draw {1} / nominal {2} • network {3} • policy {4}</PGM_Heatmap_Tooltip>
+  <PGM_Scenario_InputsHeader>Scenario inputs</PGM_Scenario_InputsHeader>
+  <PGM_Scenario_AddGeneration>Add generation (W)</PGM_Scenario_AddGeneration>
+  <PGM_Scenario_AddBattery>Add battery (Wd)</PGM_Scenario_AddBattery>
+  <PGM_Scenario_AddConsumer>Add consumer (W)</PGM_Scenario_AddConsumer>
+  <PGM_Scenario_SwitchOff>Switch off (W)</PGM_Scenario_SwitchOff>
+  <PGM_Scenario_InputsTip>Enter watts (or watt-days for batteries) to model a hypothetical change. Nothing is built or changed in the colony.</PGM_Scenario_InputsTip>
+  <PGM_Scenario_ProjectedGeneration>Projected generation</PGM_Scenario_ProjectedGeneration>
+  <PGM_Scenario_ProjectedConsumption>Projected consumption</PGM_Scenario_ProjectedConsumption>
+  <PGM_Scenario_ProjectedNet>Projected net</PGM_Scenario_ProjectedNet>
+  <PGM_Scenario_ReserveMargin>Reserve margin</PGM_Scenario_ReserveMargin>
+  <PGM_Scenario_ResultHeader>Projected result</PGM_Scenario_ResultHeader>
+  <PGM_Scenario_Surplus>Surplus {0}</PGM_Scenario_Surplus>
+  <PGM_Scenario_Deficit>Deficit {0}</PGM_Scenario_Deficit>
+  <PGM_Scenario_NoBatteries>No batteries</PGM_Scenario_NoBatteries>
+  <PGM_Scenario_Depletes>Depletes in {0}</PGM_Scenario_Depletes>
+  <PGM_Scenario_Fills>Fills in {0}</PGM_Scenario_Fills>
+  <PGM_Scenario_Balanced>Balanced</PGM_Scenario_Balanced>
+  <PGM_Scenario_Confidence>Confidence: {0}</PGM_Scenario_Confidence>
+  <PGM_Scenario_AssumptionsHeader>Assumptions</PGM_Scenario_AssumptionsHeader>
+  <PGM_Diag_Diagnose>Diagnose Power Problem</PGM_Diag_Diagnose>
+  <PGM_Diag_DiagnoseTip>Run a guided, rule-based diagnosis of the whole map, a selected network, or a selected building.</PGM_Diag_DiagnoseTip>
+  <PGM_Trouble_Title>Power troubleshooting assistant</PGM_Trouble_Title>
+  <PGM_Trouble_Prompt>Choose a scope and run a diagnosis to get a guided explanation of the most significant power problem, if any.</PGM_Trouble_Prompt>
+  <PGM_Trouble_Diagnose>Diagnose</PGM_Trouble_Diagnose>
+  <PGM_Trouble_DiagnoseTip>Evaluate the current snapshot and produce a report for the selected scope.</PGM_Trouble_DiagnoseTip>
+  <PGM_Trouble_Scope_Map>Whole map</PGM_Trouble_Scope_Map>
+  <PGM_Trouble_Scope_Network>Selected network</PGM_Trouble_Scope_Network>
+  <PGM_Trouble_Scope_Building>Selected building</PGM_Trouble_Scope_Building>
+  <PGM_Trouble_LikelyCause>Likely cause</PGM_Trouble_LikelyCause>
+  <PGM_Trouble_RecommendedActions>Recommended actions</PGM_Trouble_RecommendedActions>
+  <PGM_Trouble_Locate>Locate</PGM_Trouble_Locate>
+  <PGM_Trouble_LocateTip>Jump the camera to the affected building.</PGM_Trouble_LocateTip>
+  <PGM_Trouble_Inspect>Inspect</PGM_Trouble_Inspect>
+  <PGM_Trouble_InspectTip>Open the vanilla building inspector.</PGM_Trouble_InspectTip>
+  <PGM_Trouble_Problem_None>No significant power problem detected</PGM_Trouble_Problem_None>
+  <PGM_Trouble_Cause_None>Measurements are within normal ranges; no diagnosed condition is active.</PGM_Trouble_Cause_None>
+  <PGM_Trouble_Problem_Deficit>Persistent deficit on network {0}</PGM_Trouble_Problem_Deficit>
+  <PGM_Trouble_Ev_Deficit>Generation {0}, consumption {1}, deficit {2}, sustained {3}.</PGM_Trouble_Ev_Deficit>
+  <PGM_Trouble_Cause_Deficit>Consumption exceeds generation; the network is running on stored battery energy.</PGM_Trouble_Cause_Deficit>
+  <PGM_Trouble_Problem_Discharge>Batteries discharging on network {0}</PGM_Trouble_Problem_Discharge>
+  <PGM_Trouble_Ev_Discharge>Deficit {0}, charge {1}, sustained {2}.</PGM_Trouble_Ev_Discharge>
+  <PGM_Trouble_Cause_Discharge>A generation deficit is being covered by batteries, which are draining.</PGM_Trouble_Cause_Discharge>
+  <PGM_Trouble_Problem_NoGeneration>No generation on network {0}</PGM_Trouble_Problem_NoGeneration>
+  <PGM_Trouble_Ev_NoGeneration>Consumption {0}, charge {1}.</PGM_Trouble_Ev_NoGeneration>
+  <PGM_Trouble_Cause_NoGeneration>There is no active generator on this network.</PGM_Trouble_Cause_NoGeneration>
+  <PGM_Trouble_Problem_HighLoad>High load on network {0}</PGM_Trouble_Problem_HighLoad>
+  <PGM_Trouble_Ev_HighLoad>Load {0}; consumption {1}.</PGM_Trouble_Ev_HighLoad>
+  <PGM_Trouble_Cause_HighLoad>Demand is a large share of generation on this network.</PGM_Trouble_Cause_HighLoad>
+  <PGM_Trouble_Problem_MapDeficit>Map-wide generation deficit</PGM_Trouble_Problem_MapDeficit>
+  <PGM_Trouble_Ev_MapDeficit>Generation {0}, consumption {1}, deficit {2}.</PGM_Trouble_Ev_MapDeficit>
+  <PGM_Trouble_Cause_MapDeficit>Total consumption exceeds total generation across the colony.</PGM_Trouble_Cause_MapDeficit>
+  <PGM_Trouble_Problem_LowBattery>Low battery reserve</PGM_Trouble_Problem_LowBattery>
+  <PGM_Trouble_Ev_LowBattery>Charge {0}, deficit {1}.</PGM_Trouble_Ev_LowBattery>
+  <PGM_Trouble_Cause_LowBattery>Battery charge is low while the colony is drawing more than it generates.</PGM_Trouble_Cause_LowBattery>
+  <PGM_Trouble_Problem_BuildingIsolated>Building disconnected from a power network</PGM_Trouble_Problem_BuildingIsolated>
+  <PGM_Trouble_Ev_BuildingIsolated>{0} draws {1} but is not connected to a network.</PGM_Trouble_Ev_BuildingIsolated>
+  <PGM_Trouble_Cause_BuildingIsolated>The building has no confirmed power-network membership.</PGM_Trouble_Cause_BuildingIsolated>
+  <PGM_Trouble_Problem_BuildingOffDrawing>Switch off but still drawing</PGM_Trouble_Problem_BuildingOffDrawing>
+  <PGM_Trouble_Ev_BuildingOffDrawing>{0} still draws {1} with its switch off.</PGM_Trouble_Ev_BuildingOffDrawing>
+  <PGM_Trouble_Cause_BuildingOffDrawing>The switch is not controlling the part of the building that consumes power.</PGM_Trouble_Cause_BuildingOffDrawing>
+  <PGM_Trouble_Problem_Isolated>Consumer disconnected from a network</PGM_Trouble_Problem_Isolated>
+  <PGM_Trouble_Ev_Isolated>{0} draws {1} but has no network.</PGM_Trouble_Ev_Isolated>
+  <PGM_Trouble_Cause_Isolated>The building has no confirmed power-network membership.</PGM_Trouble_Cause_Isolated>
+  <PGM_Trouble_Problem_Generator>Generator underperforming</PGM_Trouble_Problem_Generator>
+  <PGM_Trouble_Ev_Generator>{0} produces {1} of {2} configured, sustained {3}.</PGM_Trouble_Ev_Generator>
+  <PGM_Trouble_Cause_Generator>The generator is running far below its configured output.</PGM_Trouble_Cause_Generator>
+  <PGM_Trouble_Problem_AboveConfig>Draw above configured</PGM_Trouble_Problem_AboveConfig>
+  <PGM_Trouble_Ev_AboveConfig>{0} draws {1}, configured {2}.</PGM_Trouble_Ev_AboveConfig>
+  <PGM_Trouble_Cause_AboveConfig>Measured draw exceeds the building's configured draw.</PGM_Trouble_Cause_AboveConfig>
+  <PGM_Trouble_Problem_OffDrawing>Switch off but still drawing</PGM_Trouble_Problem_OffDrawing>
+  <PGM_Trouble_Ev_OffDrawing>{0} still draws {1} with its switch off.</PGM_Trouble_Ev_OffDrawing>
+  <PGM_Trouble_Cause_OffDrawing>The switch is not controlling the part of the building that consumes power.</PGM_Trouble_Cause_OffDrawing>
+  <PGM_Trouble_Problem_Unsupported>Unsupported power component</PGM_Trouble_Problem_Unsupported>
+  <PGM_Trouble_Ev_Unsupported>{0} has a component this mod cannot explain.</PGM_Trouble_Ev_Unsupported>
+  <PGM_Trouble_Cause_Unsupported>The component is outside the recognised power contract.</PGM_Trouble_Cause_Unsupported>
+  <PGM_Trouble_Problem_Pending>Network membership pending</PGM_Trouble_Problem_Pending>
+  <PGM_Trouble_Ev_Pending>The building's network membership could not be confirmed yet.</PGM_Trouble_Ev_Pending>
+  <PGM_Trouble_Cause_Pending>The topology observation is still settling.</PGM_Trouble_Cause_Pending>
+  <PGM_Trouble_Problem_NetworkDeficit>Deficit on network {0}</PGM_Trouble_Problem_NetworkDeficit>
+  <PGM_Trouble_Ev_NetworkDeficit>Network {0}: generation {1}, consumption {2}, deficit {3}.</PGM_Trouble_Ev_NetworkDeficit>
+  <PGM_Trouble_Cause_NetworkDeficit>Consumption exceeds generation on this network.</PGM_Trouble_Cause_NetworkDeficit>
+  <PGM_Trouble_Act_InspectConsumers>Inspect the largest consumers</PGM_Trouble_Act_InspectConsumers>
+  <PGM_Trouble_Act_AddGeneration>Add generation</PGM_Trouble_Act_AddGeneration>
+  <PGM_Trouble_Act_PreviewLoadShedding>Preview a load-shedding policy</PGM_Trouble_Act_PreviewLoadShedding>
+  <PGM_Trouble_Act_ReduceDemand>Reduce demand</PGM_Trouble_Act_ReduceDemand>
+  <PGM_Trouble_Act_RepairGenerator>Repair or replace the generator</PGM_Trouble_Act_RepairGenerator>
+  <PGM_Trouble_Act_ConnectBuilding>Connect the building to a power network</PGM_Trouble_Act_ConnectBuilding>
+  <PGM_Trouble_Act_SwitchOff>Switch the building off</PGM_Trouble_Act_SwitchOff>
+  <PGM_Trouble_Act_InspectBuilding>Inspect the building</PGM_Trouble_Act_InspectBuilding>
+  <PGM_Trouble_Act_Wait>Wait for network membership to be confirmed</PGM_Trouble_Act_Wait>
+  <PGM_Trouble_Opt_PreviewLoadShedding>Preview load shedding</PGM_Trouble_Opt_PreviewLoadShedding>
+  <PGM_Trouble_Opt_PreviewLoadSheddingTip>Open the Management tab to see which buildings a load-shedding policy would affect.</PGM_Trouble_Opt_PreviewLoadSheddingTip>
+  <PGM_Trouble_Opt_SwitchOff>Switch off</PGM_Trouble_Opt_SwitchOff>
+  <PGM_Trouble_Opt_SwitchOffTip>Switch the building off through the management controls.</PGM_Trouble_Opt_SwitchOffTip>
+  <PGM_Preset_Header>Power presets ({0})</PGM_Preset_Header>
+  <PGM_Preset_Empty>No presets yet. Create one to save a load-shedding policy configuration.</PGM_Preset_Empty>
+  <PGM_Preset_Create>Create</PGM_Preset_Create>
+  <PGM_Preset_CreateTip>Create a new preset from the current policy values.</PGM_Preset_CreateTip>
+  <PGM_Preset_Priority>Default priority: {0}</PGM_Preset_Priority>
+  <PGM_Preset_ShedAt>Shed at {0}</PGM_Preset_ShedAt>
+  <PGM_Preset_Active>Active</PGM_Preset_Active>
+  <PGM_Preset_Activate>Activate</PGM_Preset_Activate>
+  <PGM_Preset_Delete>Delete</PGM_Preset_Delete>
+  <PGM_Preset_Duplicate>Duplicate</PGM_Preset_Duplicate>
   <PGM_Mgmt_Tile_Charge>Usable charge</PGM_Mgmt_Tile_Charge>
   <PGM_Mgmt_Tile_ChargeTip>Available battery energy divided by configured capacity. EMP-stunned batteries are excluded. Unknown when there is no battery capacity.</PGM_Mgmt_Tile_ChargeTip>
   <PGM_Mgmt_Tile_Net>Net balance</PGM_Mgmt_Tile_Net>

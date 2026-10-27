@@ -13,7 +13,10 @@ namespace PowerGridManager
         History,
         Diagnostics,
         Forecast,
-        Management
+        Management,
+        Optimization,
+        Planning,
+        Heatmap
     }
 
     /// <summary>Which advisories the diagnostics tab shows.</summary>
@@ -109,6 +112,7 @@ namespace PowerGridManager
         /// <summary>Range used by the forecast tab; the history tab keeps its own.</summary>
         public PowerTimeRange ForecastRange = PowerTimeRange.LastDay;
         public DiagnosticFilter DiagnosticView = DiagnosticFilter.All;
+        public RecommendationFilter RecommendationView = RecommendationFilter.All;
         public BuildingSortKey SortKey = BuildingSortKey.CurrentDraw;
         public bool SortDescending = true;
         public BuildingGrouping Grouping = BuildingGrouping.None;
@@ -122,8 +126,10 @@ namespace PowerGridManager
         public Vector2 BuildingScroll;
         public Vector2 DetailScroll;
         public Vector2 DiagnosticScroll;
+        public Vector2 RecommendationScroll;
         public Vector2 ForecastScroll;
         public Vector2 ManagementScroll;
+        public Vector2 HeatmapScroll;
 
         // Management tab view state. Never persisted: it is transient UI state only.
         public string ManagementSelectedId;
