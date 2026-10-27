@@ -79,6 +79,18 @@ namespace PowerGridManager
             PowerUiDraw.DrawText(new Rect(x, rect.y + 4f, 210f, 24f), counts, PowerUiDraw.Muted);
             x += 216f;
 
+            Rect diagnoseRect = new Rect(x, rect.y, 128f, 26f);
+            if (Widgets.ButtonText(diagnoseRect, "PGM_Diag_Diagnose".Translate()))
+            {
+                Map map = Find.CurrentMap;
+                PowerGridManagerComponent component = map == null ? null
+                    : map.GetComponent<PowerGridManagerComponent>();
+                if (component != null)
+                    Find.WindowStack.Add(new PowerTroubleshootingDialog(component, state));
+            }
+            PowerUiDraw.Tip(diagnoseRect, "PGM_Diag_DiagnoseTip".Translate());
+            x += diagnoseRect.width + 4f;
+
             Rect filterRect = new Rect(x, rect.y, 118f, 26f);
             if (Widgets.ButtonText(filterRect, "PGM_Diag_FilterButton".Translate(FilterLabel(state.DiagnosticView))))
             {

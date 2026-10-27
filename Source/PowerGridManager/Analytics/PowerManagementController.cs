@@ -17,6 +17,12 @@ namespace PowerGridManager
         private LoadSheddingState shedding = new LoadSheddingState();
         private LoadSheddingPlan lastPlan;
 
+        // Emergency override is runtime-only state: it suspends automation without persisting
+        // a "suspended" flag into a save, so a reloaded colony resumes under its configured
+        // policy rather than silently staying suspended.
+        private bool emergencyOverrideActive;
+        private int emergencyOverrideSinceTick = -1;
+
         // The UI asks for a preview every frame. Cache it against the snapshot, settings and a
         // revision counter so a large colony is never re-scanned from the draw pass.
         private PowerGridSnapshot cachedPreviewSnapshot;
@@ -38,9 +44,71 @@ namespace PowerGridManager
         /// <summary>Whether any building is currently switched off by the policy.</summary>
         public int AutoShedCount => shedding == null ? 0 : shedding.AutoShedCount;
 
+        /// <summary>Whether the emergency override is currently suspending automation.</summary>
+        public bool EmergencyOverrideActive => emergencyOverrideActive;
+
+        /// <summary>Tick the emergency override was activated, or -1 when inactive.</summary>
+        public int EmergencyOverrideSinceTick => emergencyOverrideSinceTick;
+
+        /// <summary>
+        /// Overall automation status for the status indicator:
+        /// <see cref="AutomationStatus.Unavailable"/> when management is disabled,
+        /// <see cref="AutomationStatus.Off"/> when automation is disabled,
+        /// <see cref="AutomationStatus.Suspended"/> when the emergency override is active,
+        /// <see cref="AutomationStatus.Enabled"/> when automation is running normally.
+        /// </summary>
+        public enum AutomationStatus
+        {
+            Unavailable = 0,
+            Off,
+            Enabled,
+            Suspended
+        }
+
+        /// <summary>Current automation status for the given settings.</summary>
+        public AutomationStatus Status(PowerGridManagerSettings settings)
+        {
+            if (settings == null || !settings.ManagementEnabled) return AutomationStatus.Unavailable;
+            if (!settings.LoadSheddingEnabled) return AutomationStatus.Off;
+            if (emergencyOverrideActive) return AutomationStatus.Suspended;
+            return AutomationStatus.Enabled;
+        }
+
+        /// <summary>
+        /// Player-requested emergency override. Immediately suspends automatic switching
+        /// without changing any switch the policy already flipped. Buildings the policy
+        /// switched off stay off until the player uses "Restore now" or clears the override.
+        /// This does not alter RimWorld's ordinary electrical simulation.
+        /// </summary>
+        public void ActivateEmergencyOverride(int tick)
+        {
+            revision++;
+            if (emergencyOverrideActive) return;
+            emergencyOverrideActive = true;
+            emergencyOverrideSinceTick = tick;
+            lastPlan = null;
+            if (events != null) events.Add(tick, PowerManagementEventKind.PolicyChanged, "",
+                "PGM_Mgmt_Event_EmergencyOverride".Translate(), true,
+                "PGM_Mgmt_Event_EmergencyOn".Translate());
+        }
+
+        /// <summary>Clears the emergency override so normal automation can resume.</summary>
+        public void ClearEmergencyOverride(int tick)
+        {
+            revision++;
+            if (!emergencyOverrideActive) return;
+            emergencyOverrideActive = false;
+            emergencyOverrideSinceTick = -1;
+            if (events != null) events.Add(tick, PowerManagementEventKind.PolicyChanged, "",
+                "PGM_Mgmt_Event_EmergencyOverride".Translate(), true,
+                "PGM_Mgmt_Event_EmergencyOff".Translate());
+        }
+
         /// <summary>
         /// Called from the map component after a snapshot is published. Disabling automation
         /// restores the buildings we switched off, so turning the feature off is not a trap.
+        /// The emergency override suspends switching without restoring, so an override is not
+        /// itself disruptive to loads the policy already shed.
         /// </summary>
         public void Tick(PowerGridSnapshot snapshot, PowerGridManagerSettings settings, int tick)
         {
@@ -53,13 +121,52 @@ namespace PowerGridManager
             registry.MarkSeen(snapshot, tick);
             registry.Prune(tick);
 
-            bool enabled = settings != null && settings.ManagementEnabled && settings.LoadSheddingEnabled;
-            if (!enabled)
+            bool automationOn = settings != null && settings.ManagementEnabled && settings.LoadSheddingEnabled;
+            if (!automationOn)
             {
                 if (shedding.AutoShedCount > 0)
                     LoadSheddingEngine.RestoreAll(snapshot, registry, shedding, events, tick);
                 lastPlan = null;
                 return;
+            }
+
+            if (emergencyOverrideActive)
+            {
+                // Suspend automatic switching without touching any switch.
+                lastPlan = null;
+                return;
+            }
+
+            // Optional preset auto-activation: a charge-based preset may switch the active
+            // policy. This changes settings, not switches.
+            float charge = LoadSheddingEngine.EffectiveCharge(snapshot);
+            if (charge >= 0f)
+            {
+                var presets = PowerPresetManager.LoadPresets(settings);
+                string activeName = null;
+                PowerPreset active = null;
+                for (int i = 0; i < presets.Count; i++)
+                {
+                    if (presets[i].IsActive)
+                    {
+                        active = presets[i];
+                        activeName = active.Name;
+                    }
+                }
+                PowerPreset candidate = PowerPresetManager.CheckAutoActivation(presets, charge);
+                if (candidate != null && candidate.Name != activeName)
+                {
+                    PowerPresetManager.Activate(settings, candidate, tick);
+                    presets = PowerPresetManager.LoadPresets(settings);
+                    active = null;
+                    for (int i = 0; i < presets.Count; i++)
+                        if (presets[i].IsActive) active = presets[i];
+                }
+                if (active != null && candidate == null && active.RestoreAboveCharge >= 0f &&
+                    charge >= active.RestoreAboveCharge)
+                {
+                    PowerPresetManager.Deactivate(settings);
+                }
             }
 
             LoadSheddingPlan plan = LoadSheddingEngine.Evaluate(snapshot, settings, registry, shedding, tick, false);
@@ -296,6 +403,8 @@ namespace PowerGridManager
                 if (shedding == null) shedding = new LoadSheddingState();
                 lastPlan = null;
                 cachedPreview = null;
+                emergencyOverrideActive = false;
+                emergencyOverrideSinceTick = -1;
                 revision++;
             }
         }
@@ -305,6 +414,8 @@ namespace PowerGridManager
         {
             revision++;
             cachedPreview = null;
+            emergencyOverrideActive = false;
+            emergencyOverrideSinceTick = -1;
             if (registry != null) registry.Clear();
             if (events != null) events.Clear();
             if (shedding != null) shedding.Reset();

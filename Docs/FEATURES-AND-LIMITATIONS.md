@@ -73,6 +73,48 @@ This document provides a complete checklist of implemented functionality mapped 
 4. **No automatic criticality guessing** — Categories (`Medical`, `Temperature`, etc.) never auto-enroll or auto-protect buildings for load shedding; every building is protected unless the player explicitly opts it in.
 5. **Standard `CompFlickable` control boundary** — Modded buildings without a single public `Command_Toggle` gizmo or with pending colonist flick designations are refused with an explicit reason rather than forced via private-field reflection.
 
+## 1.5 Implemented Features Added During `0.9.0-rc.1` Development
+
+These extend the baseline objectives above and are implemented, statically checked, and
+committed on `arena/38cf92f4-power-grid-manager`:
+
+- **Objective 7 — Emergency Override (load-shedding automation):** `AutomationStatus`
+  plus `ActivateEmergencyOverride()` / `ClearEmergencyOverride()`; `Tick()` suspends
+  automatic switching while the override is active; header pill + toggle button on the
+  Management tab; runtime-only state that resets on save/load (no serialization change).
+- **Objective 8 — Recommendation engine (`Optimization` tab):** Ranked, actionable
+  recommendations (`PersistentDeficit`, `LowBatteryReserve`, `BatteryDischarge`,
+  `HighDemand`, `NearCapacity`, `IdleConsumer`, `HighDraw`, `Uncontrollable`,
+  `ImbalancedGeneration`). Never acts automatically; never recommends transferring power
+  between unconnected networks; `NearCapacityThreshold` setting.
+- **Objective 9 — Scenario planner & power budgeting (`Planning` tab):** Pure-arithmetic
+  projector reusing `BatteryForecast.Evaluate()`; models added generation, battery,
+  consumer and switched-off changes; endurance + reserve-margin vs `ReserveMarginWatts`;
+  assumptions documented in-panel. Nothing is built or changed in the colony.
+- **Objective 8 — Guided troubleshooting assistant:** Rule-based `PowerTroubleshooting
+  Assistant` for whole-map / selected-network / selected-building scope; bounded
+  diagnostic report with cause + evidence + recommended action; **Diagnose Power
+  Problem** button on the Diagnostics tab; full localization keys.
+- **Performance modes (`Lightweight` / `Balanced` / `Detailed`):** `ApplyPerformanceMode()`
+  reapplies refresh interval, history sample interval, retention and diagnostic-depth
+  presets (defaults drive real collector differences; `Balanced` default). Picker in Mod
+  Settings; enum validation on load.
+- **Power presets:** Named, persisted load-shedding policy configurations (thresholds,
+  hysteresis, recovery mode, default priority, mark-sheddable, optional charge-based
+  auto-activation). One active preset at a time; activating applies policy values, never
+  switches a building; create / delete / duplicate / activate in the Management panel.
+- **Dashboard heatmap (`Heatmap` tab):** Colour-coded building heatmap with modes for
+  consumption, generation, battery charge, network stability, isolation, idle draw and
+  critical protection; search; hover tooltips; Locate / Inspect. Dashboard view only — an
+  on-map cell overlay is not implemented because it would require Harmony and RimWorld
+  exposes no public map-drawing hook.
+- **Integration API:** `Docs/INTEGRATION.md` documents the read-only query API, the
+  opt-in management control API, preset API, stability guarantees and constraints.
+
+Counts updated: **50 production C# files** (was 37 at baseline). Local static checks pass
+**2,538 checks, 0 failures** (was 1,931 at baseline). CI check counts and the official
+RimWorld build against 1.5 / 1.6 / 1.7 remain pending as noted below.
+
 ### Remaining Environment / Pre-Release Verification Limitations
 1. **Official RimWorld assembly compilation pending:** This repository was developed and verified in an environment without RimWorld binaries. All 37 production C# files compile and pass **1,744 automated checks** in `.NET 8` GitHub Actions CI against minimal game doubles, and pass **1,931 static XML/key/placeholder/link/Roslyn syntax checks** locally, but `./build.sh` still needs to be run against official RimWorld `1.5`, `1.6`, and `1.7` installations.
 2. **RimWorld 1.7 API verification pending:** `1.5` and `1.6` APIs were verified line-by-line against public decompilations; `1.7` (`net10.0` / Waylith) is configured in `PowerGridManager.csproj`, `LoadFolders.xml`, and `build.sh`, but remains untested until built against official 1.7 assemblies.

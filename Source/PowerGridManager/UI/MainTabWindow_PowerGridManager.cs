@@ -22,6 +22,9 @@ namespace PowerGridManager
         private readonly PowerDiagnosticsPanel diagnosticsPanel = new PowerDiagnosticsPanel();
         private readonly PowerForecastPanel forecastPanel = new PowerForecastPanel();
         private readonly PowerManagementPanel managementPanel = new PowerManagementPanel();
+        private readonly PowerRecommendationsPanel recommendationsPanel = new PowerRecommendationsPanel();
+        private readonly PowerScenarioPanel scenarioPanel = new PowerScenarioPanel();
+        private readonly PowerHeatmapPanel heatmapPanel = new PowerHeatmapPanel();
         private List<TabRecord> tabs;
 
         /// <summary>Window view state. Internal so the offline harness can drive each tab.</summary>
@@ -97,6 +100,16 @@ namespace PowerGridManager
                 case PowerGridTab.Management:
                     managementPanel.Draw(content, snapshot, state, settings, component.Management, now);
                     break;
+                case PowerGridTab.Optimization:
+                    recommendationsPanel.Draw(content, snapshot, state, settings,
+                        component.RecommendationTracker, component.Recommendations, ShowBuildingsOnNetwork);
+                    break;
+                case PowerGridTab.Planning:
+                    scenarioPanel.Draw(content, snapshot, state, settings);
+                    break;
+                case PowerGridTab.Heatmap:
+                    heatmapPanel.Draw(content, snapshot, state, settings, component.Management);
+                    break;
                 default:
                     overviewPanel.Draw(content, snapshot, now, settings, component.Forecast,
                         component.CriticalAdvisoryCount, component.WarningAdvisoryCount);
@@ -115,7 +128,10 @@ namespace PowerGridManager
                 Tab("PGM_Tab_History", PowerGridTab.History, "PGM_Tab_HistoryTip"),
                 Tab("PGM_Tab_Diagnostics", PowerGridTab.Diagnostics, "PGM_Tab_DiagnosticsTip"),
                 Tab("PGM_Tab_Forecast", PowerGridTab.Forecast, "PGM_Tab_ForecastTip"),
-                Tab("PGM_Tab_Management", PowerGridTab.Management, "PGM_Tab_ManagementTip")
+                Tab("PGM_Tab_Management", PowerGridTab.Management, "PGM_Tab_ManagementTip"),
+                Tab("PGM_Tab_Optimization", PowerGridTab.Optimization, "PGM_Tab_OptimizationTip"),
+                Tab("PGM_Tab_Planning", PowerGridTab.Planning, "PGM_Tab_PlanningTip"),
+                Tab("PGM_Tab_Heatmap", PowerGridTab.Heatmap, "PGM_Tab_HeatmapTip")
             };
         }
 

@@ -57,7 +57,7 @@ namespace PowerGridManager
 
             float headerH = compact ? 76f : 56f;
             float actionH = compact ? 84f : 80f;
-            float contentHeight = headerH + 48f + 64f + 112f +
+            float contentHeight = headerH + 48f + 64f + 64f + 112f +
                                  HeaderHeight + Math.Max(28f, previewRows * RowHeight) + 30f +
                                  HeaderHeight + 28f + Math.Max(26f, groupRows * GroupRowHeight) +
                                  HeaderHeight + Math.Max(28f, pageRows * RowHeight) + actionH + 26f +
@@ -78,6 +78,9 @@ namespace PowerGridManager
 
                 DrawTiles(new Rect(0f, y, width, 58f), snapshot, settings, plan, management);
                 y += 64f + Gap;
+
+                y = DrawPresets(new Rect(0f, y, width, 0f), settings, management, tick);
+                y += 10f + Gap;
 
                 DrawPolicy(new Rect(0f, y, width, 106f), state, settings, management, plan, tick);
                 y += 112f + Gap;
@@ -115,9 +118,18 @@ namespace PowerGridManager
             PowerUiDraw.StatusPill(pill, PhaseLabel(phase), PhaseColor(phase));
             PowerUiDraw.Tip(pill, "PGM_Mgmt_StatusTip".Translate());
 
-            float buttonY = rect.y + 27f;
-            int count = management != null && management.AutoShedCount > 0 ? 3 : 2;
-            float buttonWidth = Mathf.Max(84f, (rect.width - (count - 1) * 4f) / count);
+            PowerManagementController.AutomationStatus status = management == null
+                ? PowerManagementController.AutomationStatus.Unavailable : management.Status(settings);
+            Rect statusPill = new Rect(rect.xMax - 158f, rect.y + 25f, 158f, 18f);
+            PowerUiDraw.StatusPill(statusPill, AutomationStatusLabel(status),
+                AutomationStatusColor(status));
+            PowerUiDraw.Tip(statusPill, "PGM_Mgmt_AutomationStatusTip".Translate());
+
+            float buttonY = rect.y + 48f;
+            bool showEmergency = automation;
+            bool showRestore = management != null && management.AutoShedCount > 0;
+            int count = (showRestore ? 3 : 2) + (showEmergency ? 1 : 0);
+            float buttonWidth = Mathf.Max(76f, (rect.width - (count - 1) * 4f) / count);
             float bx = rect.x;
 
             Rect master = new Rect(bx, buttonY, buttonWidth, 24f);
@@ -142,7 +154,21 @@ namespace PowerGridManager
             PowerUiDraw.Tip(auto, "PGM_Mgmt_AutomationTip".Translate());
             bx += buttonWidth + 4f;
 
-            if (count == 3)
+            Rect emergency = new Rect(bx, buttonY, buttonWidth, 24f);
+            bool emergencyActive = management != null && management.EmergencyOverrideActive;
+            if (Widgets.ButtonText(emergency, emergencyActive
+                    ? "PGM_Mgmt_EmergencyOff".Translate() : "PGM_Mgmt_EmergencyOn".Translate()) &&
+                settings != null && management != null)
+            {
+                if (emergencyActive) management.ClearEmergencyOverride(tick);
+                else management.ActivateEmergencyOverride(tick);
+            }
+            PowerUiDraw.Tip(emergency, emergencyActive
+                ? "PGM_Mgmt_EmergencyOffTip".Translate()
+                : "PGM_Mgmt_EmergencyOnTip".Translate());
+            bx += buttonWidth + 4f;
+
+            if (showRestore)
             {
                 float restoreX = compact ? rect.x : bx;
                 float restoreWidth = compact
@@ -183,6 +209,28 @@ namespace PowerGridManager
             }
         }
 
+        private static string AutomationStatusLabel(PowerManagementController.AutomationStatus status)
+        {
+            switch (status)
+            {
+                case PowerManagementController.AutomationStatus.Enabled: return "PGM_Mgmt_Status_Enabled".Translate();
+                case PowerManagementController.AutomationStatus.Suspended: return "PGM_Mgmt_Status_Suspended".Translate();
+                case PowerManagementController.AutomationStatus.Off: return "PGM_Mgmt_Status_Off".Translate();
+                default: return "PGM_Mgmt_Status_Unavailable".Translate();
+            }
+        }
+
+        private static Color AutomationStatusColor(PowerManagementController.AutomationStatus status)
+        {
+            switch (status)
+            {
+                case PowerManagementController.AutomationStatus.Enabled: return PowerUiDraw.Good;
+                case PowerManagementController.AutomationStatus.Suspended: return PowerUiDraw.NoticeColor;
+                case PowerManagementController.AutomationStatus.Off: return PowerUiDraw.Warn;
+                default: return PowerUiDraw.Muted;
+            }
+        }
+
         // --- Metrics and policy ---------------------------------------------
 
         private static void DrawTiles(Rect rect, PowerGridSnapshot snapshot,
@@ -211,6 +259,74 @@ namespace PowerGridManager
                 (management == null ? 0 : management.AutoShedCount).ToString(),
                 management != null && management.AutoShedCount > 0 ? PowerUiDraw.Warn : Color.white,
                 "PGM_Mgmt_Tile_AutoShedTip".Translate());
+        }
+
+        private float DrawPresets(Rect rect, PowerGridManagerSettings settings,
+            PowerManagementController management, int tick)
+        {
+            float y = rect.y;
+            List<PowerPreset> presets = PowerPresetManager.LoadPresets(settings);
+            PowerUiDraw.SectionHeader(new Rect(rect.x, y, rect.width, HeaderHeight),
+                "PGM_Preset_Header".Translate(presets.Count));
+            y += HeaderHeight + 2f;
+
+            if (presets.Count == 0)
+            {
+                PowerUiDraw.WrappedText(new Rect(rect.x + 4f, y, rect.width - 8f, 26f),
+                    "PGM_Preset_Empty".Translate(), PowerUiDraw.Muted);
+                return y + 28f + Gap;
+            }
+
+            Rect newButton = new Rect(rect.xMax - 100f, y, 96f, 24f);
+            if (Widgets.ButtonText(newButton, "PGM_Preset_Create".Translate()))
+            {
+                if (PowerPresetManager.Create(presets, "New preset"))
+                    PowerPresetManager.SavePresets(settings, presets);
+            }
+            PowerUiDraw.Tip(newButton, "PGM_Preset_CreateTip".Translate());
+            y += 28f;
+
+            for (int i = 0; i < presets.Count; i++)
+            {
+                PowerPreset preset = presets[i];
+                Rect row = new Rect(rect.x, y, rect.width, RowHeight);
+                if (i % 2 == 0) Widgets.DrawBoxSolid(row, new Color(1f, 1f, 1f, 0.04f));
+                if (preset.IsActive) Widgets.DrawBoxSolid(row, new Color(0.2f, 0.4f, 0.2f, 0.15f));
+                PowerUiDraw.DrawText(new Rect(row.x + 4f, row.y, row.width * 0.34f, RowHeight),
+                    preset.Name, preset.IsActive ? PowerUiDraw.Good : Color.white);
+                PowerUiDraw.DrawText(new Rect(row.x + row.width * 0.34f, row.y,
+                        row.width * 0.22f, RowHeight),
+                    "PGM_Preset_Priority".Translate(preset.DefaultPriority), PowerUiDraw.Muted,
+                    TextAnchor.MiddleRight);
+                PowerUiDraw.DrawText(new Rect(row.x + row.width * 0.56f, row.y,
+                        row.width * 0.22f, RowHeight),
+                    "PGM_Preset_ShedAt".Translate(PowerFormatting.FormatCharge(
+                        preset.LoadShedLowThreshold)), PowerUiDraw.Muted, TextAnchor.MiddleRight);
+                float bx = row.xMax;
+                bx -= 46f;
+                if (Widgets.ButtonText(new Rect(bx, row.y + 1f, 44f, 22f),
+                        preset.IsActive ? "PGM_Preset_Active" : "PGM_Preset_Activate"))
+                {
+                    if (!preset.IsActive)
+                        PowerPresetManager.Activate(settings, preset, tick);
+                }
+                bx -= 46f;
+                if (Widgets.ButtonText(new Rect(bx, row.y + 1f, 44f, 22f),
+                        "PGM_Preset_Delete".Translate()))
+                {
+                    PowerPresetManager.Delete(presets, preset);
+                    PowerPresetManager.SavePresets(settings, presets);
+                }
+                bx -= 56f;
+                if (Widgets.ButtonText(new Rect(bx, row.y + 1f, 54f, 22f),
+                        "PGM_Preset_Duplicate".Translate()))
+                {
+                    PowerPresetManager.Duplicate(presets, preset);
+                    PowerPresetManager.SavePresets(settings, presets);
+                }
+                y += RowHeight;
+            }
+            return y + Gap;
         }
 
         private void DrawPolicy(Rect rect, PowerUiState state, PowerGridManagerSettings settings,
