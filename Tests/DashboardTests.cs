@@ -6,10 +6,10 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using PowerGridManager.Tests;
-using PowerScenario = PowerGridManager.Tests.PowerScenario;
 
 namespace PowerGridManager
 {
+    using PowerScenario = PowerGridManager.Tests.PowerScenario;
     public static class DashboardTests
     {
         public static int Run()

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using PowerGridManager.Tests;
-using PowerScenario = PowerGridManager.Tests.PowerScenario;
 
 namespace PowerGridManager
 {
+    using PowerScenario = PowerGridManager.Tests.PowerScenario;
     public static class HistoryTests
     {
         public static int Run()
