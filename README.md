@@ -8,7 +8,7 @@
 - **No external dependencies** — no Harmony patches, no HugsLib, no reflection, no background threads, and no network services.
 - **Honest numbers** — every value is explicitly distinguished as **measured**, **configured**, or **estimated**, and power (**W** / **kW**) is never confused with stored energy (**Wd**).
 
-> **Release status (`0.9.0-rc.1`):** All nine development phases are implemented in source, packaged with `LoadFolders.xml`, `LICENSE`, `About/Preview.png`, Workshop metadata, and `package-release.sh`, and verified by both `Tests/static_checks.py` (XML, source hygiene, Roslyn syntax, release layout, link integrity) and the `.NET 8` CI test harness (**1,730+ automated checks** against game doubles). Because no RimWorld installation or proprietary game DLLs are present in the automated build environment, final compilation via `./build.sh` against official RimWorld `1.5` / `1.6` / `1.7` assemblies and execution of the [in-game QA checklist](Docs/TESTING.md) remain required before promoting `0.9.0-rc.1` to a signed-off `1.0.0` release.
+> **Release status (`0.9.0-rc.1`):** All nine development phases are implemented in source, packaged with `LoadFolders.xml`, `LICENSE`, `About/Preview.png`, Workshop metadata, and `package-release.sh`, and verified by both `Tests/static_checks.py` (**1,929 static checks**, **1,931** with `--syntax`) and the `.NET 8` CI test harness (**1,744 automated C# checks** against game doubles). Because no RimWorld installation or proprietary game DLLs are present in the automated build environment, final compilation via `./build.sh` against official RimWorld `1.5` / `1.6` / `1.7` assemblies and execution of the [in-game QA checklist](Docs/TESTING.md) remain required before promoting `0.9.0-rc.1` to a signed-off `1.0.0` release.
 
 ---
 
@@ -132,7 +132,7 @@ dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release
 ./package-release.sh --allow-unbuilt
 ```
 
-- **What automated CI proves:** All 37 production C# files compile cleanly against minimal game doubles and pass **1,730+ checks** covering scanner math, `PowerOn` gating, EMP batteries, 10,000-building maps, multi-map staggering, sorting/filtering/grouping, bounded history & Scribe corruption recovery, diagnostic episodes & alert throttling, endurance forecasting, optional load shedding & hysteresis, localization completeness, and release metadata.
+- **What automated CI proves:** All 37 production C# files compile cleanly against minimal game doubles and pass **1,744 checks** covering scanner math, `PowerOn` gating, EMP batteries, 10,000-building maps, multi-map staggering, sorting/filtering/grouping, bounded history & Scribe corruption recovery, diagnostic episodes & alert throttling, endurance forecasting, optional load shedding & hysteresis, localization completeness, and release metadata.
 - **What requires a RimWorld installation:** Compiling against official game assemblies, in-game UI rendering across resolutions/UI scales, live frame-time profiling, and real save/reload sign-off. Follow [`Docs/TESTING.md`](Docs/TESTING.md) step by step.
 
 ---

@@ -28,8 +28,9 @@
   and `.github/workflows/monitoring-tests.yml` to verify `LICENSE`, `LoadFolders.xml`,
   `About/Preview.png`, `package-release.sh`, Markdown link integrity, group-priority wrap
   behaviour and dynamic settings scroll sizing.
-- Release-candidate note: automated static checks and the `.NET 8` CI test harness pass,
-  while compilation against official RimWorld `1.5`/`1.6`/`1.7` game assemblies and in-game QA
+- Release-candidate note: automated static checks (1,929 checks; 1,931 with `--syntax`),
+  release-staging dry run, and the `.NET 8` CI test harness (1,744 checks) all pass, while
+  compilation against official RimWorld `1.5`/`1.6`/`1.7` game assemblies and in-game QA
   (`Docs/TESTING.md`) remain required before tagging `1.0.0`.
 
 ## Unreleased — Phase 8: compatibility and optimization
