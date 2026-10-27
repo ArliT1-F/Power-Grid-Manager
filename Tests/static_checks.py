@@ -17,6 +17,7 @@ import argparse
 import glob
 import os
 import re
+import struct
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -234,8 +235,89 @@ def main():
     about = ET.parse(os.path.join(root, "About", "About.xml")).getroot()
     versions = {e.text for e in about.find("supportedVersions").findall("li")}
     check({"1.5", "1.6", "1.7"}.issubset(versions), "1.5/1.6/1.7 are advertised")
+    check(bool((about.findtext("modVersion") or "").strip()), "About.xml declares modVersion")
+    check(bool((about.findtext("url") or "").strip()), "About.xml declares repository url")
     check(about.find("modDependencies") is None and about.find("dependencies") is None,
           "no hard dependencies or DLC requirement")
+
+    # LoadFolders.xml must mirror RimWorld's ModLoadFolders.GetIssueList checks.
+    load_folders_path = os.path.join(root, "LoadFolders.xml")
+    check(os.path.isfile(load_folders_path), "LoadFolders.xml exists")
+    if os.path.isfile(load_folders_path):
+        lf_root = ET.parse(load_folders_path).getroot()
+        check(lf_root.tag == "loadFolders", "LoadFolders.xml root tag is loadFolders")
+        prev_ver = None
+        seen_versions = set()
+        for child in list(lf_root):
+            tag = child.tag[1:] if child.tag.lower().startswith("v") else child.tag
+            seen_versions.add(tag)
+            check(tag in versions, "LoadFolders version %s is supported in About.xml" % tag)
+            ver_tuple = tuple(int(p) for p in tag.split("."))
+            if prev_ver is not None:
+                check(ver_tuple > prev_ver, "LoadFolders version %s is in ascending order" % tag)
+            prev_ver = ver_tuple
+            entries = [li.text or "" for li in child.findall("li")]
+            check(len(entries) >= 2 and "/" in entries and tag in entries,
+                  "LoadFolders %s maps both / and %s" % (tag, tag))
+            for folder in entries:
+                resolved = root if folder in ("/", "\\", "") else os.path.join(root, folder)
+                check(os.path.isdir(resolved),
+                      "LoadFolders directory exists for %s: %s" % (tag, folder))
+        check({"1.5", "1.6", "1.7"}.issubset(seen_versions),
+              "LoadFolders.xml defines 1.5, 1.6 and 1.7")
+
+    # Release assets, license, packager, and PNG dimensions.
+    license_path = os.path.join(root, "LICENSE")
+    check(os.path.isfile(license_path) and "MIT License" in open(license_path, encoding="utf-8").read(),
+          "MIT LICENSE file exists")
+    for script_name in ("build.sh", "package-release.sh"):
+        script_path = os.path.join(root, script_name)
+        check(os.path.isfile(script_path) and os.access(script_path, os.X_OK),
+              "%s exists and is executable" % script_name)
+    for png_rel, expected_size in (
+        (os.path.join("About", "ModIcon.png"), None),
+        (os.path.join("About", "Preview.png"), (640, 360)),
+    ):
+        png_path = os.path.join(root, png_rel)
+        check(os.path.isfile(png_path), "%s exists" % png_rel)
+        if os.path.isfile(png_path):
+            header = open(png_path, "rb").read(24)
+            is_png = len(header) >= 24 and header[:8] == b"\x89PNG\r\n\x1a\n"
+            check(is_png, "%s has a valid PNG signature" % png_rel)
+            if is_png and expected_size is not None:
+                width, height = struct.unpack(">II", header[16:24])
+                check((width, height) == expected_size,
+                      "%s dimensions are %dx%d (got %dx%d)" %
+                      (png_rel, expected_size[0], expected_size[1], width, height))
+
+    for doc_rel in (
+        "README.md",
+        "CHANGELOG.md",
+        os.path.join("Docs", "ARCHITECTURE.md"),
+        os.path.join("Docs", "COMPATIBILITY.md"),
+        os.path.join("Docs", "FEATURES-AND-LIMITATIONS.md"),
+        os.path.join("Docs", "SCREENSHOTS.md"),
+        os.path.join("Docs", "WORKSHOP.md"),
+    ):
+        check(os.path.isfile(os.path.join(root, doc_rel)), "%s exists" % doc_rel)
+
+    # Every relative Markdown link/image in README.md and Docs/*.md must resolve on disk.
+    md_files = [os.path.join(root, "README.md"), os.path.join(root, "CHANGELOG.md")] + sorted(
+        glob.glob(os.path.join(root, "Docs", "*.md")))
+    link_re = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+    for md_path in md_files:
+        if not os.path.isfile(md_path):
+            continue
+        md_dir = os.path.dirname(md_path)
+        md_rel = os.path.relpath(md_path, root)
+        md_body = re.sub(r"```.*?```", "", open(md_path, encoding="utf-8").read(), flags=re.S)
+        for target in link_re.findall(md_body):
+            target = target.strip().split("#", 1)[0]
+            if not target or "://" in target or target.startswith("mailto:"):
+                continue
+            resolved = os.path.normpath(os.path.join(md_dir, target))
+            check(os.path.exists(resolved),
+                  "%s links to missing path %s" % (md_rel, target))
 
     project = open(os.path.join(root, "Source", "PowerGridManager",
                                 "PowerGridManager.csproj"), encoding="utf-8").read()

@@ -163,6 +163,40 @@ namespace PowerGridManager.Tests
                 "production project has no external NuGet packages");
             string build = File.ReadAllText(Path.Combine(root, "build.sh"));
             TestAssert.Check(build.Contains("Assembly-CSharp.dll"), "build references the game assembly");
+
+            // Phase 9 release artifacts: license, LoadFolders.xml, Preview.png, packager and docs.
+            TestAssert.NotNull(about.Root.Element("modVersion"), "About.xml defines modVersion");
+            TestAssert.NotNull(about.Root.Element("url"), "About.xml defines url");
+            TestAssert.Check(File.Exists(Path.Combine(root, "LICENSE")), "LICENSE exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "About", "ModIcon.png")), "ModIcon.png exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "About", "Preview.png")), "Preview.png exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "package-release.sh")),
+                "package-release.sh exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "Docs", "ARCHITECTURE.md")),
+                "Docs/ARCHITECTURE.md exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "Docs", "COMPATIBILITY.md")),
+                "Docs/COMPATIBILITY.md exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "Docs", "FEATURES-AND-LIMITATIONS.md")),
+                "Docs/FEATURES-AND-LIMITATIONS.md exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "Docs", "WORKSHOP.md")),
+                "Docs/WORKSHOP.md exists");
+            TestAssert.Check(File.Exists(Path.Combine(root, "Docs", "SCREENSHOTS.md")),
+                "Docs/SCREENSHOTS.md exists");
+
+            string loadFoldersPath = Path.Combine(root, "LoadFolders.xml");
+            TestAssert.Check(File.Exists(loadFoldersPath), "LoadFolders.xml exists");
+            XDocument loadFolders = XDocument.Load(loadFoldersPath);
+            foreach (string v in new[] { "v1.5", "v1.6", "v1.7" })
+            {
+                XElement section = loadFolders.Root.Element(v);
+                TestAssert.NotNull(section, "LoadFolders.xml contains " + v);
+                foreach (XElement folder in section.Elements("li"))
+                {
+                    string target = folder.Value == "/" ? root : Path.Combine(root, folder.Value);
+                    TestAssert.Check(Directory.Exists(target),
+                        "LoadFolders target exists for " + v + ": " + folder.Value);
+                }
+            }
         }
 
         // --- Performance ------------------------------------------------------
@@ -456,6 +490,13 @@ namespace PowerGridManager.Tests
             }
             TestAssert.Equal(Find.WindowStack.windows.Count, 0,
                 "rendering never opens an unexpected window");
+
+            // Settings window dynamic scroll height pass across compact and wide viewports.
+            var mod = new PowerGridManagerMod(new ModContentPack());
+            mod.DoSettingsWindowContents(new Rect(0f, 0f, 520f, 400f));
+            mod.DoSettingsWindowContents(new Rect(0f, 0f, 900f, 700f));
+            TestAssert.Equal(Find.WindowStack.windows.Count, 0,
+                "settings window draw pass never opens an unexpected modal");
         }
 
         private static string FindRepositoryRoot()

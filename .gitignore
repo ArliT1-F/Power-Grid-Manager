@@ -1,4 +1,4 @@
-# Build outputs
+# Build outputs (never commit compiled assemblies or release archives)
 Assemblies/*.dll
 Assemblies/*.pdb
 /1.5/Assemblies/*.dll
@@ -11,3 +11,6 @@ Source/PowerGridManager/bin/
 Source/PowerGridManager/obj/
 Tests/bin/
 Tests/obj/
+dist/
+*.zip
+*.tar.gz

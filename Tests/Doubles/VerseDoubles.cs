@@ -639,18 +639,24 @@ namespace Verse
     public class Listing_Standard
     {
         public float curY;
+        public float CurHeight => curY;
         public Rect ColumnWidth => new Rect(0f, 0f, 600f, 0f);
 
         public void Begin(Rect rect) { curY = rect.y; }
         public void End() { }
         public float GetRectHeight => 26f;
-        public Rect GetRect(float height) => new Rect(0f, curY, 600f, height);
+        public Rect GetRect(float height)
+        {
+            var rect = new Rect(0f, curY, 600f, height);
+            curY += height;
+            return rect;
+        }
         public void Gap(float amount) { curY += amount; }
-        public Rect Label(string label, float maxHeight = -1f, TipSignal? tipSignal = null) => GetRect(20f);
-        public Rect Label(TaggedString label, float maxHeight = -1f, string tooltip = null) => GetRect(20f);
+        public Rect Label(string label, float maxHeight = -1f, TipSignal? tipSignal = null) => GetRect(22f);
+        public Rect Label(TaggedString label, float maxHeight = -1f, string tooltip = null) => GetRect(22f);
         public void CheckboxLabeled(string label, ref bool checkOn, string tooltip = null, float height = 0f,
-            float labelPct = 1f) { }
-        public bool ButtonText(string label, string highlightTag = null, float widthPct = 1f) => false;
+            float labelPct = 1f) { curY += height > 0f ? height : 24f; }
+        public bool ButtonText(string label, string highlightTag = null, float widthPct = 1f) { curY += 30f; return false; }
     }
 
     public enum MovementMode

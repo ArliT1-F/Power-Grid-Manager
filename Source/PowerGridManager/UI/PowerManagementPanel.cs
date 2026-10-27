@@ -449,10 +449,12 @@ namespace PowerGridManager
                 else
                 {
                     bx -= 46f;
+                    int currentPriority = registry.GroupPriority(name);
                     if (Widgets.ButtonText(new Rect(bx, row.y + 1f, 44f, 22f),
-                        registry.GroupPriority(name) >= PowerManagementRegistry.MaxPriority ? "–" : "+"))
+                        currentPriority >= PowerManagementRegistry.MaxPriority ? "1" : "+"))
                     {
-                        int next = Math.Min(PowerManagementRegistry.MaxPriority, registry.GroupPriority(name) + 1);
+                        int next = currentPriority >= PowerManagementRegistry.MaxPriority
+                            ? PowerManagementRegistry.MinPriority : currentPriority + 1;
                         if (management != null) management.SetGroupPriority(name, next, tick);
                         else { registry.SetGroupPriority(name, next); registry.ApplyGroupPriority(name, next); }
                     }
