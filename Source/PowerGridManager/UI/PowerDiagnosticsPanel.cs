@@ -129,7 +129,7 @@ namespace PowerGridManager
 
             diagnoseRect = showDiagnose
                 ? new Rect(nextX, inner.y, diagW, inner.height)
-                : Rect.zero;
+                : new Rect(0f, 0f, 0f, 0f);
 
             float leftW = Mathf.Max(0f, filterRect.x - inner.x - 10f);
             if (leftW >= 80f)

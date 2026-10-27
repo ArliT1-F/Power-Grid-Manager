@@ -9,7 +9,6 @@ using PowerGridManager.Tests;
 
 namespace PowerGridManager
 {
-    using PowerScenario = PowerGridManager.Tests.PowerScenario;
     public static class DashboardTests
     {
         public static int Run()
@@ -32,7 +31,7 @@ namespace PowerGridManager
 
         private static void SnapshotAggregates()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantDef = ThingDefFactory.Simple("plant");
             var plantBuilding = scenario.AddBuilding(plantDef);
@@ -95,7 +94,7 @@ namespace PowerGridManager
             TestAssert.Equal(snapshot.LoadRatio.Value, 0.125f, "load ratio is consumption over generation");
 
             // A generator without a declared configured output must not be guessed.
-            var undeclared = new PowerScenario();
+            var undeclared = new PowerGridManager.Tests.PowerScenario();
             var undeclaredNet = undeclared.AddNet();
             var undeclaredBuilding = undeclared.CreateBuilding(ThingDefFactory.Simple("solar"));
             undeclared.AddTrader<CompPowerPlant>(undeclaredNet, undeclaredBuilding, 600f, true, 0f);
@@ -106,7 +105,7 @@ namespace PowerGridManager
                 "load ratio is zero when a generator runs with no consumption");
 
             // No generation at all: the ratio must be undefined rather than infinite.
-            var idle = new PowerScenario();
+            var idle = new PowerGridManager.Tests.PowerScenario();
             idle.AddNet();
             var idleBuilding = idle.CreateBuilding(ThingDefFactory.Simple("idle lamp"));
             idle.AddTrader(null, idleBuilding, 0f, false, 40f);
@@ -181,7 +180,7 @@ namespace PowerGridManager
 
         private static void FilteringAndSearch()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var otherNet = scenario.AddNet();
 
@@ -284,7 +283,7 @@ namespace PowerGridManager
 
         private static void Sorting()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var alpha = scenario.CreateBuilding(ThingDefFactory.Simple("alpha"));
             var beta = scenario.CreateBuilding(ThingDefFactory.Simple("beta"));
@@ -322,7 +321,7 @@ namespace PowerGridManager
 
         private static void Grouping()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var lamp = scenario.CreateBuilding(ThingDefFactory.Simple("lamp", typeof(CompGlower)));
             scenario.AddTrader(net, lamp, -10f, true, 10f);
@@ -345,7 +344,7 @@ namespace PowerGridManager
 
         private static void Classification()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
 
             var research = scenario.CreateBuilding(new ThingDef
@@ -420,7 +419,7 @@ namespace PowerGridManager
 
         private static void Compatibility()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var building = scenario.CreateBuilding(ThingDefFactory.Simple("thing"));
             scenario.AddTrader(net, building, -10f, true, 10f);
@@ -439,7 +438,7 @@ namespace PowerGridManager
 
         private static void UiSmoke()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("plant"));
             scenario.AddTrader<CompPowerPlant>(net, plantBuilding, 2000f);
@@ -553,7 +552,7 @@ namespace PowerGridManager
             buildings.Draw(large, component.Snapshot, state, settings);
 
             // Empty map state.
-            var emptyScenario = new PowerScenario();
+            var emptyScenario = new PowerGridManager.Tests.PowerScenario();
             var emptyComponent = new PowerGridManagerComponent(emptyScenario.Map);
             emptyComponent.MapComponentTick();
             var emptyState = new PowerUiState { LastSnapshot = emptyComponent.Snapshot };
@@ -578,7 +577,7 @@ namespace PowerGridManager
 
         private static void ModernizedUiAndInspectorSmoke()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("geothermal"));
             scenario.AddTrader<CompPowerPlant>(net, plantBuilding, 3600f, true, -3600f);

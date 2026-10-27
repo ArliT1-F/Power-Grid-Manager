@@ -29,6 +29,8 @@ namespace UnityEngine
             this.height = height;
         }
 
+        public static Rect zero => new Rect(0f, 0f, 0f, 0f);
+
         public float xMin { get => x; set { width += x - value; x = value; } }
         public float yMin { get => y; set { height += y - value; y = value; } }
         public float xMax { get => x + width; set { width = value - x; } }

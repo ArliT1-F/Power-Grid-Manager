@@ -8,7 +8,6 @@ using PowerGridManager.Tests;
 
 namespace PowerGridManager
 {
-    using PowerScenario = PowerGridManager.Tests.PowerScenario;
     public static class HistoryTests
     {
         public static int Run()
@@ -256,7 +255,7 @@ namespace PowerGridManager
 
         private static void ComponentIntegration()
         {
-            var scenario = new PowerScenario();
+            var scenario = new PowerGridManager.Tests.PowerScenario();
             var net = scenario.AddNet();
             var plantBuilding = scenario.CreateBuilding(ThingDefFactory.Simple("plant"));
             scenario.AddTrader<CompPowerPlant>(net, plantBuilding, 1500f);
