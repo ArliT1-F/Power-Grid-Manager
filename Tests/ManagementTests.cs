@@ -807,6 +807,20 @@ namespace PowerGridManager.Tests
             WidgetsQueue.ClickTextAt(0);
             panel.Draw(sizes[0], snapshot, state, toggleSettings, controller, 0);
             TestAssert.Check(!toggleSettings.ManagementEnabled, "header button toggles the master switch");
+
+            // Group priority button wraps from MaxPriority (6) back to MinPriority (1).
+            controller.CreateGroup("Workshop", 0);
+            controller.SetGroup(target, "Workshop", 0);
+            controller.SetGroupPriority("Workshop", PowerManagementRegistry.MaxPriority, 0);
+            TestAssert.Equal(controller.Registry.GroupPriority("Workshop"),
+                PowerManagementRegistry.MaxPriority, "group starts at max priority");
+            WidgetsQueue.Reset();
+            WidgetsQueue.ClickTextAt(8);
+            panel.Draw(sizes[0], snapshot, state, toggleSettings, controller, 1);
+            TestAssert.Equal(controller.Registry.GroupPriority("Workshop"),
+                PowerManagementRegistry.MinPriority, "group priority button wraps from 6 back to 1");
+            TestAssert.Equal(controller.Registry.PriorityOf(target),
+                PowerManagementRegistry.MinPriority, "group member priority wraps to 1 with group");
             Find.WindowStack.windows.Clear();
             WidgetsQueue.Reset();
         }

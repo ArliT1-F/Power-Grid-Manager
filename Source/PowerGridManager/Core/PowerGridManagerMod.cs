@@ -7,6 +7,7 @@ namespace PowerGridManager
     {
         private readonly PowerGridManagerSettings settings;
         private Vector2 settingsScroll;
+        private float settingsContentHeight = 1920f;
         private static PowerGridManagerMod instance;
 
         /// <summary>
@@ -38,12 +39,11 @@ namespace PowerGridManager
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            // Monitoring, diagnostics, forecast and the ten mute toggles do not fit in one
-            // screen at any UI scale, so the whole panel scrolls rather than clipping controls.
-            // The height is a constant rather than a measured value because Listing_Standard
-            // only knows its own height after it has drawn.
-            const float contentHeight = 1720f;
-            Rect viewRect = new Rect(0f, 0f, inRect.width - 18f, contentHeight);
+            // Monitoring, diagnostics, forecast, management and the ten mute toggles do not fit in
+            // one screen at any UI scale, so the whole panel scrolls rather than clipping controls.
+            // Listing_Standard only knows its own height after it has drawn, so we start with a
+            // generous floor and update the scroll height from CurHeight on each pass.
+            Rect viewRect = new Rect(0f, 0f, inRect.width - 18f, settingsContentHeight);
             Widgets.BeginScrollView(inRect, ref settingsScroll, viewRect);
             try
             {
@@ -177,6 +177,7 @@ namespace PowerGridManager
                 Section(listing, "PGM_Settings_Muted");
                 DrawMuteToggles(listing);
 
+                settingsContentHeight = Mathf.Max(1920f, listing.CurHeight + 24f);
                 listing.End();
             }
             finally

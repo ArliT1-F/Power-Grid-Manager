@@ -119,7 +119,9 @@ These links establish overlapping categories, not a complete feature-by-feature 
 - [x] Phase 7: optional management (source + offline checks; in-game validation still open).
 - [x] Phase 8: compatibility/performance (source audits + offline checks; real profiling and
       official-assembly compilation still open).
-- [ ] Phase 9: release preparation (license, packaged release, final in-game sign-off).
+- [x] Phase 9: release preparation (`LICENSE`, `LoadFolders.xml`, `About/Preview.png`,
+      `package-release.sh`, architecture/compatibility/feature/Workshop/screenshot docs,
+      UI polish fixes; final official-assembly build & in-game sign-off still open before `1.0.0`).
 
 
 ## Phase 3-4 implementation update (2026-10-25)

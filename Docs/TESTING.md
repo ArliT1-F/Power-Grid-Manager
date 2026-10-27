@@ -204,10 +204,14 @@ in the Phase 7/8 local workspace**, but the `Offline logic tests` GitHub Actions
 performs the equivalent doubles-based compile and executes **1,719 checks** successfully on
 every push/PR. The following checks were additionally run locally:
 
-- `python3 Tests/static_checks.py --syntax` — 1,853 assertions, 0 failures: XML parsing of
-  `About.xml`, all defs and the English keyed file; 568 localization keys with placeholder
-  counts; duplicate keys; forbidden API patterns; no DLC namespaces; no `PackageReference`
-  or Harmony in the production project; def wiring and icon existence.
+- `python3 Tests/static_checks.py --syntax` — XML parsing of `About.xml`, `LoadFolders.xml`,
+  all defs and the English keyed file; 568 localization keys with placeholder counts;
+  duplicate keys; forbidden API patterns; no DLC namespaces; no `PackageReference` or Harmony
+  in the production project; def wiring, icon, `Preview.png`, `LICENSE`, `package-release.sh`,
+  and Markdown relative-link checks.
+- `./package-release.sh --allow-unbuilt` — verifies that clean release staging (`About/`,
+  `LoadFolders.xml`, `1.5–1.7/Assemblies`, `Defs/`, `Languages/`, `Textures/`, `LICENSE`,
+  `README.md`, `CHANGELOG.md`) succeeds without leaking `Source/`, `Tests/` or `Docs/`.
 - Roslyn **syntax** parsing of all 50 C# files through the WASM build of CSharpier
   (`@scalar/csharp-fmt`), 0 parse failures. This is a parser, not a semantic compiler.
 - Manual member cross-check of every new Phase 7/8 type against its declaration and the game

@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.9.0-rc.1 (2026-10-27) — Phase 9: release preparation
+
+- Added `LICENSE` (MIT License).
+- Added `LoadFolders.xml` and version-scoped `1.5/Assemblies`, `1.6/Assemblies`, and
+  `1.7/Assemblies` directories, verified against RimWorld's `ModLoadFolders` /
+  `ModContentPack` rules so each game version strictly loads only its own runtime binary and
+  never falls back across `net472` and `net10.0` targets.
+- Added `<modVersion>0.9.0-rc.1</modVersion>` and `<url>` metadata to `About/About.xml`.
+- Added `About/Preview.png` (`640×360` Mod Manager and Steam Workshop banner) and four
+  explicitly labelled offline UI layout preview diagrams under `Docs/Screenshots/` rendered
+  from the mod's panel geometry, `PowerUiDraw` palette and English keyed strings.
+- Added `package-release.sh`: runs static checks, verifies required assets/metadata, stages a
+  clean distributable `dist/PowerGridManager` directory (excluding `Source/`, `Tests/`,
+  `Docs/`, `.git/` and `.pdb` files) and produces `dist/PowerGridManager-<version>.zip`.
+  Refuses unbuilt packages by default while supporting `--allow-unbuilt` for CI dry runs.
+- Fixed a UI bug in `PowerManagementPanel.DrawGroups` where the group-priority button stopped
+  changing priority once a group reached `MaxPriority` (`6`); clicking at `6` now wraps back
+  to `MinPriority` (`1`).
+- Replaced the fixed `1720f` scroll height in `PowerGridManagerMod.DoSettingsWindowContents`
+  with dynamic height tracking (`Mathf.Max(1920f, listing.CurHeight + 24f)`) so Mod Settings
+  cannot clip at narrow widths, higher UI scales or longer translations.
+- Added release documentation: `Docs/ARCHITECTURE.md`, `Docs/COMPATIBILITY.md`,
+  `Docs/FEATURES-AND-LIMITATIONS.md`, `Docs/SCREENSHOTS.md`, and `Docs/WORKSHOP.md`, and
+  rewrote `README.md` with complete build, packaging, installation and verification steps.
+- Extended `Tests/static_checks.py`, `Tests/ManagementTests.cs`, `Tests/CompatibilityTests.cs`
+  and `.github/workflows/monitoring-tests.yml` to verify `LICENSE`, `LoadFolders.xml`,
+  `About/Preview.png`, `package-release.sh`, Markdown link integrity, group-priority wrap
+  behaviour and dynamic settings scroll sizing.
+- Release-candidate note: automated static checks and the `.NET 8` CI test harness pass,
+  while compilation against official RimWorld `1.5`/`1.6`/`1.7` game assemblies and in-game QA
+  (`Docs/TESTING.md`) remain required before tagging `1.0.0`.
+
 ## Unreleased — Phase 8: compatibility and optimization
 
 - Hardened save/load after inspecting `Verse/Scribe_Deep.Look`, `PostLoadInitter` and
