@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 # Assembles a clean, distributable RimWorld mod folder and .zip archive from the
-# repository root after PowerGridManager.dll has been built for at least one
+# repository root after PowerGridManager.dll has been built for every
 # supported game version via ./build.sh.
 #
 # Usage:
-#   ./package-release.sh                    # requires >= 1 built 1.X/Assemblies/PowerGridManager.dll
+#   ./package-release.sh                    # requires DLLs for 1.5, 1.6 and 1.7
 #   ./package-release.sh --allow-unbuilt    # offline/CI dry-run: verifies layout without game DLLs
 #   ./package-release.sh --output-dir PATH  # override output directory (default: ./dist)
 set -eu
@@ -68,16 +68,19 @@ MOD_VERSION=${MOD_VERSION:-dev}
 
 # 4. Discover compiled version-scoped assemblies.
 BUILT_VERSIONS=""
+MISSING_VERSIONS=""
 for ver in 1.5 1.6 1.7; do
   if [ -f "$ROOT/$ver/Assemblies/PowerGridManager.dll" ]; then
     BUILT_VERSIONS="${BUILT_VERSIONS:+$BUILT_VERSIONS }$ver"
+  else
+    MISSING_VERSIONS="${MISSING_VERSIONS:+$MISSING_VERSIONS }$ver"
   fi
 done
 
-if [ -z "$BUILT_VERSIONS" ] && [ "$ALLOW_UNBUILT" -ne 1 ]; then
-  echo "No compiled PowerGridManager.dll found under 1.5/, 1.6/, or 1.7/Assemblies/." >&2
-  echo "Build against at least one installed RimWorld version with ./build.sh first," >&2
-  echo "or pass --allow-unbuilt for an offline layout verification dry run." >&2
+if [ -n "$MISSING_VERSIONS" ] && [ "$ALLOW_UNBUILT" -ne 1 ]; then
+  echo "Missing PowerGridManager.dll for advertised RimWorld version(s): $MISSING_VERSIONS" >&2
+  echo "Build each version against its own game assemblies with ./build.sh before releasing." >&2
+  echo "Use --allow-unbuilt only for a non-distributable layout dry run." >&2
   exit 2
 fi
 
@@ -101,12 +104,12 @@ for ver in 1.5 1.6 1.7; do
 done
 
 ARCHIVE_SUFFIX="$MOD_VERSION"
-if [ -z "$BUILT_VERSIONS" ]; then
+if [ "$ALLOW_UNBUILT" -eq 1 ]; then
   ARCHIVE_SUFFIX="$MOD_VERSION-unbuilt-layout"
   cat > "$STAGE/UNBUILT-PACKAGE.txt" <<'EOF'
 WARNING: This archive was staged with --allow-unbuilt for layout verification only.
-It contains NO compiled PowerGridManager.dll assembly and will NOT function in RimWorld
-until built against a RimWorld installation using ./build.sh.
+It may be missing compiled PowerGridManager.dll assemblies and must NOT be distributed.
+Build all supported versions against their respective RimWorld installations using ./build.sh.
 EOF
 fi
 
@@ -145,8 +148,7 @@ fi
 
 echo "Staged mod directory: $STAGE"
 echo "Archive created:      $ARCHIVE"
-if [ -n "$BUILT_VERSIONS" ]; then
-  echo "Included assemblies:  $BUILT_VERSIONS"
-else
-  echo "Included assemblies:  none (--allow-unbuilt layout dry run)"
+echo "Included assemblies:  ${BUILT_VERSIONS:-none}"
+if [ "$ALLOW_UNBUILT" -eq 1 ]; then
+  echo "WARNING: layout dry run only; do not distribute or upload this package."
 fi

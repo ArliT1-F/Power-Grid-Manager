@@ -2,7 +2,7 @@
 
 This file contains the Steam Workshop metadata, plain-text summary, ready-to-paste Steam BBCode description, recommended tags, and pre-upload verification gate for **Power Grid Manager**.
 
-> **Pre-upload gate:** Do **not** upload to the Steam Workshop until `./build.sh` has built `PowerGridManager.dll` against each advertised RimWorld version you intend to ship (`1.5`, `1.6`, and/or `1.7`), the in-game checklist in [`Docs/TESTING.md`](TESTING.md) has passed in a clean no-DLC profile, and `./package-release.sh` has produced a verified package. If RimWorld `1.7` has not yet been compiled and tested against official 1.7 binaries, remove `<li>1.7</li>` from `About/About.xml` and `<v1.7>` from `LoadFolders.xml` before publishing so Steam only advertises verified versions.
+> **Pre-upload gate:** Do **not** upload to the Steam Workshop until `./build.sh` has built `PowerGridManager.dll` against each advertised RimWorld version (`1.5`, `1.6`, and `1.7`), the in-game checklist in [`Docs/TESTING.md`](TESTING.md) has passed in a clean no-DLC profile, and `./package-release.sh` has produced a verified package. The release packager requires all three DLLs; do not upload until every advertised version has been built and tested. The `--allow-unbuilt` output is a layout dry run, not a Workshop package.
 
 ---
 
