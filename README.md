@@ -99,7 +99,7 @@ RIMWORLD_DIR="/path/to/RimWorld-1.7" RIMWORLD_GAME_VERSION=1.7 ./build.sh
 
 ### 2. Package a Clean Distributable Release (`dist/`)
 
-After building one or more version-scoped DLLs, assemble a clean player/Workshop folder (excluding `Source/`, `Tests/`, `Docs/`, `.git/`, and `.pdb` files):
+After building all three advertised version-scoped DLLs, assemble a clean player/Workshop folder (excluding `Source/`, `Tests/`, `Docs/`, `.git/`, and `.pdb` files):
 
 ```sh
 ./package-release.sh
