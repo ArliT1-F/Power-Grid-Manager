@@ -1,6 +1,6 @@
 # Implemented Features & Remaining Limitations
 
-This document provides a complete checklist of implemented functionality mapped against Power Grid Manager's ten primary objectives, together with all deliberate scope boundaries and remaining verification items as of `0.9.0-rc.1`.
+This document summarizes implemented functionality mapped against Power Grid Manager's ten primary objectives, together with deliberate scope boundaries and verification items for the `1.0.1` source.
 
 ---
 
@@ -111,11 +111,10 @@ committed on `arena/38cf92f4-power-grid-manager`:
 - **Integration API:** `Docs/INTEGRATION.md` documents the read-only query API, the
   opt-in management control API, preset API, stability guarantees and constraints.
 
-Counts updated: **50 production C# files** (was 37 at baseline). Local static checks pass
-**2,538 checks, 0 failures** (was 1,931 at baseline). CI check counts and the official
-RimWorld build against 1.5 / 1.6 / 1.7 remain pending as noted below.
+At the time of that development record there were **50 production C# files** and **2,538**
+passing local static checks. See [`Docs/TESTING.md`](TESTING.md) for current test instructions.
 
-### Remaining Environment / Pre-Release Verification Limitations
-1. **Official RimWorld assembly compilation pending:** This repository was developed and verified in an environment without RimWorld binaries. All 37 production C# files compile and pass **1,744 automated checks** in `.NET 8` GitHub Actions CI against minimal game doubles, and pass **1,931 static XML/key/placeholder/link/Roslyn syntax checks** locally, but `./build.sh` still needs to be run against official RimWorld `1.5`, `1.6`, and `1.7` installations.
-2. **RimWorld 1.7 API verification pending:** `1.5` and `1.6` APIs were verified line-by-line against public decompilations; `1.7` (`net10.0` / Waylith) is configured in `PowerGridManager.csproj`, `LoadFolders.xml`, and `build.sh`, but remains untested until built against official 1.7 assemblies.
-3. **In-game QA & live screenshots pending:** Frame-time profiling on a live colony, real RimWorld save/reload testing, UI scale visual inspection (`1x`–`2x`), and live in-game Workshop screenshots remain open items on the pre-release checklist in [`Docs/TESTING.md`](TESTING.md) before promoting `0.9.0-rc.1` to `1.0.0`.
+### Remaining Verification for This Update
+1. **Official RimWorld assembly compilation:** The `1.0.1` source has not been built against the official RimWorld `1.5`, `1.6`, and `1.7` installations in this environment. The offline harness compiles against game doubles, not the game assemblies.
+2. **RimWorld 1.7 API verification:** `1.5` and `1.6` APIs were checked against public decompilations; `1.7` (`net10.0` / Waylith) is configured in `PowerGridManager.csproj`, `LoadFolders.xml`, and `build.sh`, but has not been verified against official 1.7 assemblies here.
+3. **In-game QA:** Profile frame time on a live colony and check save/reload and UI rendering, including the Heatmap-specific scenarios in [`Docs/TESTING.md`](TESTING.md), before distributing this update.

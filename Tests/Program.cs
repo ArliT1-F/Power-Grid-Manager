@@ -18,6 +18,7 @@ namespace PowerGridManager
             {
                 new KeyValuePair<string, Func<int>>("Phase 2 monitoring", MonitoringTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 3 dashboard", DashboardTests.Run),
+                new KeyValuePair<string, Func<int>>("Heatmap performance", HeatmapTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 4 history", HistoryTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 5 diagnostics", DiagnosticsTests.Run),
                 new KeyValuePair<string, Func<int>>("Phase 6 forecast", ForecastTests.Run),

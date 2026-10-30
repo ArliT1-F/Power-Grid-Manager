@@ -1,8 +1,11 @@
-# Power Grid Manager — Audit Report
+# Power Grid Manager — Historical Audit Report
+
+This report is a snapshot from an earlier development audit, not the current feature or
+release status. See [README](../README.md) and [CHANGELOG](../CHANGELOG.md) for current information.
 
 **Repository:** `ArliT1-F/Power-Grid-Manager`
-**Branch:** `arena/38cf92f4-power-grid-manager` (from `main` @ `457afe9d`)
-**Current version:** `0.9.0-rc.1` (About.xml)
+**Branch at audit:** `arena/38cf92f4-power-grid-manager` (from `main` @ `457afe9d`)
+**Version at audit:** `0.9.0-rc.1` (About.xml)
 **Supported game versions:** RimWorld 1.5, 1.6, 1.7 (About.xml `<supportedVersions>`)
 **DLC required:** None. Core only.
 **External dependencies:** None (no Harmony, no HugsLib, no reflection, no background threads).
@@ -127,4 +130,4 @@ No obvious unbounded allocations, LINQ, reflection, or background-thread access 
 - No .NET SDK / RimWorld assemblies are present, so C# cannot be compiled and the in-game QA checklist cannot be run here.
 - `python3 Tests/static_checks.py` passes (1,929 checks, 0 failures) and enforces source hygiene; I will re-run it after every change.
 - All new C# will follow existing file patterns exactly and avoid LINQ, reflection, Harmony, `Task.Run`/`new Thread`, and `Log.Error/ErrorOnce/WarningOnce` so the static checks keep passing.
-- In-game validation (compilation against official 1.5/1.6/1.7 assemblies, save/reload, live UI) remains the responsibility of a RimWorld installation and is noted as a pre-release item consistent with the existing `0.9.0-rc.1` status.
+- At the time of this audit, compilation against official 1.5/1.6/1.7 assemblies, save/reload, and live UI validation had not been performed in the audit environment.

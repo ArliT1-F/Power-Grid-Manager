@@ -121,7 +121,12 @@ namespace Verse
         public string ThingID => def == null ? "" : def.defName + thingIDNumber;
 
         /// <summary>Mirrors ILoadReferenceable.GetUniqueLoadID for a Thing.</summary>
-        public string GetUniqueLoadID() => "Thing_" + ThingID;
+        public static int UniqueLoadIdCalls;
+        public string GetUniqueLoadID()
+        {
+            UniqueLoadIdCalls++;
+            return "Thing_" + ThingID;
+        }
 
         public RimWorld.Faction Faction => factionInt;
 
@@ -398,6 +403,11 @@ namespace Verse
         public static bool IsOver(Rect rect) => rect.Contains(Position);
     }
 
+    public static class DebugViewSettings
+    {
+        public static bool drawTooltipEdges;
+    }
+
     public struct TipSignal
     {
         public string text;
@@ -407,10 +417,12 @@ namespace Verse
     public static class TooltipHandler
     {
         public static string LastTip;
+        public static Action<Rect, string> TipObserver;
 
         public static void TipRegion(Rect rect, TipSignal tip)
         {
             LastTip = tip.text;
+            if (TipObserver != null) TipObserver(rect, tip.text);
         }
     }
 
@@ -418,26 +430,50 @@ namespace Verse
     {
         public static float HeightOfButton = 26f;
 
-        public static void Label(Rect rect, string label) { }
-        public static void Label(Rect rect, TaggedString label) { }
+        // Optional observers let tests count submitted widgets; the doubles still do no rendering.
+        public static Action<Rect, string, Color> LabelObserver;
+        public static Action<Rect, Color> SolidBoxObserver;
+        public static Action<Rect> InvisibleButtonObserver;
+        public static Action<Rect, Rect> BeginScrollViewObserver;
+        public static Action EndScrollViewObserver;
+        public static Func<Vector2, Vector2> ScrollPositionOverride;
+
+        public static void Label(Rect rect, string label)
+        {
+            if (LabelObserver != null) LabelObserver(rect, label, GUI.color);
+        }
+        public static void Label(Rect rect, TaggedString label) { Label(rect, label.ToString()); }
         public static void LabelEllipses(Rect rect, string label) { }
-        public static void DrawBoxSolid(Rect rect, Color color) { }
+        public static void DrawBoxSolid(Rect rect, Color color)
+        {
+            if (SolidBoxObserver != null) SolidBoxObserver(rect, color);
+        }
         public static void DrawBox(Rect rect, int thickness = 1, Texture2D lineTexture = null) { }
         public static void DrawLine(Vector2 start, Vector2 end, Color color, float width) { }
         public static void DrawLineHorizontal(float x, float y, float length, Color color) { }
         public static void DrawLineHorizontal(float x, float y, float length) { }
         public static void DrawHighlightSelected(Rect rect) { }
         public static void DrawHighlightIfMouseover(Rect rect) { }
-        public static bool ButtonInvisible(Rect rect, bool doMouseoverSound = true) =>
-            PowerGridManager.WidgetsQueue.NextButtonInvisible();
+        public static bool ButtonInvisible(Rect rect, bool doMouseoverSound = true)
+        {
+            if (InvisibleButtonObserver != null) InvisibleButtonObserver(rect);
+            return PowerGridManager.WidgetsQueue.NextButtonInvisible();
+        }
 
         public static bool ButtonText(Rect rect, string label) => PowerGridManager.WidgetsQueue.NextButtonText();
 
         public static bool ButtonText(Rect rect, string label, bool drawBackground, bool doMouseoverSound,
             bool active = true, TextAnchor? overrideTextAnchor = null) => PowerGridManager.WidgetsQueue.NextButtonText();
-        public static string TextField(Rect rect, string text) => text;
-        public static void BeginScrollView(Rect outRect, ref Vector2 scrollPosition, Rect viewRect, bool showScrollbars = true) { }
-        public static void EndScrollView() { }
+        public static string TextField(Rect rect, string text) => PowerGridManager.WidgetsQueue.NextTextField(text);
+        public static void BeginScrollView(Rect outRect, ref Vector2 scrollPosition, Rect viewRect, bool showScrollbars = true)
+        {
+            if (ScrollPositionOverride != null) scrollPosition = ScrollPositionOverride(scrollPosition);
+            if (BeginScrollViewObserver != null) BeginScrollViewObserver(outRect, viewRect);
+        }
+        public static void EndScrollView()
+        {
+            if (EndScrollViewObserver != null) EndScrollViewObserver();
+        }
         public static float HorizontalSlider(Rect rect, float value, float min, float max, bool middleAlignment = false,
             string label = null, string leftAlignedLabel = null, string rightAlignedLabel = null, float roundTo = -1f) => value;
         public static bool CheckboxLabeled(Rect rect, string label, ref bool checkOn, bool disabled = false) => false;
@@ -680,8 +716,14 @@ namespace Verse
 
     public static class CameraJumper
     {
+        public static Thing LastJumpAndSelect;
+
         public static bool TryJumpAndSelect(RimWorld.Planet.GlobalTargetInfo target,
-            MovementMode mode = MovementMode.Pan) => true;
+            MovementMode mode = MovementMode.Pan)
+        {
+            LastJumpAndSelect = target.Thing;
+            return true;
+        }
 
         public static bool TryJump(RimWorld.Planet.GlobalTargetInfo target,
             MovementMode mode = MovementMode.Pan) => true;

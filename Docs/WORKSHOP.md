@@ -10,6 +10,7 @@ This file contains the Steam Workshop metadata, plain-text summary, ready-to-pas
 
 - **Title:** `Power Grid Manager`
 - **Package ID:** `ArliT1.PowerGridManager`
+- **Mod version:** `1.0.1` (`About/About.xml`)
 - **Preview Banner:** `About/Preview.png` (`640×360` PNG — automatically picked up by RimWorld's Workshop uploader via `ModMetaData.GetWorkshopPreviewImagePath()`)
 - **Mod List Icon:** `About/ModIcon.png` (`64×64` PNG)
 - **Tags:** `Mod` (plus version tags `1.5`, `1.6`, `1.7` automatically populated by RimWorld from `About/About.xml`)
@@ -62,20 +63,25 @@ Every figure is explicitly labelled as [b]measured[/b] (live active output), [b]
 
 ## 3. Packaging & Publishing Workflow
 
-1. Build each supported RimWorld version against its official installation:
+1. For an **existing Workshop item**, preserve its real `About/PublishedFileId.txt` from the local mod folder used for the earlier upload. Put a copy in this repository's `About/` folder before packaging; the packager copies it into the staged folder and archive when present. If it is missing, recover or verify the actual item ID before proceeding—never guess or create a new item by accident. Check that the ID belongs to the item you intend to update.
+2. Rebuild each advertised RimWorld version against its own official installation:
    ```sh
    RIMWORLD_MANAGED_DIR="/path/to/RimWorld-1.5/RimWorldLinux_Data/Managed" RIMWORLD_GAME_VERSION=1.5 ./build.sh
    RIMWORLD_MANAGED_DIR="/path/to/RimWorld-1.6/RimWorldLinux_Data/Managed" RIMWORLD_GAME_VERSION=1.6 ./build.sh
-   # Optional once 1.7 is installed and verified:
    RIMWORLD_DIR="/path/to/RimWorld-1.7" RIMWORLD_GAME_VERSION=1.7 ./build.sh
    ```
-2. Run the static checks and logic test suite:
+3. Run the static checks and logic test suite:
    ```sh
    python3 Tests/static_checks.py
+   python3 Tests/build_version_test.py
+   python3 Tests/package_release_test.py
    dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release
    ```
-3. Assemble the clean distributable folder in `dist/PowerGridManager`:
+4. Assemble the clean distributable folder and archive:
    ```sh
    ./package-release.sh
+   # dist/PowerGridManager/ and dist/PowerGridManager-1.0.1.zip
    ```
-4. Copy `dist/PowerGridManager` into `<RimWorld>/Mods/PowerGridManager`, run the in-game checklist in [`Docs/TESTING.md`](TESTING.md), capture live 1920×1080 in-game screenshots (see [`Docs/SCREENSHOTS.md`](SCREENSHOTS.md)), and upload from RimWorld's **Options → Mod Settings / Workshop Uploader** using `dist/PowerGridManager` so `Source/`, `Tests/`, and `.git/` are never uploaded to Steam.
+   For an update, verify `dist/PowerGridManager/About/PublishedFileId.txt` contains the correct existing ID. If the ID was copied in after packaging, it is not in the already-created zip; repackage if the archive must include it.
+5. Back up any existing local mod folder, then copy the staged `PowerGridManager` folder into `<RimWorld>/Mods/PowerGridManager`, keeping the ID file. Restart RimWorld so it reads the updated files and ID, run the in-game checklist in [`Docs/TESTING.md`](TESTING.md), and capture live screenshots if needed (see [`Docs/SCREENSHOTS.md`](SCREENSHOTS.md)).
+6. **Before invoking the uploader**, check again that the copied folder's ID matches your existing Workshop listing: RimWorld may submit immediately, and a missing or invalid ID can create a new item. Then use the Workshop upload/update action for the **copied local mod folder** in RimWorld's Mods menu. The staged folder excludes `Source/`, `Tests/`, `Docs/`, and `.git/`.

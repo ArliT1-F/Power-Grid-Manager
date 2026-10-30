@@ -235,7 +235,13 @@ def main():
     about = ET.parse(os.path.join(root, "About", "About.xml")).getroot()
     versions = {e.text for e in about.find("supportedVersions").findall("li")}
     check({"1.5", "1.6", "1.7"}.issubset(versions), "1.5/1.6/1.7 are advertised")
-    check(bool((about.findtext("modVersion") or "").strip()), "About.xml declares modVersion")
+    mod_version = (about.findtext("modVersion") or "").strip()
+    check(bool(mod_version), "About.xml declares modVersion")
+    project_xml = ET.parse(os.path.join(root, "Source", "PowerGridManager",
+                                        "PowerGridManager.csproj")).getroot()
+    project_version = (project_xml.findtext("./PropertyGroup/Version") or "").strip()
+    check(bool(mod_version) and project_version == mod_version,
+          "project Version matches About.xml modVersion")
     check(bool((about.findtext("url") or "").strip()), "About.xml declares repository url")
     check(about.find("modDependencies") is None and about.find("dependencies") is None,
           "no hard dependencies or DLC requirement")
