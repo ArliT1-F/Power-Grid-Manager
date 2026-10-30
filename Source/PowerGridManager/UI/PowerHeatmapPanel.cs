@@ -7,10 +7,9 @@ using Verse;
 namespace PowerGridManager
 {
     /// <summary>
-    /// Modernized dashboard-based power heatmap. Each row is a power building with a dark
-    /// intensity bar, symbol+color status indicator, mode-specific ranking and measurement,
-    /// hover tooltip, and Locate / Inspect actions. Nothing here scans the map or alters the
-    /// simulation.
+    /// Dashboard power heatmap with a schematic map and a ranked building list.
+    /// The map reads terrain and building footprints when snapshots refresh; neither view
+    /// changes the simulation.
     /// </summary>
     public sealed class PowerHeatmapPanel
     {
@@ -37,6 +36,10 @@ namespace PowerGridManager
 
         private HeatmapMode mode = HeatmapMode.Consumption;
         private string searchText = "";
+        private bool showMap = true;
+        private Map renderedMap;
+        private PowerGridSnapshot renderedSnapshot;
+        private Texture2D mapTexture;
         private readonly List<HeatmapRow> cachedRows = new List<HeatmapRow>(128);
         private bool hasCachedRows;
         private PowerGridSnapshot cachedSnapshot;
@@ -48,7 +51,7 @@ namespace PowerGridManager
         private readonly List<PolicyState> cachedPolicy = new List<PolicyState>(32);
 
         public void Draw(Rect rect, PowerGridSnapshot snapshot, PowerUiState state,
-            PowerGridManagerSettings settings, PowerManagementController management)
+            PowerGridManagerSettings settings, PowerManagementController management, Map map = null)
         {
             if (state == null || rect.width <= 8f || rect.height <= 8f) return;
 
@@ -57,11 +60,25 @@ namespace PowerGridManager
             float toolbarH = twoRowToolbar ? 62f : 36f;
             DrawToolbar(new Rect(rect.x, y, rect.width, toolbarH), state, twoRowToolbar);
             y += toolbarH + 6f;
+            if (map != null)
+            {
+                float toggleWidth = Mathf.Min(150f, rect.width * 0.45f);
+                if (PowerUiDraw.Button(new Rect(rect.x, y, toggleWidth, 24f),
+                    "PGM_Heatmap_MapView".Translate(), showMap)) showMap = true;
+                if (PowerUiDraw.Button(new Rect(rect.x + toggleWidth + 4f, y, toggleWidth, 24f),
+                    "PGM_Heatmap_ListView".Translate(), !showMap)) showMap = false;
+                y += 30f;
+            }
 
             Rect body = new Rect(rect.x, y, rect.width, Mathf.Max(60f, rect.yMax - y));
             PowerUiDraw.Panel(body);
 
             FilterAndRank(snapshot, management);
+            if (map != null && showMap)
+            {
+                DrawMap(body, map, snapshot, management);
+                return;
+            }
             if (cachedRows.Count == 0)
             {
                 PowerUiDraw.WrappedText(new Rect(body.x + 12f, body.y + 12f, body.width - 24f, 60f),
@@ -108,6 +125,116 @@ namespace PowerGridManager
             {
                 Widgets.EndScrollView();
             }
+        }
+
+        public void ReleaseMapTexture()
+        {
+            if (mapTexture != null) UnityEngine.Object.Destroy(mapTexture);
+            mapTexture = null;
+            renderedMap = null;
+            renderedSnapshot = null;
+        }
+
+        // Base map is rebuilt on snapshot changes, not on every IMGUI event. Building
+        // footprints use the game's occupied rectangle, including rotation and modded sizes.
+        private void DrawMap(Rect body, Map map, PowerGridSnapshot snapshot, PowerManagementController management)
+        {
+            int width = map.Size.x, height = map.Size.z;
+            if (width <= 0 || height <= 0) return;
+            if (!ReferenceEquals(renderedMap, map) || !ReferenceEquals(renderedSnapshot, snapshot) || mapTexture == null)
+                RebuildMap(map, snapshot, width, height);
+
+            float scale = Mathf.Min((body.width - 24f) / width, (body.height - 48f) / height);
+            if (scale <= 0f) return;
+            Rect image = new Rect(body.x + (body.width - width * scale) / 2f,
+                body.y + 8f, width * scale, height * scale);
+            GUI.DrawTexture(image, mapTexture);
+
+            // Map colors are relative to the strongest matching building in this mode.
+            // A small minimum marker makes buildings visible even on a full-size colony map.
+            for (int i = 0; i < cachedRows.Count; i++)
+            {
+                HeatmapRow row = cachedRows[i];
+                Building building = row.Building.Building;
+                if (row.HeatValue <= 0f || !building.Spawned || building.Map != map ||
+                    map.fogGrid.IsFogged(building.Position)) continue;
+                CellRect cells = building.OccupiedRect();
+                Rect marker = MapRect(image, scale, height, cells);
+                float centerX = marker.x + marker.width / 2f;
+                float centerY = marker.y + marker.height / 2f;
+                float size = Mathf.Max(4f, Mathf.Max(marker.width, marker.height));
+                marker = new Rect(centerX - size / 2f, centerY - size / 2f, size, size);
+                float value = mode == HeatmapMode.Battery ? 1f - row.Intensity : row.Intensity;
+                Widgets.DrawBoxSolid(marker, MapHeatColor(value));
+                if (Mouse.IsOver(marker)) PowerUiDraw.Tip(marker, Tooltip(row, management));
+            }
+            PowerUiDraw.WrappedText(new Rect(body.x + 10f, body.yMax - 30f, body.width - 20f, 24f),
+                "PGM_Heatmap_MapLegend".Translate(), PowerUiDraw.TextSecondary);
+        }
+
+        internal static Rect MapRect(Rect image, float scale, int mapHeight, CellRect cells)
+        {
+            return new Rect(image.x + cells.minX * scale,
+                image.y + (mapHeight - cells.maxZ - 1) * scale,
+                cells.Width * scale, cells.Height * scale);
+        }
+
+        private static Color MapHeatColor(float value)
+        {
+            value = Mathf.Clamp01(value);
+            if (value < 0.5f) return new Color(0f, 0.35f + value, 1f - value, 0.9f);
+            return new Color((value - 0.5f) * 2f, 0.85f - (value - 0.5f) * 1.3f, 0f, 0.9f);
+        }
+
+        private void RebuildMap(Map map, PowerGridSnapshot snapshot, int width, int height)
+        {
+            if (mapTexture != null) UnityEngine.Object.Destroy(mapTexture);
+            mapTexture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            mapTexture.filterMode = FilterMode.Point;
+            Color[] pixels = new Color[width * height];
+            for (int z = 0; z < height; z++)
+                for (int x = 0; x < width; x++)
+                {
+                    IntVec3 cell = new IntVec3(x, 0, z);
+                    pixels[z * width + x] = map.fogGrid.IsFogged(cell)
+                        ? new Color(0.015f, 0.035f, 0.07f)
+                        : TerrainColor(map.terrainGrid.TerrainAt(cell)?.defName);
+                }
+            PaintBuildings(map.listerBuildings.allBuildingsNonColonist, map, pixels, width, height);
+            PaintBuildings(map.listerBuildings.allBuildingsColonist, map, pixels, width, height);
+            mapTexture.SetPixels(pixels);
+            mapTexture.Apply();
+            renderedMap = map;
+            renderedSnapshot = snapshot;
+        }
+
+        private static void PaintBuildings(List<Building> buildings, Map map, Color[] pixels, int width, int height)
+        {
+            if (buildings == null) return;
+            for (int i = 0; i < buildings.Count; i++)
+            {
+                Building building = buildings[i];
+                if (building == null || !building.Spawned || building.Map != map) continue;
+                CellRect cells = building.OccupiedRect();
+                for (int z = Mathf.Max(0, cells.minZ); z <= Mathf.Min(height - 1, cells.maxZ); z++)
+                    for (int x = Mathf.Max(0, cells.minX); x <= Mathf.Min(width - 1, cells.maxX); x++)
+                    {
+                        IntVec3 cell = new IntVec3(x, 0, z);
+                        if (!map.fogGrid.IsFogged(cell)) pixels[z * width + x] = new Color(0.39f, 0.72f, 0.83f);
+                    }
+            }
+        }
+
+        // A restrained blueprint palette keeps the cell layout visible without competing
+        // with the heat markers. Unknown and modded terrains use the neutral background.
+        private static Color TerrainColor(string name)
+        {
+            name = (name ?? "").ToLowerInvariant();
+            if (name.Contains("water") || name.Contains("ocean") || name.Contains("river")) return new Color(0.04f, 0.18f, 0.29f);
+            if (name.Contains("sand")) return new Color(0.16f, 0.25f, 0.30f);
+            if (name.Contains("snow") || name.Contains("ice")) return new Color(0.28f, 0.43f, 0.49f);
+            if (name.Contains("soil") || name.Contains("marsh") || name.Contains("mud")) return new Color(0.08f, 0.21f, 0.27f);
+            return new Color(0.12f, 0.25f, 0.32f);
         }
 
         private void DrawToolbar(Rect rect, PowerUiState state, bool twoRow)

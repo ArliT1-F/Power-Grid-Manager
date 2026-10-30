@@ -18,11 +18,24 @@ namespace PowerGridManager.Tests
         {
             TestAssert.UsePhase("heatmap");
             int start = TestAssert.Checks;
+            MapProjection();
             LargeListViewportAndActions();
             RankingAndCacheInvalidation();
             EmptyAndNarrowViews();
             Console.WriteLine("Heatmap cache/viewport checks passed: " + (TestAssert.Checks - start));
             return TestAssert.Checks - start;
+        }
+
+        private static void MapProjection()
+        {
+            Rect image = new Rect(10f, 20f, 200f, 100f);
+            Rect footprint = PowerHeatmapPanel.MapRect(image, 2f, 50, new CellRect(3, 4, 2, 3));
+            TestAssert.Equal(footprint.x, 16f, "map footprint preserves x position");
+            TestAssert.Equal(footprint.y, 106f, "north is at the top of the map");
+            TestAssert.Equal(footprint.width, 4f, "map footprint preserves width");
+            TestAssert.Equal(footprint.height, 6f, "map footprint preserves height");
+            Rect north = PowerHeatmapPanel.MapRect(image, 2f, 50, new CellRect(0, 49, 1, 1));
+            TestAssert.Equal(north.y, image.y, "northern edge aligns with image top");
         }
 
         private static void LargeListViewportAndActions()
