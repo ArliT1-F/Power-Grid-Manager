@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1 (2026-10-30) — Heatmap performance
+
+- Reuse filtered and ranked heatmap rows until the snapshot, mode, search, or relevant
+  management policy changes, rather than sorting the whole map on every UI pass.
+- Submit only rows near the scroll viewport (with a small edge buffer) while preserving the
+  full scroll range, tooltips, selection, Locate and Inspect actions. Handle stale scroll
+  positions after a search or snapshot shrinks the list.
+- Added headless regressions for a 10,000-building list, cache invalidation, all seven modes,
+  partial rows, scrolling, filtering and actions. Live FPS still needs in-game verification.
+- Set the mod and assembly version to `1.0.1`. Release staging preserves an existing
+  `About/PublishedFileId.txt` when supplied so the Workshop item can be updated.
+
+Earlier entries are historical development notes, not a complete release history.
+
 ## 0.9.0-rc.1 (2026-10-27) — Phase 9: release preparation
 
 - Added `LICENSE` (MIT License).
@@ -28,12 +42,11 @@
   and `.github/workflows/monitoring-tests.yml` to verify `LICENSE`, `LoadFolders.xml`,
   `About/Preview.png`, `package-release.sh`, Markdown link integrity, group-priority wrap
   behaviour and dynamic settings scroll sizing.
-- Release-candidate note: automated static checks (1,929 checks; 1,931 with `--syntax`),
-  release-staging dry run, and the `.NET 8` CI test harness (1,744 checks) all pass, while
-  compilation against official RimWorld `1.5`/`1.6`/`1.7` game assemblies and in-game QA
-  (`Docs/TESTING.md`) remain required before tagging `1.0.0`.
+- Historical verification note: at this milestone the static checks, release-staging dry
+  run and doubles-based CI harness passed. Official RimWorld `1.5`/`1.6`/`1.7` assembly
+  builds and in-game QA had not been performed in that development environment.
 
-## Unreleased — Phase 8: compatibility and optimization
+## Development history — Phase 8: compatibility and optimization
 
 - Hardened save/load after inspecting `Verse/Scribe_Deep.Look`, `PostLoadInitter` and
   `ScribeExtractor`: `Scribe_Deep.Look` does nothing in `PostLoadInit`, and nested objects are
@@ -65,7 +78,7 @@
   RimWorld assemblies, frame-time profiling, Harmony patch check or in-game exception scan was
   performed.
 
-## Unreleased — Phase 7: optional management (off by default)
+## Development history — Phase 7: optional management (off by default)
 
 - Added `ManagementEnabled` and `LoadSheddingEnabled`, both false by default and saved with the
   mod settings. Monitoring, history, diagnostics and forecasting are independent of them.
@@ -95,7 +108,7 @@
   `Tests/ManagementTests.cs`. See `Docs/PHASE-7-MANAGEMENT.md` for API evidence and the
   in-game checklist. Not compiled against game assemblies or validated in game here.
 
-## Unreleased — build compatibility
+## Development history — build compatibility
 
 - Removed the compile-time dependency on `Verse.GenDate`: durations, retention and chart
   ranges now use the mod's own `PowerTime.TicksPerHour` / `PowerTime.TicksPerDay`
@@ -107,7 +120,7 @@
 - Offline harness: dropped the now-unused `GenDate` double and pointed the duration/range
   assertions at `PowerTime`.
 
-## Unreleased — Phase 6: battery endurance forecasting
+## Development history — Phase 6: battery endurance forecasting
 
 - Added a battery endurance estimate: time until the map's stored energy runs out, or until it
   is full, from the current balance and — when enough samples exist — the recorded average over
@@ -131,7 +144,7 @@
 - Validation: 90 new offline checks, including a read-only guarantee that forecasting leaves
   the power simulation and the reported measurements untouched. Not validated in game.
 
-## Unreleased — Phase 5: power diagnostics
+## Development history — Phase 5: power diagnostics
 
 - Added a diagnostics engine that turns the readings into advisories: power deficit, high load,
   battery discharge, network with no generation, isolated consumer, unconfirmed membership,
@@ -158,7 +171,7 @@
 - Advisory kinds are never renumbered: the enum values index the persisted mute mask.
 - Validation: 119 new offline checks. Not validated in game.
 
-## Unreleased — Phase 4: historical monitoring
+## Development history — Phase 4: historical monitoring
 
 - Added bounded, map-scoped aggregate history: generation, consumption, stored energy and
   capacity sampled at a configurable interval (60–15,000 ticks; default 2,500).
@@ -183,7 +196,7 @@
   already-recorded tick is skipped, so the in-memory series is always strictly monotonic.
 - Validation: 103 new offline checks. Not validated in game.
 
-## Unreleased — Phase 3: dashboard
+## Development history — Phase 3: dashboard
 
 - Added a native **Power** main tab (`MainButtonDef` + `MainTabWindow`) with mod icon.
 - Added the overview dashboard: measured generation/consumption/balance, load ratio,
@@ -216,7 +229,7 @@
 - Validation: 108 new offline checks, including a headless draw pass of every panel and tab
   at three sizes. No in-game validation.
 
-## Unreleased — Phase 2 monitoring core
+## Development history — Phase 2 monitoring core
 
 - Added read-only network discovery and map building/component snapshots, including
   non-colonist infrastructure and multiple power components per building.

@@ -731,6 +731,7 @@ namespace PowerGridManager
     {
         private static readonly Queue<bool> ButtonInvisibleResults = new Queue<bool>();
         private static readonly Queue<bool> ButtonTextResults = new Queue<bool>();
+        private static readonly Queue<string> TextFieldResults = new Queue<string>();
 
         /// <summary>Clicks the (zero-based) invisible-button index in the next draw pass.</summary>
         public static void ClickInvisibleAt(int index)
@@ -746,10 +747,22 @@ namespace PowerGridManager
             ButtonTextResults.Enqueue(true);
         }
 
+        /// <summary>Replaces the next text field's value during a draw pass.</summary>
+        public static void EnterText(string value)
+        {
+            TextFieldResults.Enqueue(value);
+        }
+
         public static void Reset()
         {
             ButtonInvisibleResults.Clear();
             ButtonTextResults.Clear();
+            TextFieldResults.Clear();
+        }
+
+        public static string NextTextField(string current)
+        {
+            return TextFieldResults.Count > 0 ? TextFieldResults.Dequeue() : current;
         }
 
         public static bool NextButtonInvisible()

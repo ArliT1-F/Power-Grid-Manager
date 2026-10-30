@@ -7,6 +7,8 @@
     <TargetFramework Condition="'$(RimWorldGameVersion)' != '1.7'">net472</TargetFramework>
     <LangVersion>latest</LangVersion>
     <AssemblyName>PowerGridManager</AssemblyName>
+    <!-- Keep the SDK-generated DLL version in sync with About/About.xml. -->
+    <Version>1.0.1</Version>
     <RootNamespace>PowerGridManager</RootNamespace>
     <!-- Forward slashes: MSBuild normalises them on Windows, and backslashes would
          create a literally-named directory on Linux. -->

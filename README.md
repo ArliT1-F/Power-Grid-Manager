@@ -8,13 +8,13 @@
 - **No external dependencies** — no Harmony patches, no HugsLib, no reflection, no background threads, and no network services.
 - **Honest numbers** — every value is explicitly distinguished as **measured**, **configured**, or **estimated**, and power (**W** / **kW**) is never confused with stored energy (**Wd**).
 
-> **Release status (`0.9.0-rc.1`):** All nine development phases are implemented in source, packaged with `LoadFolders.xml`, `LICENSE`, `About/Preview.png`, Workshop metadata, and `package-release.sh`, and verified by both `Tests/static_checks.py` (**1,929 static checks**, **1,931** with `--syntax`) and the `.NET 8` CI test harness (**1,744 automated C# checks** against game doubles). Because no RimWorld installation or proprietary game DLLs are present in the automated build environment, final compilation via `./build.sh` against official RimWorld `1.5` / `1.6` / `1.7` assemblies and execution of the [in-game QA checklist](Docs/TESTING.md) remain required before promoting `0.9.0-rc.1` to a signed-off `1.0.0` release.
+> **Version 1.0.1:** This update improves Heatmap performance, particularly on large colonies. The source was tested against offline game doubles, but this update has not been built against official game assemblies or profiled in RimWorld in this environment. Before distributing it, build the supported versions and run the [in-game QA checklist](Docs/TESTING.md).
 
 ---
 
 ## Features
 
-Open the **Power** tab on the main bottom bar to access seven integrated views:
+Open the **Power** tab on the main bottom bar to access integrated views including:
 
 | Tab | What It Provides |
 |---|---|
@@ -25,6 +25,7 @@ Open the **Power** tab on the main bottom bar to access seven integrated views:
 | **Diagnostics** | Ten evidence-based advisory kinds (*Persistent deficit*, *High load*, *Battery discharge*, *No generation*, *Isolated consumer*, *Pending membership*, *Underperforming generator*, *Draw above configured*, *Switched off but drawing*, *Unsupported component*) with severity pills, measured evidence, duration, suggested action, resolved-episode retention, per-kind muting, per-advisory dismissal, and rate-limited on-screen alerts. |
 | **Forecast** | Estimates time to battery depletion or full charge from current and recorded historical balance, accounting for vanilla's `5 W`/battery continuous self-discharge, charging `Props.efficiency`, and EMP-stunned batteries. Displays explicit confidence (*High* / *Medium* / *Low*), current-vs-historical comparison, per-network endurance, and stated assumptions. |
 | **Management** *(Off by default)* | Optional manual On/Off switching for compatible `CompFlickable` buildings, up to 16 user-defined monitoring groups, per-building diagnostic/control exclusions, user-assigned priorities (`1–6`), and an opt-in hysteresis load-shedding policy with a read-only **"Buildings this policy would affect"** preview, staged/all/manual recovery, and a bounded 40-entry audit log. Critical buildings are protected by default — only buildings explicitly marked *Sheddable* can ever be switched off automatically. |
+| **Heatmap** | A searchable, colour-coded building view with consumption, generation, battery charge, network stability, isolation, idle draw and critical-protection modes. Rankings are cached and only rows near the viewport are drawn. |
 
 ---
 
@@ -48,9 +49,9 @@ Each RimWorld version compiles into its own isolated `1.X/Assemblies/PowerGridMa
 
 | RimWorld Version | Runtime Target | Verification Status |
 |---|---|---|
-| **1.6** *(Primary)* | `.NET Framework 4.7.2` (Mono) | All APIs verified against public 1.6 decompilation; Phases 1–6 user-compiled in-game; awaiting final Phase 7–9 official-assembly build & QA checklist. |
-| **1.5** | `.NET Framework 4.7.2` (Mono) | All APIs verified against public 1.5.4409 decompilation; awaiting official 1.5 assembly build & QA checklist. |
-| **1.7** | `.NET 10.0` (Waylith) | Build target configured; APIs unverified against official 1.7 assemblies (**experimental / untested** until built on 1.7). |
+| **1.6** *(Primary)* | `.NET Framework 4.7.2` (Mono) | APIs checked against public 1.6 decompilation; this update still needs a game-assembly build and QA in this environment. |
+| **1.5** | `.NET Framework 4.7.2` (Mono) | APIs checked against public 1.5.4409 decompilation; this update still needs a game-assembly build and QA in this environment. |
+| **1.7** | `.NET 10.0` (Waylith) | Build target configured; APIs and this update have not been verified against official 1.7 assemblies in this environment. |
 
 See [`Docs/COMPATIBILITY.md`](Docs/COMPATIBILITY.md) for the full version and mod-compatibility matrix.
 
@@ -94,8 +95,9 @@ RIMWORLD_DIR="/path/to/RimWorld-1.7" RIMWORLD_GAME_VERSION=1.7 ./build.sh
     -p:RimWorldGameVersion=1.6 `
     -p:RimWorldManagedDir="C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64_Data\Managed"
   ```
-- **Compiler requirements:** `.NET SDK` (`dotnet`, recommended — restores `net472` reference assemblies automatically on first build), `msbuild`, or Mono `mcs`/`csc`.
+- **Compiler requirements:** `.NET SDK` (`dotnet`, recommended — restores `net472` reference assemblies automatically on first build); RimWorld 1.7 requires the .NET 10 SDK. For 1.5/1.6, `msbuild` or the Mono `mcs`/`csc` fallback can also be used.
 - **Outputs:** `1.5/Assemblies/PowerGridManager.dll`, `1.6/Assemblies/PowerGridManager.dll`, or `1.7/Assemblies/PowerGridManager.dll`.
+- **Release version:** `About/About.xml` is the mod version; keep the project `Version` in `Source/PowerGridManager/PowerGridManager.csproj` in sync so the SDK-generated assembly metadata matches. The static checks enforce this.
 
 ### 2. Package a Clean Distributable Release (`dist/`)
 
@@ -105,8 +107,13 @@ After building all three advertised version-scoped DLLs, assemble a clean player
 ./package-release.sh
 # Produces:
 #   dist/PowerGridManager/
-#   dist/PowerGridManager-0.9.0-rc.1.zip
+#   dist/PowerGridManager-1.0.1.zip
 ```
+
+For an existing Workshop item, preserve its real `About/PublishedFileId.txt` in the
+repository's `About/` folder before staging. The packager copies it when present; verify the
+ID and follow the [Workshop update instructions](Docs/WORKSHOP.md) before uploading. No ID
+is supplied in this repository.
 
 For development iteration, you can also symlink the repository directly into `Mods/` after running `./build.sh`:
 
@@ -128,11 +135,15 @@ python3 Tests/static_checks.py --syntax
 # 3. Full C# offline logic & UI smoke harness (.NET 8 SDK; runs automatically on every push/PR in GitHub Actions)
 dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release
 
-# 4. Dry-run release packager layout check (when no game DLLs are present locally)
+# 4. Build metadata and package gating (uses a fake compiler and fake DLLs only)
+python3 Tests/build_version_test.py
+python3 Tests/package_release_test.py
+
+# 5. Dry-run release packager layout check (never distribute the unbuilt output)
 ./package-release.sh --allow-unbuilt
 ```
 
-- **What automated CI proves:** All 37 production C# files compile cleanly against minimal game doubles and pass **1,744 checks** covering scanner math, `PowerOn` gating, EMP batteries, 10,000-building maps, multi-map staggering, sorting/filtering/grouping, bounded history & Scribe corruption recovery, diagnostic episodes & alert throttling, endurance forecasting, optional load shedding & hysteresis, localization completeness, and release metadata.
+- **What the offline harness checks:** Production sources compile against minimal game doubles and exercise scanner math, `PowerOn` gating, EMP batteries, 10,000-building maps, multi-map staggering, sorting/filtering/grouping, Heatmap virtualization, bounded history & Scribe corruption recovery, diagnostics, forecasting, load shedding, localization, and release metadata. Check the current CI run for its result.
 - **What requires a RimWorld installation:** Compiling against official game assemblies, in-game UI rendering across resolutions/UI scales, live frame-time profiling, and real save/reload sign-off. Follow [`Docs/TESTING.md`](Docs/TESTING.md) step by step.
 
 ---

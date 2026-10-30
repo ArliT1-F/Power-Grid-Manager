@@ -28,9 +28,24 @@ namespace PowerGridManager
             Critical
         }
 
+        private static readonly HeatmapMode[] Modes =
+        {
+            HeatmapMode.Consumption, HeatmapMode.Generation, HeatmapMode.Battery,
+            HeatmapMode.Stability, HeatmapMode.Isolation, HeatmapMode.Idle,
+            HeatmapMode.Critical
+        };
+
         private HeatmapMode mode = HeatmapMode.Consumption;
         private string searchText = "";
         private readonly List<HeatmapRow> cachedRows = new List<HeatmapRow>(128);
+        private bool hasCachedRows;
+        private PowerGridSnapshot cachedSnapshot;
+        private HeatmapMode cachedMode;
+        private string cachedSearchText;
+        private PowerManagementController cachedManagement;
+        private int cachedManagementRevision;
+        private PowerManagementRegistry cachedRegistry;
+        private readonly List<PolicyState> cachedPolicy = new List<PolicyState>(32);
 
         public void Draw(Rect rect, PowerGridSnapshot snapshot, PowerUiState state,
             PowerGridManagerSettings settings, PowerManagementController management)
@@ -46,8 +61,7 @@ namespace PowerGridManager
             Rect body = new Rect(rect.x, y, rect.width, Mathf.Max(60f, rect.yMax - y));
             PowerUiDraw.Panel(body);
 
-            IReadOnlyList<BuildingPowerSnapshot> buildings = snapshot == null ? null : snapshot.Buildings;
-            FilterAndRank(buildings, settings, management);
+            FilterAndRank(snapshot, management);
             if (cachedRows.Count == 0)
             {
                 PowerUiDraw.WrappedText(new Rect(body.x + 12f, body.y + 12f, body.width - 24f, 60f),
@@ -58,14 +72,28 @@ namespace PowerGridManager
             Rect outer = new Rect(body.x + 6f, body.y + 6f, body.width - 12f, body.height - 12f);
             float contentHeight = cachedRows.Count * RowHeight;
             Rect view = new Rect(0f, 0f, Mathf.Max(140f, outer.width - 18f), Mathf.Max(contentHeight, outer.height));
+
+            // A search or a new snapshot can shrink the list while it is scrolled down.
+            // Correct an offset beyond the entire list without restricting the extra scroll
+            // space a horizontal scrollbar can require in very narrow windows.
+            if (state.HeatmapScroll.y < 0f) state.HeatmapScroll.y = 0f;
+            else if (state.HeatmapScroll.y >= contentHeight)
+                state.HeatmapScroll.y = Mathf.Max(0f, contentHeight - outer.height);
+
             Widgets.BeginScrollView(outer, ref state.HeatmapScroll, view);
             try
             {
-                float rowY = 0f;
-                for (int i = 0; i < cachedRows.Count; i++)
+                // BeginScrollView clips drawing, but calling every widget is still expensive.
+                // Preserve full-list positions and overscan one row at each edge so pixel-grid
+                // rounding and partial scroll positions cannot leave a gap in the viewport.
+                int first = Mathf.Clamp(Mathf.FloorToInt(state.HeatmapScroll.y / RowHeight) - 1,
+                    0, cachedRows.Count);
+                int end = Mathf.Clamp(Mathf.CeilToInt((state.HeatmapScroll.y + outer.height) / RowHeight) + 1,
+                    first, cachedRows.Count);
+                for (int i = first; i < end; i++)
                 {
                     HeatmapRow row = cachedRows[i];
-                    Rect rowRect = new Rect(0f, rowY, view.width, RowHeight);
+                    Rect rowRect = new Rect(0f, i * RowHeight, view.width, RowHeight);
                     bool selected = ReferenceEquals(state.SelectedBuilding, row.Building.Building);
                     PowerUiDraw.RowBackground(rowRect, i, selected);
                     DrawRow(rowRect, row, settings, management);
@@ -74,7 +102,6 @@ namespace PowerGridManager
                     {
                         state.SelectBuilding(row.Building.Building);
                     }
-                    rowY += RowHeight;
                 }
             }
             finally
@@ -88,24 +115,17 @@ namespace PowerGridManager
             PowerUiDraw.Panel(rect);
             Rect inner = rect.ContractedBy(6f);
 
-            HeatmapMode[] modes =
-            {
-                HeatmapMode.Consumption, HeatmapMode.Generation, HeatmapMode.Battery,
-                HeatmapMode.Stability, HeatmapMode.Isolation, HeatmapMode.Idle,
-                HeatmapMode.Critical
-            };
-
             float searchW = twoRow
                 ? Mathf.Min(220f, inner.width * 0.45f)
                 : Mathf.Min(190f, Mathf.Max(90f, inner.width * 0.22f));
             float modesAreaW = twoRow ? inner.width : Mathf.Max(120f, inner.width - searchW - 8f);
-            float buttonWidth = Mathf.Max(42f, (modesAreaW - (modes.Length - 1) * 4f) / modes.Length);
+            float buttonWidth = Mathf.Max(42f, (modesAreaW - (Modes.Length - 1) * 4f) / Modes.Length);
 
             float x = inner.x;
             float y = inner.y;
-            for (int i = 0; i < modes.Length; i++)
+            for (int i = 0; i < Modes.Length; i++)
             {
-                HeatmapMode m = modes[i];
+                HeatmapMode m = Modes[i];
                 Rect b = new Rect(x, y, buttonWidth, 24f);
                 if (PowerUiDraw.Button(b, ModeLabel(m), this.mode == m))
                     this.mode = m;
@@ -126,22 +146,43 @@ namespace PowerGridManager
             PowerUiDraw.Tip(search, "PGM_Heatmap_SearchTip".Translate());
         }
 
-        private void FilterAndRank(IReadOnlyList<BuildingPowerSnapshot> buildings,
-            PowerGridManagerSettings settings, PowerManagementController management)
+        private void FilterAndRank(PowerGridSnapshot snapshot, PowerManagementController management)
         {
+            string currentSearch = searchText ?? string.Empty;
+            int managementRevision = management == null ? -1 : management.Revision;
+            if (hasCachedRows && ReferenceEquals(snapshot, cachedSnapshot) && mode == cachedMode &&
+                currentSearch == cachedSearchText &&
+                (mode != HeatmapMode.Critical || CriticalPolicyUnchanged(management, managementRevision)))
+                return;
+
+            // Snapshots are immutable. Only Critical ranking depends on management policy;
+            // the other modes can reuse their ranking even when a policy changes. Colours and
+            // tooltips still read current settings and policy while drawing visible rows.
+            hasCachedRows = false;
+            cachedSnapshot = snapshot;
+            cachedMode = mode;
+            cachedSearchText = currentSearch;
+            cachedManagement = management;
+            cachedManagementRevision = managementRevision;
             cachedRows.Clear();
-            if (buildings == null) return;
-            string search = (searchText ?? string.Empty).Trim();
+            IReadOnlyList<BuildingPowerSnapshot> buildings = snapshot == null ? null : snapshot.Buildings;
+            if (buildings == null)
+            {
+                CaptureCriticalPolicy(management);
+                hasCachedRows = true;
+                return;
+            }
+            string search = currentSearch.Trim();
             float maxHeat = 1f;
 
             for (int i = 0; i < buildings.Count; i++)
             {
                 BuildingPowerSnapshot building = buildings[i];
                 if (building == null || building.Building == null) continue;
-                string label = PowerGridUtilities.BuildingLabel(building.Building);
-                if (search.Length > 0 && label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
+                if (search.Length > 0 && PowerGridUtilities.BuildingLabel(building.Building)
+                    .IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
-                float hv = ComputeHeatValue(building, settings, management);
+                float hv = ComputeHeatValue(building, management);
                 if (hv > maxHeat) maxHeat = hv;
                 cachedRows.Add(new HeatmapRow(building, hv, 0f));
             }
@@ -158,10 +199,46 @@ namespace PowerGridManager
             }
 
             cachedRows.Sort((left, right) => right.HeatValue.CompareTo(left.HeatValue));
+            CaptureCriticalPolicy(management);
+            hasCachedRows = true;
         }
 
-        private float ComputeHeatValue(BuildingPowerSnapshot b, PowerGridManagerSettings settings,
-            PowerManagementController management)
+        private bool CriticalPolicyUnchanged(PowerManagementController management, int revision)
+        {
+            if (!ReferenceEquals(management, cachedManagement) || revision != cachedManagementRevision)
+                return false;
+            PowerManagementRegistry registry = management == null ? null : management.Registry;
+            if (!ReferenceEquals(registry, cachedRegistry)) return false;
+            if (registry == null) return cachedPolicy.Count == 0;
+            IReadOnlyList<PowerManagementRecord> records = registry.Records;
+            if (records.Count != cachedPolicy.Count) return false;
+
+            // Records and their Sheddable field are publicly mutable, including through the
+            // integration API without a controller revision. Check that bounded registry
+            // (at most MaxRecords), not the potentially much larger snapshot, for such edits.
+            for (int i = 0; i < records.Count; i++)
+            {
+                PowerManagementRecord record = records[i];
+                if (!ReferenceEquals(record, cachedPolicy[i].Record) ||
+                    (record != null && record.Sheddable != cachedPolicy[i].Sheddable)) return false;
+            }
+            return true;
+        }
+
+        private void CaptureCriticalPolicy(PowerManagementController management)
+        {
+            cachedPolicy.Clear();
+            cachedRegistry = mode == HeatmapMode.Critical && management != null ? management.Registry : null;
+            if (cachedRegistry == null) return;
+            IReadOnlyList<PowerManagementRecord> records = cachedRegistry.Records;
+            for (int i = 0; i < records.Count; i++)
+            {
+                PowerManagementRecord record = records[i];
+                cachedPolicy.Add(new PolicyState(record, record != null && record.Sheddable));
+            }
+        }
+
+        private float ComputeHeatValue(BuildingPowerSnapshot b, PowerManagementController management)
         {
             switch (mode)
             {
@@ -181,10 +258,9 @@ namespace PowerGridManager
                     return b.IsFlickable && b.SwitchIsOn == false && b.ConsumptionWatts > 0.01f
                         ? 1000f + b.ConsumptionWatts : 0f;
                 case HeatmapMode.Critical:
-                    bool prot = management != null && management.Registry != null &&
-                                management.Registry.Find(b.Building) != null &&
-                                !management.Registry.Find(b.Building).Sheddable;
-                    return prot ? 1000f + b.ConsumptionWatts : b.ConsumptionWatts * 0.1f;
+                    PowerManagementRecord record = FindManagementRecord(b.Building, management);
+                    return record != null && !record.Sheddable
+                        ? 1000f + b.ConsumptionWatts : b.ConsumptionWatts * 0.1f;
                 default:
                     return b.ConsumptionWatts + b.GenerationWatts;
             }
@@ -194,7 +270,7 @@ namespace PowerGridManager
             PowerManagementController management)
         {
             Color heat = HeatColor(row, settings, management);
-            string sym = HeatSymbol(row, settings, management);
+            string sym = HeatSymbol(heat);
 
             Rect heatCell = new Rect(rect.x + 6f, rect.y + 4f, 68f, RowHeight - 8f);
             Widgets.DrawBoxSolid(heatCell, PowerUiDraw.BgRecessed);
@@ -237,7 +313,10 @@ namespace PowerGridManager
                 PowerUiDraw.Tip(locate, "PGM_Heatmap_LocateTip".Translate());
             }
 
-            PowerUiDraw.Tip(rect, Tooltip(row, management));
+            // Formatting the detailed tooltip allocates several strings; only do that for
+            // the hovered row (or when the game's tooltip-edge debugger is enabled).
+            if (Mouse.IsOver(rect) || DebugViewSettings.drawTooltipEdges)
+                PowerUiDraw.Tip(rect, Tooltip(row, management));
         }
 
         private Color HeatColor(HeatmapRow row, PowerGridManagerSettings settings,
@@ -265,13 +344,11 @@ namespace PowerGridManager
             }
         }
 
-        private string HeatSymbol(HeatmapRow row, PowerGridManagerSettings settings,
-            PowerManagementController management)
+        private static string HeatSymbol(Color color)
         {
-            Color c = HeatColor(row, settings, management);
-            if (c == PowerUiDraw.NoticeColor) return "[!!]";
-            if (c == PowerUiDraw.Warn) return "[!]";
-            if (c == PowerUiDraw.Good) return "[OK]";
+            if (color == PowerUiDraw.NoticeColor) return "[!!]";
+            if (color == PowerUiDraw.Warn) return "[!]";
+            if (color == PowerUiDraw.Good) return "[OK]";
             return "\u2013";
         }
 
@@ -322,11 +399,16 @@ namespace PowerGridManager
         private static Color CriticalColor(BuildingPowerSnapshot building,
             PowerManagementController management)
         {
-            bool protectedBuilding = management != null &&
-                management.Registry != null &&
-                management.Registry.Find(building.Building) != null &&
-                !management.Registry.Find(building.Building).Sheddable;
-            return protectedBuilding ? PowerUiDraw.Good : PowerUiDraw.TextSecondary;
+            PowerManagementRecord record = FindManagementRecord(building.Building, management);
+            return record != null && !record.Sheddable ? PowerUiDraw.Good : PowerUiDraw.TextSecondary;
+        }
+
+        private static PowerManagementRecord FindManagementRecord(Building building, PowerManagementController management)
+        {
+            PowerManagementRegistry registry = management == null ? null : management.Registry;
+            // StableId allocates a string. Most colonies have no configured records, so avoid
+            // constructing one per building just to look up an entry in an empty dictionary.
+            return registry == null || registry.Count == 0 ? null : registry.Find(building);
         }
 
         private string ValueText(HeatmapRow row)
@@ -362,6 +444,8 @@ namespace PowerGridManager
         private static string Tooltip(HeatmapRow row, PowerManagementController management)
         {
             BuildingPowerSnapshot b = row.Building;
+            PowerManagementRecord record = b.ConsumptionWatts > 0.01f
+                ? FindManagementRecord(b.Building, management) : null;
             return "PGM_Heatmap_Tooltip".Translate(
                 PowerGridUtilities.BuildingLabel(b.Building),
                 PowerFormatting.FormatWatts(b.ConsumptionWatts),
@@ -371,9 +455,7 @@ namespace PowerGridManager
                 b.NetworkId.HasValue
                     ? b.NetworkId.Value.ToString()
                     : (string)"PGM_Value_Unknown".Translate(),
-                b.ConsumptionWatts > 0.01f && management != null &&
-                management.Registry != null && management.Registry.Find(b.Building) != null &&
-                management.Registry.Find(b.Building).Sheddable
+                record != null && record.Sheddable
                     ? (string)"PGM_Heatmap_Policy_Sheddable".Translate()
                     : (string)"PGM_Heatmap_Policy_Protected".Translate());
         }
@@ -389,6 +471,18 @@ namespace PowerGridManager
                 case HeatmapMode.Isolation: return "PGM_Heatmap_Mode_Isolation".Translate();
                 case HeatmapMode.Idle: return "PGM_Heatmap_Mode_Idle".Translate();
                 default: return "PGM_Heatmap_Mode_Critical".Translate();
+            }
+        }
+
+        private struct PolicyState
+        {
+            public readonly PowerManagementRecord Record;
+            public readonly bool Sheddable;
+
+            public PolicyState(PowerManagementRecord record, bool sheddable)
+            {
+                Record = record;
+                Sheddable = sheddable;
             }
         }
 

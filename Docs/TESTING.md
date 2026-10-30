@@ -2,15 +2,13 @@
 
 Two separate levels exist, and they must not be confused:
 
-1. **Offline logic harness** — compiles the production sources against minimal game doubles.
-   Proves measurement, filtering, history, chart, diagnostics, forecast, management and
-   localization logic. It cannot prove compatibility with the real game assemblies, rendering,
-   or performance. **There is no .NET SDK in the development workspace itself**, but the
-   `Offline logic tests` GitHub Actions job compiles the full production source set against
-   the doubles and runs the harness on .NET 8 for every push and pull request; that job passes
-   for the Phase 7/8 branch. A local `dotnet run` reproduces it.
-2. **In-game validation** — requires an installed RimWorld build. Everything in this
-   document's second half is still outstanding.
+1. **Offline logic harness** — compiles the production sources against minimal game doubles
+   and checks measurement, filtering, history, diagnostics, forecasting, management and UI
+   logic. It cannot prove compatibility with real game assemblies, rendering or performance.
+   The `Offline logic tests` GitHub Actions job is configured to run on .NET 8 for each push
+   and pull request; check the CI result for the revision being released.
+2. **In-game validation** — requires installed RimWorld builds. The checklist below was not
+   run for the `1.0.1` update in this development environment.
 
 ## 1. Offline harness
 
@@ -23,8 +21,8 @@ Exit code is 0 only when every check passes. The project links
 `../Source/PowerGridManager/**/*.cs` plus `Tests/Doubles/*.cs`, so a compile error in the
 mod also fails the harness.
 
-What it covers (the Phase 1–6 harness reported 493 checks; the current CI run reports
-**1,744 checks**, and the harness prints the exact total when run):
+What it covers (the harness prints the exact total when run; the `1.0.1` local doubles-based
+run passed 2,465 checks):
 
 - **Phase 2 monitoring (32):** empty maps, signed trader output, `PowerOn` gating, flick
   state, batteries and EMP, deficit counting, independent networks, non-colonist buildings,
@@ -32,13 +30,18 @@ What it covers (the Phase 1–6 harness reported 493 checks; the current CI run 
   unsupported components, variable demand, snapshot immutability, cache cadence, tick
   rollback, multi-component buildings, deduplicated lister entries, connector-only traders,
   and a 10,000-building map.
-- **Phase 3 dashboard (108):** building roll-ups and component counts, configured
+- **Phase 3 dashboard (333):** building roll-ups and component counts, configured
   generation, load ratio, room association, category classification, all network statuses,
   every filter, searching, sort direction and stability, grouping labels, number/unit
   formatting (watts vs kilowatts vs watt-days vs durations), support levels, and a headless
   UI pass that draws every panel and every tab at 320x180, 1010x640, 2560x1400 and with
   real data, clicks network rows, building rows and toolbar buttons, and asserts that no
   drawing path opens a window unexpectedly.
+- **Heatmap performance (116):** a 10,000-building fixture counts snapshot reads and submitted
+  row widgets to check that repeated draws reuse rankings and submit only viewport rows and
+  a small edge buffer. It exercises all modes, filtering, management-policy changes, scroll
+  boundaries, partial rows, resized lists, tooltips, selection, Inspect and Locate. These
+  counts are not FPS measurements, and the doubles do not simulate real GUI clipping or input.
 - **Phase 4 history (103):** sampling cadence and clamping, retention, caps, rollback,
   save/load round-trip, future and truncated formats, corrupt rows, missing nodes, map
   component integration, chart binnings/averages/gaps/axes, and `RefreshIfStale` reuse.
@@ -77,10 +80,10 @@ What it covers (the Phase 1–6 harness reported 493 checks; the current CI run 
   keyed/def/About XML parse, the def wires the right tab window type, the icon texture exists,
   and the window type derives from `MainTabWindow`.
 
-The harness proves nothing about the draw calls themselves: `Widgets`, `GUI` and rendering
-are inert doubles.
+The instrumented doubles can count submitted widget calls, but `Widgets` and `GUI` do not
+perform real clipping or rendering; the harness cannot validate the resulting in-game view.
 
-## 2. In-game validation checklist (outstanding)
+## 2. In-game validation checklist for the update
 
 Build against each target installation (see README), install into a **no-DLC** profile,
 and check the log after each step. Record the results next to each item.
@@ -186,6 +189,11 @@ and check the log after each step. Record the results next to each item.
       notice and never contributes invented numbers.
 - [ ] Large colony (100+ powered buildings): measure frame time with the dashboard open and
       closed; the open dashboard must not drop frames.
+- [ ] Heatmap: on the same large save, compare frame time before and after this change at the
+      same resolution, UI scale and game speed. Scroll to the top, middle and bottom, including
+      partial rows; verify selection, tooltips, Inspect and Locate. Try every mode and search
+      while paused, shrink the results while scrolled down, change critical policies, and
+      switch maps or remove buildings to verify refreshed rankings and scroll positions.
 - [ ] Several maps: each map keeps its own history; switching maps does not mix them.
 - [ ] No repeated log spam over a long session.
 
@@ -196,35 +204,24 @@ and check the log after each step. Record the results next to each item.
 - [ ] No Harmony patches are present: the mod ships none, so no patch errors are possible.
 - [ ] UI scale 1x/1.5x/2x and 1280x720 through 2560x1440: nothing clipped or overlapping.
 
-## 3. Static checks performed in this environment
+## 3. Verification recorded for 1.0.1
 
-Earlier phases reported a full Roslyn compile of the production sources plus the harness
-against a local .NET runtime and execution of the 493 checks. **That toolchain is not present
-in the local workspace**, but the `Offline logic tests` GitHub Actions job now performs the
-equivalent doubles-based compile and executes **1,744 checks** successfully on every push/PR.
-The following checks were additionally run locally:
+The following were run in this workspace on 2026-10-30:
 
-- `python3 Tests/static_checks.py --syntax` — 1,931 assertions, 0 failures: XML parsing of
-  `About.xml`, `LoadFolders.xml`,
-  all defs and the English keyed file; 568 localization keys with placeholder counts;
-  duplicate keys; forbidden API patterns; no DLC namespaces; no `PackageReference` or Harmony
-  in the production project; def wiring, icon, `Preview.png`, `LICENSE`, `package-release.sh`,
-  and Markdown relative-link checks.
-- `./package-release.sh --allow-unbuilt` — verifies that clean release staging (`About/`,
-  `LoadFolders.xml`, `1.5–1.7/Assemblies`, `Defs/`, `Languages/`, `Textures/`, `LICENSE`,
-  `README.md`, `CHANGELOG.md`) succeeds without leaking `Source/`, `Tests/` or `Docs/`.
-- Roslyn **syntax** parsing of all 50 C# files through the WASM build of CSharpier
-  (`@scalar/csharp-fmt`), 0 parse failures. This is a parser, not a semantic compiler.
-- Manual member cross-check of every new Phase 7/8 type against its declaration and the game
-  doubles, and API signature cross-checks against the public 1.5.4409 and 1.6 decompilation
-  references for `CompFlickable`, `FlickUtility`, `Command_Toggle`, `ThingComp`,
-  `Thing.GetUniqueLoadID`, `Map.uniqueID`, `Scribe_Deep`, `Scribe_Values`, `ParseHelper`,
-  `JobDriver_Flick` and `WorkGiver_Flick`.
-- `git diff --check` for whitespace errors.
+- Compiled all production and test sources with Roslyn 5.9 against game doubles and ran
+  the harness on .NET 10: **2,465 checks passed**, including **116 Heatmap checks**.
+  This was a temporary local toolchain; the project's standard CI target is .NET 8.
+- `python3 Tests/static_checks.py` — checks XML, localization, source hygiene, release
+  metadata, project/mod version consistency, assets and Markdown links.
+- `python3 Tests/build_version_test.py` — checks standalone compiler version attributes
+  using a fake compiler and placeholder references; this is not a real game build.
+- `python3 Tests/package_release_test.py` — verifies versioned archive naming, the assembly
+  gate, optional Workshop-ID preservation and clean restaging using fake DLLs only.
+- `./package-release.sh --allow-unbuilt` — verifies the folder and zip layout. Its output
+  contains `UNBUILT-PACKAGE.txt` and **must not be distributed**.
+- `git diff --check` and shell syntax checks.
 
-**Not performed in this workspace:** compilation against official game assemblies, launching
-the game, real save/load, real rendering, Harmony patch verification or frame-time profiling.
-The C# harness *is* executed on every push/PR by the GitHub Actions `Offline logic tests`
-job (Ubuntu, .NET 8), which compiles all production sources against the doubles and runs
-every check; that job passes for this branch. The `CompatibilityTests` timing assertions are
-generous regression guards in that environment, not performance claims about the real game.
+Compilation against official game assemblies, launching RimWorld, real save/load, real
+rendering and live frame-time profiling were **not performed for this update here**. The
+`CompatibilityTests` timing assertions and GUI-double counts are regression guards, not
+performance measurements in the game.

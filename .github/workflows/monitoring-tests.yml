@@ -17,6 +17,7 @@ jobs:
       # localization checks. This does not prove binary compatibility with the real
       # RimWorld assemblies; that requires a game installation.
       - run: dotnet run --project Tests/PowerGridManager.Tests.csproj --configuration Release
+      - run: python3 Tests/build_version_test.py
       - run: python3 Tests/package_release_test.py
       # Verifies that clean release staging and zip packaging succeed without leaking dev files.
       - run: ./package-release.sh --allow-unbuilt && rm -rf dist

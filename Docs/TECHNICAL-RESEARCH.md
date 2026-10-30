@@ -104,6 +104,9 @@ These links establish overlapping categories, not a complete feature-by-feature 
 
 ## Phase checklist
 
+This is the historical research checklist, not a statement of current release status. For the
+current update's verification, see [Testing](TESTING.md).
+
 - [x] Phase 1: initial research, project/build skeleton and settings established.
 - [x] Add 1.5/1.6/1.7 metadata and separate build targets/runtime layouts.
 - [ ] Phase 1: compile/load against official 1.5, 1.6, and 1.7 installations (blocked here by absent game installs/toolchain).
@@ -121,7 +124,8 @@ These links establish overlapping categories, not a complete feature-by-feature 
       official-assembly compilation still open).
 - [x] Phase 9: release preparation (`LICENSE`, `LoadFolders.xml`, `About/Preview.png`,
       `package-release.sh`, architecture/compatibility/feature/Workshop/screenshot docs,
-      UI polish fixes; final official-assembly build & in-game sign-off still open before `1.0.0`).
+      UI polish fixes; official-assembly build and in-game sign-off were still open in this
+      research environment at the time).
 
 
 ## Phase 3-4 implementation update (2026-10-25)

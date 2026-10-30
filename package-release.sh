@@ -94,6 +94,11 @@ mkdir -p \
   "$STAGE/1.7/Assemblies"
 
 cp "$ROOT/About/About.xml" "$ROOT/About/ModIcon.png" "$ROOT/About/Preview.png" "$STAGE/About/"
+# An existing Workshop item's ID is local publishing state. Preserve it when supplied,
+# but never invent one for a new installation or a developer without that file.
+if [ -f "$ROOT/About/PublishedFileId.txt" ]; then
+  cp "$ROOT/About/PublishedFileId.txt" "$STAGE/About/"
+fi
 cp "$ROOT/LoadFolders.xml" "$ROOT/LICENSE" "$ROOT/README.md" "$ROOT/CHANGELOG.md" "$STAGE/"
 cp -R "$ROOT/Defs" "$ROOT/Languages" "$ROOT/Textures" "$STAGE/"
 
