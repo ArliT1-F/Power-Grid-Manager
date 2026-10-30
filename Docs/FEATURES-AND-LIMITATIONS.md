@@ -105,9 +105,11 @@ committed on `arena/38cf92f4-power-grid-manager`:
   switches a building; create / delete / duplicate / activate in the Management panel.
 - **Dashboard heatmap (`Heatmap` tab):** Colour-coded building heatmap with modes for
   consumption, generation, battery charge, network stability, isolation, idle draw and
-  critical protection; search; hover tooltips; Locate / Inspect. Dashboard view only — an
-  on-map cell overlay is not implemented because it would require Harmony and RimWorld
-  exposes no public map-drawing hook.
+  critical protection; search; hover tooltips; Locate / Inspect in the list. The Map view
+  shows a blueprint-style top-down map: simplified terrain colours, rectangular building footprints
+  and relative power markers, refreshed with power snapshots. Fogged cells are hidden.
+  Textures, pawns, lighting and animations are not reproduced. Dashboard view only; no
+  overlay is drawn on the game map.
 - **Integration API:** `Docs/INTEGRATION.md` documents the read-only query API, the
   opt-in management control API, preset API, stability guarantees and constraints.
 

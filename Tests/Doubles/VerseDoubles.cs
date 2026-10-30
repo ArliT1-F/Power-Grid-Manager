@@ -103,6 +103,7 @@ namespace Verse
         public int x;
         public int z;
         public IntVec3(int x, int z) { this.x = x; this.z = z; }
+        public IntVec3(int x, int y, int z) { this.x = x; this.z = z; }
     }
 
     public class Thing
@@ -144,7 +145,21 @@ namespace Verse
 
     public class ThingWithComps : Thing { }
 
-    public class Building : ThingWithComps { }
+    public struct CellRect
+    {
+        public int minX, minZ, maxX, maxZ;
+        public int Width => maxX - minX + 1;
+        public int Height => maxZ - minZ + 1;
+        public CellRect(int x, int z, int width, int height)
+        { minX = x; minZ = z; maxX = x + width - 1; maxZ = z + height - 1; }
+    }
+    public class Building : ThingWithComps
+    {
+        public CellRect OccupiedRect() => new CellRect(Position.x, Position.z, 1, 1);
+    }
+    public class TerrainDef : Def { }
+    public class TerrainGrid { public TerrainDef TerrainAt(IntVec3 cell) => null; }
+    public class FogGrid { public bool IsFogged(IntVec3 cell) => false; }
 
     public static class RegionAndRoomQuery
     {
@@ -193,6 +208,9 @@ namespace Verse
 
     public class Map
     {
+        public IntVec3 Size;
+        public TerrainGrid terrainGrid = new TerrainGrid();
+        public FogGrid fogGrid = new FogGrid();
         public int uniqueID = -1;
         public RimWorld.PowerNetManager powerNetManager = new RimWorld.PowerNetManager();
         public ListerBuildings listerBuildings = new ListerBuildings();

@@ -565,6 +565,9 @@
   <PGM_Tab_PlanningTip>Scenario planning and power budgeting: evaluate hypothetical changes without touching the live game.</PGM_Tab_PlanningTip>
   <PGM_Tab_Heatmap>Heatmap</PGM_Tab_Heatmap>
   <PGM_Tab_HeatmapTip>Colour-coded building heatmap: consumption, generation, battery charge, network stability, isolation, idle draw and critical protection. Dashboard view only.</PGM_Tab_HeatmapTip>
+  <PGM_Heatmap_MapView>Map</PGM_Heatmap_MapView>
+  <PGM_Heatmap_ListView>List</PGM_Heatmap_ListView>
+  <PGM_Heatmap_MapLegend>Relative intensity: blue low → yellow → red high. Battery shows low charge as high intensity.</PGM_Heatmap_MapLegend>
   <PGM_Heatmap_Empty>No power buildings found on this map.</PGM_Heatmap_Empty>
   <PGM_Heatmap_SearchTip>Filter buildings by label.</PGM_Heatmap_SearchTip>
   <PGM_Heatmap_Mode_Consumption>Consumption</PGM_Heatmap_Mode_Consumption>

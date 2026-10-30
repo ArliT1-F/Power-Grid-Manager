@@ -75,7 +75,16 @@ namespace UnityEngine
         public override int GetHashCode() => r.GetHashCode() ^ (g.GetHashCode() << 2) ^ (b.GetHashCode() >> 2) ^ (a.GetHashCode() >> 1);
     }
 
-    public class Texture2D { }
+    public class Object { public static void Destroy(Object value) { } }
+    public enum TextureFormat { RGBA32 }
+    public enum FilterMode { Point }
+    public class Texture2D : Object
+    {
+        public FilterMode filterMode;
+        public Texture2D(int width, int height, TextureFormat format, bool mipChain) { }
+        public void SetPixels(Color[] colors) { }
+        public void Apply() { }
+    }
 
     public enum TextAnchor
     {

@@ -53,6 +53,12 @@ namespace PowerGridManager
         private readonly PowerScenarioPanel scenarioPanel = new PowerScenarioPanel();
         private readonly PowerHeatmapPanel heatmapPanel = new PowerHeatmapPanel();
 
+        public override void PostClose()
+        {
+            heatmapPanel.ReleaseMapTexture();
+            base.PostClose();
+        }
+
         /// <summary>Window view state. Internal so the offline harness can drive each tab.</summary>
         internal PowerUiState UiState => state;
 
@@ -159,7 +165,7 @@ namespace PowerGridManager
                     scenarioPanel.Draw(content, snapshot, state, settings);
                     break;
                 case PowerGridTab.Heatmap:
-                    heatmapPanel.Draw(content, snapshot, state, settings, component.Management);
+                    heatmapPanel.Draw(content, snapshot, state, settings, component.Management, map);
                     break;
                 default:
                     overviewPanel.Draw(
